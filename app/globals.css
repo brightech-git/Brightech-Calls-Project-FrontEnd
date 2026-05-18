@@ -1,0 +1,23 @@
+:root {
+  --bg: #f0f6ff;
+  --surface: #ffffff;
+  --border: #dbeafe;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-light: #eff6ff;
+  --text-main: #1e3a5f;
+  --text-muted: #64748b;
+  --text-faint: #93c5fd;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text-main);
+  font-family: 'DM Sans', 'Inter', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
