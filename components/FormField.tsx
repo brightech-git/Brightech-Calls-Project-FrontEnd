@@ -107,56 +107,65 @@ export interface FieldConfig<T extends FieldValues = FieldValues> {
 
   // layout — how many grid columns to span (1 or 2)
   colSpan?: 1 | 2;
+
+  // horizontal label:value layout
+  inline?: boolean;
+  labelWidth?: string;
+  inputWidth?: string;
+
+  // input behaviour
+  capitalize?: boolean;
+  tabIndex?: number;
 }
 
 interface FormFieldProps<T extends FieldValues> {
   field: FieldConfig<T>;
   control: Control<T>;
   errors: FieldErrors<T>;
+  inline?: boolean;
 }
 
 // ─── Styles (reused) ──────────────────────────────────────────────────────────
 
 const inputStyles = {
-  bg: "rgba(255,255,255,0.03)",
-  border: "0.5px solid",
-  borderColor: "rgba(255,255,255,0.1)",
-  borderRadius: "8px",
-  color: "rgba(255,255,255,0.85)",
+  bg: "#ffffff",
+  border: "1px solid",
+  borderColor: "#d1d5db",
+  borderRadius: "6px",
+  color: "#111827",
   fontSize: "13px",
-  _placeholder: { color: "rgba(255,255,255,0.25)" },
-  _hover: { borderColor: "rgba(255,255,255,0.2)", bg: "rgba(255,255,255,0.05)" },
+  _placeholder: { color: "#9ca3af" },
+  _hover: { borderColor: "#9ca3af", bg: "#ffffff" },
   _focus: {
-    borderColor: "#4f8ef7",
-    boxShadow: "0 0 0 2px rgba(79,142,247,0.18)",
-    bg: "rgba(79,142,247,0.04)",
+    borderColor: "#6b7280",
+    boxShadow: "0 0 0 2px rgba(107,114,128,0.15)",
+    bg: "#ffffff",
     outline: "none",
   },
   _disabled: { opacity: 0.4, cursor: "not-allowed" },
   _invalid: { borderColor: "#f87171", boxShadow: "0 0 0 2px rgba(248,113,113,0.18)" },
-  height: "38px",
-  px: "12px",
+  height: "34px",
+  px: "10px",
 };
 
 const labelStyle = {
   fontSize: "12px",
   fontWeight: "600",
-  color: "rgba(255,255,255,0.5)",
-  letterSpacing: "0.04em",
-  textTransform: "uppercase" as const,
-  mb: "6px",
+  color: "#374151",
+  letterSpacing: "0.02em",
+  mb: "4px",
 };
 
 const helperStyle = {
   fontSize: "11px",
-  color: "rgba(255,255,255,0.28)",
-  mt: "4px",
+  color: "#6b7280",
+  mt: "3px",
 };
 
 const errorStyle = {
   fontSize: "11px",
-  color: "#f87171",
-  mt: "4px",
+  color: "#ef4444",
+  mt: "3px",
 };
 
 // ─── Helper: get nested error message ─────────────────────────────────────────
@@ -183,16 +192,33 @@ function TextInput({
   onChange,
   onBlur,
   invalid,
+  tabIndex,
 }: {
   field: FieldConfig<any>;
   value: unknown;
   onChange: (v: unknown) => void;
   onBlur: () => void;
   invalid: boolean;
+  tabIndex?: number;
 }) {
   const [showPw, setShowPw] = useState(false);
   const type =
     field.type === "password" ? (showPw ? "text" : "password") : field.type;
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const form = (e.target as HTMLElement).closest("form");
+      if (!form) return;
+      const focusable = Array.from(
+        form.querySelectorAll<HTMLElement>(
+          'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]):not([tabindex="-1"])'
+        )
+      );
+      const idx = focusable.indexOf(e.target as HTMLElement);
+      if (idx >= 0 && idx < focusable.length - 1) focusable[idx + 1].focus();
+    }
+  };
 
   if (field.type === "color") {
     return (
@@ -200,24 +226,16 @@ function TextInput({
         <input
           type="color"
           value={(value as string) ?? "#4f8ef7"}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            onChange(e.target.value)
-          }
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
           onBlur={onBlur}
           disabled={field.disabled}
           style={{
-            width: 38,
-            height: 38,
-            borderRadius: 8,
+            width: 38, height: 38, borderRadius: 8,
             border: "0.5px solid rgba(255,255,255,0.15)",
-            background: "transparent",
-            cursor: "pointer",
-            padding: 2,
+            background: "transparent", cursor: "pointer", padding: 2,
           }}
         />
-        <Text fontSize="13px" color="rgba(255,255,255,0.55)">
-          {(value as string) ?? "#4f8ef7"}
-        </Text>
+        <Text fontSize="13px" color="#6b7280">{(value as string) ?? "#4f8ef7"}</Text>
       </HStack>
     );
   }
@@ -227,12 +245,19 @@ function TextInput({
       <Input
         type={type}
         value={(value as string) ?? ""}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          const v = field.capitalize
+            ? e.target.value.toUpperCase()
+            : e.target.value;
+          onChange(v);
+        }}
         onBlur={onBlur}
+        onKeyDown={handleKeyDown}
         placeholder={field.placeholder}
         disabled={field.disabled}
         readOnly={field.readOnly}
         aria-invalid={invalid}
+        tabIndex={tabIndex ?? field.tabIndex}
         {...inputStyles}
         pr={field.type === "password" ? "40px" : inputStyles.px}
       />
@@ -242,16 +267,10 @@ function TextInput({
           onClick={() => setShowPw((p) => !p)}
           tabIndex={-1}
           style={{
-            position: "absolute",
-            right: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: "rgba(255,255,255,0.3)",
-            display: "flex",
-            alignItems: "center",
+            position: "absolute", right: 10, top: "50%",
+            transform: "translateY(-50%)", background: "none",
+            border: "none", cursor: "pointer", color: "#9ca3af",
+            display: "flex", alignItems: "center",
           }}
         >
           <Icon as={showPw ? EyeOff : Eye} boxSize="14px" />
@@ -693,9 +712,11 @@ export function FormField<T extends FieldValues>({
   field,
   control,
   errors,
+  inline: inlineProp,
 }: FormFieldProps<T>) {
   const errorMsg = getErrorMessage(errors, field.name as string);
   const invalid = !!errorMsg;
+  const isInline = field.inline ?? inlineProp ?? false;
 
   // Hidden field — no UI
   if (field.type === "hidden") {
@@ -717,123 +738,106 @@ export function FormField<T extends FieldValues>({
       control={control}
       render={({ field: f }) => (
         <Field.Root invalid={invalid} disabled={field.disabled}>
-          {/* Label — skip for single checkbox / switch (they render it inline) */}
-          {field.label && !isBoolean && (
-            <Field.Label {...labelStyle}>
-              {field.label}
-              {field.required && (
-                <Text as="span" color="#f87171" ml="3px">
-                  *
-                </Text>
+          {isInline ? (
+            // ── Horizontal label : input layout ──
+            <Box w="full">
+              <HStack align="center" gap="0" w="full">
+                <Box
+                  w={field.labelWidth ?? "110px"}
+                  flexShrink={0}
+                  display="flex"
+                  alignItems="center"
+                  gap="4px"
+                >
+                  <Text
+                    fontSize="12px"
+                    fontWeight="600"
+                    color="#374151"
+                    letterSpacing="0.02em"
+                  >
+                    {field.label}
+                  </Text>
+                  {field.required && (
+                    <Text as="span" color="#ef4444" fontSize="12px">*</Text>
+                  )}
+                  <Text fontSize="12px" color="#9ca3af" ml="1px">:</Text>
+                </Box>
+                <Box flex="1" w={field.inputWidth}>
+                  {renderInput(field, f, invalid)}
+                  {field.helperText && !errorMsg && (
+                    <Text {...helperStyle}>{field.helperText}</Text>
+                  )}
+                  {errorMsg && (
+                    <Field.ErrorText {...errorStyle}>{errorMsg}</Field.ErrorText>
+                  )}
+                </Box>
+              </HStack>
+            </Box>
+          ) : (
+            // ── Vertical (default) layout ──
+            <Box w="full">
+              {/* Label — skip for single checkbox / switch (they render it inline) */}
+              {field.label && !isBoolean && (
+                <Field.Label {...labelStyle}>
+                  {field.label}
+                  {field.required && (
+                    <Text as="span" color="#ef4444" ml="3px">*</Text>
+                  )}
+                </Field.Label>
               )}
-            </Field.Label>
+              {renderInput(field, f, invalid)}
+              {field.helperText && !errorMsg && (
+                <Text {...helperStyle}>{field.helperText}</Text>
+              )}
+              {errorMsg && (
+                <Field.ErrorText {...errorStyle}>{errorMsg}</Field.ErrorText>
+              )}
+            </Box>
           )}
 
-          {/* ── Render by type ── */}
-          {(field.type === "text" ||
-            field.type === "email" ||
-            field.type === "password" ||
-            field.type === "number" ||
-            field.type === "tel" ||
-            field.type === "url" ||
-            field.type === "date" ||
-            field.type === "time" ||
-            field.type === "datetime-local" ||
-            field.type === "color") && (
-            <TextInput
-              field={field}
-              value={f.value}
-              onChange={f.onChange}
-              onBlur={f.onBlur}
-              invalid={invalid}
-            />
-          )}
-
-          {field.type === "range" && (
-            <RangeInput
-              field={field}
-              value={f.value}
-              onChange={f.onChange}
-              onBlur={f.onBlur}
-            />
-          )}
-
-          {field.type === "textarea" && (
-            <TextareaInput
-              field={field}
-              value={f.value}
-              onChange={f.onChange}
-              onBlur={f.onBlur}
-              invalid={invalid}
-            />
-          )}
-
-          {field.type === "select" && (
-            <SelectInput
-              field={field}
-              value={f.value}
-              onChange={f.onChange}
-              onBlur={f.onBlur}
-              invalid={invalid}
-            />
-          )}
-
-          {field.type === "multi-select" && (
-            <MultiSelectInput
-              field={field}
-              value={f.value}
-              onChange={f.onChange}
-              onBlur={f.onBlur}
-            />
-          )}
-
-          {field.type === "checkbox-group" && (
-            <CheckboxGroupInput
-              field={field}
-              value={f.value}
-              onChange={f.onChange}
-            />
-          )}
-
-          {field.type === "radio-group" && (
-            <RadioGroupInput
-              field={field}
-              value={f.value}
-              onChange={f.onChange}
-            />
-          )}
-
-          {field.type === "checkbox" && (
-            <SingleCheckbox
-              field={field}
-              value={f.value}
-              onChange={f.onChange}
-            />
-          )}
-
-          {field.type === "switch" && (
-            <SwitchInput
-              field={field}
-              value={f.value}
-              onChange={f.onChange}
-            />
-          )}
-
-          {field.type === "file" && (
-            <FileInput field={field} onChange={f.onChange} />
-          )}
-
-          {/* Helper text */}
-          {field.helperText && !errorMsg && (
-            <Text {...helperStyle}>{field.helperText}</Text>
-          )}
-
-          {/* Error */}
-          {errorMsg && (
-            <Field.ErrorText {...errorStyle}>{errorMsg}</Field.ErrorText>
-          )}
         </Field.Root>
       )}
     />
   );
+}
+
+// ─── Extracted input renderer ─────────────────────────────────────────────────
+
+function renderInput(field: FieldConfig<any>, f: any, invalid: boolean) {
+  if (
+    field.type === "text" || field.type === "email" || field.type === "password" ||
+    field.type === "number" || field.type === "tel" || field.type === "url" ||
+    field.type === "date" || field.type === "time" || field.type === "datetime-local" ||
+    field.type === "color"
+  ) {
+    return <TextInput field={field} value={f.value} onChange={f.onChange} onBlur={f.onBlur} invalid={invalid} tabIndex={field.tabIndex} />;
+  }
+  if (field.type === "range") {
+    return <RangeInput field={field} value={f.value} onChange={f.onChange} onBlur={f.onBlur} />;
+  }
+  if (field.type === "textarea") {
+    return <TextareaInput field={field} value={f.value} onChange={f.onChange} onBlur={f.onBlur} invalid={invalid} />;
+  }
+  if (field.type === "select") {
+    return <SelectInput field={field} value={f.value} onChange={f.onChange} onBlur={f.onBlur} invalid={invalid} />;
+  }
+  if (field.type === "multi-select") {
+    return <MultiSelectInput field={field} value={f.value} onChange={f.onChange} onBlur={f.onBlur} />;
+  }
+  if (field.type === "checkbox-group") {
+    return <CheckboxGroupInput field={field} value={f.value} onChange={f.onChange} />;
+  }
+  if (field.type === "radio-group") {
+    return <RadioGroupInput field={field} value={f.value} onChange={f.onChange} />;
+  }
+  if (field.type === "checkbox") {
+    return <SingleCheckbox field={field} value={f.value} onChange={f.onChange} />;
+  }
+  if (field.type === "switch") {
+    return <SwitchInput field={field} value={f.value} onChange={f.onChange} />;
+  }
+  if (field.type === "file") {
+    return <FileInput field={field} onChange={f.onChange} />;
+  }
+  return null;
 }

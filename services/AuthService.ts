@@ -6,6 +6,7 @@ import { axiosInstance } from "@/api/axiosInstance";
 import {
   LoginPayload,
   RegisterPayload,
+  UpdateUserPayload,
   AuthResponse,
   UserRecord,
 } from "@/types/Auth/Auth";
@@ -36,4 +37,21 @@ export const registerUser = async (payload: RegisterPayload): Promise<AuthRespon
 export const getAllUsers = async (): Promise<UserRecord[]> => {
   const response = await axiosInstance.get<UserRecord[]>("/user");
   return response.data;
+};
+
+// GET USER BY ID
+export const getUserById = async (id: number): Promise<UserRecord> => {
+  const response = await axiosInstance.get<UserRecord>(`/user/${id}`);
+  return response.data;
+};
+
+// UPDATE USER
+export const updateUser = async (id: number, payload: UpdateUserPayload): Promise<UserRecord> => {
+  const response = await axiosInstance.put<UserRecord>(`/user/${id}`, payload);
+  return response.data;
+};
+
+// DELETE USER
+export const deleteUser = async (id: number): Promise<void> => {
+  await axiosInstance.delete(`/user/${id}`);
 };

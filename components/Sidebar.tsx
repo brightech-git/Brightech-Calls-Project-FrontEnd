@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
-  LayoutDashboard, BarChart2, Database, FileBarChart,
+  LayoutDashboard, Database,
   Settings, Bolt, ChevronDown, LogOut, Users, UserCheck,
-  Briefcase, Package,
+  Briefcase,
 } from "lucide-react";
+import { COLORS, FONT, RADIUS } from "@/utils/theme";
 
 interface NavChild { label: string; href: string; icon?: React.ReactNode; }
 interface NavGroup { label: string; icon: React.ReactNode; children: NavChild[]; }
@@ -20,8 +21,8 @@ const menuItems: NavItem[] = [
   {
     label: "Master", icon: <Database size={16} />,
     children: [
-      { label: "Staff Master",  href: "/Master/StaffMaster",  icon: <Users size={13} /> },
       { label: "User Master",   href: "/Master/UserMaster",   icon: <UserCheck size={13} /> },
+      { label: "Staff Master",  href: "/Master/StaffMaster",  icon: <Users size={13} /> },
       { label: "Client Master", href: "/Master/ClientMaster", icon: <Briefcase size={13} /> },
     ],
   },
@@ -98,126 +99,116 @@ export default function Sidebar() {
     <>
       <style>{`
         .sidebar-root {
-          width: 240px;
-          min-width: 240px;
-          height: 100vh;
-          background: #ffffff;
-          border-right: 1px solid #dbeafe;
-          display: flex;
-          flex-direction: column;
-          font-family: 'DM Sans', 'Inter', sans-serif;
-          position: sticky;
-          top: 0;
+          width: 240px; min-width: 240px; height: 100vh;
+          background: ${COLORS.shellBg};
+          border-right: 1px solid ${COLORS.shellBorder};
+          display: flex; flex-direction: column;
+          font-family: ${FONT.family};
+          position: sticky; top: 0;
         }
         .sidebar-logo {
           padding: 18px 16px 14px;
-          border-bottom: 1px solid #dbeafe;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          flex-shrink: 0;
+          border-bottom: 1px solid ${COLORS.shellBorder};
+          display: flex; align-items: center; gap: 10px; flex-shrink: 0;
         }
         .sidebar-logo-icon {
-          width: 32px; height: 32px;
-          border-radius: 8px;
-          background: linear-gradient(135deg, #3b82f6, #60a5fa);
+          width: 32px; height: 32px; border-radius: ${RADIUS.md};
+          background: ${COLORS.sidebarLogoIconBg};
           display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; color: #fff;
+          flex-shrink: 0; color: ${COLORS.sidebarLogoIconColor};
         }
         .sidebar-logo-text {
           font-size: 13.5px; font-weight: 700;
-          color: #1e3a5f; letter-spacing: -0.01em; line-height: 1.2;
+          color: ${COLORS.sidebarLogoText}; letter-spacing: -0.01em; line-height: 1.2;
         }
         .sidebar-logo-sub {
-          font-size: 9.5px; color: #93c5fd; font-weight: 500;
+          font-size: 9.5px; color: ${COLORS.sidebarLogoSub}; font-weight: 500;
           letter-spacing: 0.08em; text-transform: uppercase; margin-top: 1px;
         }
         .sidebar-nav {
-          flex: 1; overflow-y: auto;
-          padding: 10px 8px;
+          flex: 1; overflow-y: auto; padding: 10px 8px;
           display: flex; flex-direction: column; gap: 20px;
         }
         .sidebar-nav::-webkit-scrollbar { width: 3px; }
-        .sidebar-nav::-webkit-scrollbar-thumb { background: #bfdbfe; border-radius: 2px; }
+        .sidebar-nav::-webkit-scrollbar-thumb { background: ${COLORS.sidebarScrollThumb}; border-radius: 2px; }
         .sidebar-section { display: flex; flex-direction: column; gap: 2px; }
         .sidebar-section-label {
           font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
-          text-transform: uppercase; color: #93c5fd;
+          text-transform: uppercase; color: ${COLORS.sidebarSectionLabel};
           padding: 0 8px 4px;
         }
         .sidebar-nav-link {
           display: flex; align-items: center; gap: 9px;
-          padding: 8px 10px; border-radius: 8px;
-          font-size: 13px; font-weight: 500;
-          color: #64748b; text-decoration: none;
+          padding: 8px 10px; border-radius: ${RADIUS.md};
+          font-size: ${FONT.size.md}; font-weight: 500;
+          color: ${COLORS.sidebarNavText}; text-decoration: none;
           transition: background 0.15s, color 0.15s;
         }
-        .sidebar-nav-link:hover { background: #eff6ff; color: #3b82f6; }
-        .sidebar-nav-link.active { background: #dbeafe; color: #1d4ed8; font-weight: 600; }
+        .sidebar-nav-link:hover { background: ${COLORS.sidebarNavHoverBg}; color: ${COLORS.sidebarNavHoverText}; }
+        .sidebar-nav-link.active { background: ${COLORS.sidebarNavActiveBg}; color: ${COLORS.sidebarNavActiveText}; font-weight: 600; }
         .sidebar-link-icon { display: flex; align-items: center; flex-shrink: 0; }
         .sidebar-group-btn {
           width: 100%; display: flex; align-items: center; gap: 9px;
-          padding: 8px 10px; border: none; border-radius: 8px;
-          background: transparent; color: #64748b;
-          font-size: 13px; font-family: inherit; font-weight: 500;
-          cursor: pointer; text-align: left;
-          transition: background 0.15s, color 0.15s;
+          padding: 8px 10px; border: none; border-radius: ${RADIUS.md};
+          background: transparent; color: ${COLORS.sidebarNavText};
+          font-size: ${FONT.size.md}; font-family: inherit; font-weight: 500;
+          cursor: pointer; text-align: left; transition: background 0.15s, color 0.15s;
         }
         .sidebar-group-btn:hover, .sidebar-group-btn.open {
-          background: #eff6ff; color: #3b82f6;
+          background: ${COLORS.sidebarNavHoverBg}; color: ${COLORS.sidebarNavHoverText};
         }
         .sidebar-group-icon { display: flex; align-items: center; flex-shrink: 0; }
         .sidebar-group-label { flex: 1; }
-        .sidebar-chevron { color: #bfdbfe; transition: transform 0.2s; flex-shrink: 0; }
-        .sidebar-chevron.rotate-180 { transform: rotate(180deg); color: #3b82f6; }
+        .sidebar-chevron { color: ${COLORS.sidebarChevron}; transition: transform 0.2s; flex-shrink: 0; }
+        .sidebar-chevron.rotate-180 { transform: rotate(180deg); color: ${COLORS.sidebarChevronActive}; }
         .sidebar-children { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
         .sidebar-children.open { max-height: 400px; }
         .sidebar-child {
           display: flex; align-items: center; gap: 7px;
           padding: 7px 10px 7px 24px; border-radius: 7px;
           font-size: 12.5px; font-weight: 400;
-          color: #64748b; text-decoration: none; position: relative;
+          color: ${COLORS.sidebarNavText}; text-decoration: none; position: relative;
           transition: background 0.15s, color 0.15s; margin-top: 1px;
         }
-        .sidebar-child:hover { background: #eff6ff; color: #3b82f6; }
-        .sidebar-child.active { background: #dbeafe; color: #1d4ed8; font-weight: 600; }
+        .sidebar-child:hover { background: ${COLORS.sidebarNavHoverBg}; color: ${COLORS.sidebarNavHoverText}; }
+        .sidebar-child.active { background: ${COLORS.sidebarNavActiveBg}; color: ${COLORS.sidebarNavActiveText}; font-weight: 600; }
         .sidebar-child-dot {
-          position: absolute; left: 10px;
-          width: 4px; height: 4px; border-radius: 50%;
-          background: #bfdbfe; flex-shrink: 0; transition: background 0.15s;
+          position: absolute; left: 10px; width: 4px; height: 4px;
+          border-radius: 50%; background: ${COLORS.sidebarChildDot};
+          flex-shrink: 0; transition: background 0.15s;
         }
-        .sidebar-child.active .sidebar-child-dot { background: #3b82f6; }
-        .sidebar-child:hover .sidebar-child-dot { background: #60a5fa; }
+        .sidebar-child.active .sidebar-child-dot { background: ${COLORS.sidebarChildDotActive}; }
+        .sidebar-child:hover .sidebar-child-dot { background: ${COLORS.sidebarChildDotActive}; }
         .sidebar-child-icon { display: flex; align-items: center; }
         .sidebar-footer {
-          flex-shrink: 0; border-top: 1px solid #dbeafe; padding: 10px 8px;
+          flex-shrink: 0; border-top: 1px solid ${COLORS.shellBorder}; padding: 10px 8px;
         }
         .sidebar-user-card {
           display: flex; align-items: center; gap: 10px;
           padding: 8px 10px; border-radius: 10px; cursor: pointer;
           transition: background 0.15s;
         }
-        .sidebar-user-card:hover { background: #eff6ff; }
+        .sidebar-user-card:hover { background: ${COLORS.sidebarUserHoverBg}; }
         .sidebar-avatar {
           width: 32px; height: 32px; border-radius: 50%;
-          background: linear-gradient(135deg, #3b82f6, #60a5fa);
+          background: ${COLORS.sidebarLogoIconBg};
           display: flex; align-items: center; justify-content: center;
-          font-size: 11.5px; font-weight: 700; color: #fff;
+          font-size: 11.5px; font-weight: 700; color: ${COLORS.sidebarLogoIconColor};
           letter-spacing: -0.02em; flex-shrink: 0;
         }
         .sidebar-user-info { flex: 1; min-width: 0; }
         .sidebar-user-name {
-          font-size: 12.5px; font-weight: 600; color: #1e3a5f;
+          font-size: 12.5px; font-weight: 600; color: ${COLORS.sidebarUserName};
           white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;
         }
-        .sidebar-user-role { font-size: 10.5px; color: #93c5fd; line-height: 1.3; }
+        .sidebar-user-role { font-size: 10.5px; color: ${COLORS.sidebarUserRole}; line-height: 1.3; }
         .sidebar-logout-btn {
           width: 28px; height: 28px; border: none;
-          background: #eff6ff; border-radius: 7px; cursor: pointer;
+          background: ${COLORS.sidebarLogoutBg}; border-radius: 7px; cursor: pointer;
           display: flex; align-items: center; justify-content: center;
-          color: #93c5fd; transition: background 0.15s, color 0.15s; flex-shrink: 0;
+          color: ${COLORS.sidebarLogoutColor}; transition: background 0.15s, color 0.15s; flex-shrink: 0;
         }
-        .sidebar-logout-btn:hover { background: #fee2e2; color: #ef4444; }
+        .sidebar-logout-btn:hover { background: ${COLORS.sidebarLogoutHoverBg}; color: ${COLORS.sidebarLogoutHoverColor}; }
       `}</style>
 
       <aside className="sidebar-root">

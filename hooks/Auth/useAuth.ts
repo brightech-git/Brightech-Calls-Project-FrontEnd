@@ -8,11 +8,15 @@ import {
   loginUser,
   registerUser,
   getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
 } from "@/services/AuthService";
 
 import {
   LoginPayload,
   RegisterPayload,
+  UpdateUserPayload,
   AuthResponse,
   UserRecord,
 } from "@/types/Auth/Auth";
@@ -76,5 +80,37 @@ export const useGetAllUsers = () => {
   return useQuery<UserRecord[]>({
     queryKey: ["all-users"],
     queryFn: getAllUsers,
+  });
+};
+
+// GET USER BY ID HOOK
+export const useGetUserById = (id: number) => {
+  return useQuery<UserRecord>({
+    queryKey: ["user", id],
+    queryFn: () => getUserById(id),
+    enabled: !!id,
+  });
+};
+
+// UPDATE USER HOOK
+export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: UpdateUserPayload }) =>
+      updateUser(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-users"] });
+    },
+  });
+};
+
+// DELETE USER HOOK
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-users"] });
+    },
   });
 };

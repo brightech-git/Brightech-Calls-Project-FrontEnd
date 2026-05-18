@@ -5,18 +5,33 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Box, Grid, HStack, Text, VStack } from "@chakra-ui/react";
-import { UserPlus } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 import { FormField, FieldConfig } from "@/components/FormField";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
-import { useRegister, useGetAllUsers } from "@/hooks/Auth/useAuth";
-import { AuthResponse, UserRecord } from "@/types/Auth/Auth";
+import { useRegister, useGetAllUsers, useUpdateUser, useDeleteUser } from "@/hooks/Auth/useAuth";
+import { UserRecord, UpdateUserPayload } from "@/types/Auth/Auth";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { usePageHeader } from "@/context/PageHeaderContext";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const userSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(5, "Password must be at least 5 characters"),
+  confirmPassword: z.string(),
+}).refine((d) => d.password === d.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+const editSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(5, "Password must be at least 5 characters").or(z.literal("")),
+  confirmPassword: z.string(),
+}).refine((d) => d.password === d.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 type UserForm = z.infer<typeof userSchema>;
@@ -30,13 +45,30 @@ const FIELDS: FieldConfig<UserForm>[] = [
     type: "text",
     placeholder: "Enter username",
     required: true,
+    inline: true,
+    labelWidth: "120px",
+    capitalize: true,
+    tabIndex: 1,
   },
   {
     name: "password",
     label: "Password",
     type: "password",
-    placeholder: "Minimum 6 characters",
+    placeholder: "Min 5 characters",
     required: true,
+    inline: true,
+    labelWidth: "120px",
+    tabIndex: 2,
+  },
+  {
+    name: "confirmPassword",
+    label: "Confirm Pwd",
+    type: "password",
+    placeholder: "Re-enter password",
+    required: true,
+    inline: true,
+    labelWidth: "120px",
+    tabIndex: 3,
   },
 ];
 
@@ -60,19 +92,40 @@ const COLUMNS: TableColumn<UserRecord & Record<string, unknown>>[] = [
     ),
   },
   { key: "UPDATED",  header: "Created",  sortable: true,
-    render: (row) => <span>{new Date(row.UPDATED as string).toLocaleDateString()}</span> },
+    render: (row) => {
+      const v = row.UPDATED;
+      if (!v) return <span>—</span>;
+      const d = new Date(v as string);
+      return <span>{isNaN(d.getTime()) ? "—" : d.toLocaleDateString()}</span>;
+    }
+  },
   { key: "UPTIME",   header: "Updated",  sortable: true,
-    render: (row) => <span>{new Date(row.UPTIME as string).toLocaleDateString()}</span> },
+    render: (row) => {
+      const v = row.UPTIME;
+      if (!v) return <span>—</span>;
+      const d = new Date(v as string);
+      return <span>{isNaN(d.getTime()) ? "—" : d.toLocaleDateString()}</span>;
+    }
+  },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function UserMasterPage() {
-  const [apiError, setApiError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
+  const [apiError, setApiError]     = useState("");
+  const [successMsg, setSuccessMsg]  = useState("");
+  const [editId, setEditId]          = useState<number | null>(null);
+  const [editRow, setEditRow]        = useState<UserRecord | null>(null);
+  const [deleteRow, setDeleteRow]    = useState<UserRecord | null>(null);
 
-  const { mutate: register, isPending } = useRegister();
-  const { data: users = [], isLoading, refetch } = useGetAllUsers();
+  const { mutate: register, isPending: isRegistering } = useRegister();
+  const { mutate: updateUser, isPending: isUpdating }  = useUpdateUser();
+  const { mutate: deleteUser, isPending: isDeleting }  = useDeleteUser();
+  const { data: users = [], isLoading, refetch }       = useGetAllUsers();
+
+  const isEditMode = editId !== null;
+
+  usePageHeader({ title: "User Master", subtitle: "Register and manage user accounts" });
 
   const {
     control,
@@ -80,75 +133,121 @@ export default function UserMasterPage() {
     reset,
     formState: { errors },
   } = useForm<UserForm>({
-    resolver: zodResolver(userSchema),
+    resolver: zodResolver(isEditMode ? editSchema : userSchema),
   });
+
+  const isPending = isRegistering || isUpdating;
+
+  const handleEdit = (row: UserRecord & Record<string, unknown>) => {
+    setEditId(Number(row.USERID));
+    setEditRow(row as UserRecord);
+    setApiError("");
+    setSuccessMsg("");
+    reset({ username: row.USERNAME as string, password: "", confirmPassword: "" });
+  };
+
+  const handleDelete = (row: UserRecord & Record<string, unknown>) => {
+    setDeleteRow(row as UserRecord);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteRow) return;
+    deleteUser(Number(deleteRow.USERID), {
+      onSuccess: () => {
+        setSuccessMsg(`User "${deleteRow.USERNAME}" deleted.`);
+        setDeleteRow(null);
+        refetch();
+      },
+      onError: (err: any) => {
+        setApiError(err?.response?.data?.message || "Delete failed.");
+        setDeleteRow(null);
+      },
+    });
+  };
+
+  const handleCancel = () => {
+    setEditId(null);
+    setEditRow(null);
+    setApiError("");
+    setSuccessMsg("");
+    reset({ username: "", password: "", confirmPassword: "" });
+  };
 
   const onSubmit = (data: UserForm) => {
     setApiError("");
     setSuccessMsg("");
+    const { confirmPassword: _, ...payload } = data;
 
-    register(data, {
-      onSuccess: (res) => {
-        setSuccessMsg(`User "${res.username}" registered successfully.`);
-        refetch();
-        reset();
-      },
-      onError: (err: any) => {
-        setApiError(
-          err?.response?.data?.message ||
-          err?.message ||
-          "Registration failed."
-        );
-      },
-    });
+    if (isEditMode) {
+      const updatePayload = {
+        USERID:   String(editId),
+        USERNAME: payload.username,
+        PWD:      payload.password || editRow?.PWD || "",
+        ACTIVE:   editRow?.ACTIVE ?? "Y",
+        AUTHPWD:  editRow?.AUTHPWD ?? null,
+      };
+      updateUser({ id: editId!, payload: updatePayload }, {
+        onSuccess: () => {
+          setSuccessMsg("User updated successfully.");
+          refetch();
+          handleCancel();
+        },
+        onError: (err: any) => setApiError(err?.response?.data?.message || "Update failed."),
+      });
+    } else {
+      register(payload, {
+        onSuccess: (res) => {
+          setSuccessMsg(`User "${res.username}" registered successfully.`);
+          refetch();
+          reset();
+        },
+        onError: (err: any) => setApiError(err?.response?.data?.message || "Registration failed."),
+      });
+    }
   };
 
   return (
     <>
       <style>{`
         .um-page {
-          background: #f0f6ff;
-          min-height: 100vh;
-          padding: 24px;
+          background: transparent;
+          min-height: 100%;
           font-family: 'DM Sans', 'Inter', sans-serif;
         }
         .um-card {
           background: #ffffff;
-          border: 1px solid #dbeafe;
+          border: 1px solid #e5e7eb;
           border-radius: 12px;
-          box-shadow: 0 1px 6px rgba(59,130,246,0.07);
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         }
         .um-card-head {
           padding: 16px 20px 12px;
-          border-bottom: 1px solid #dbeafe;
+          border-bottom: 1px solid #e5e7eb;
         }
         .um-card-body { padding: 20px; }
 
-        /* override FormField inputs to light theme */
         .um-card input, .um-card textarea, .um-card select {
-          background: #f8faff !important;
-          border: 1px solid #bfdbfe !important;
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
           border-radius: 8px !important;
-          color: #1e3a5f !important;
+          color: #111827 !important;
           font-size: 13px !important;
         }
         .um-card input::placeholder, .um-card textarea::placeholder {
-          color: #93c5fd !important;
+          color: #9ca3af !important;
         }
         .um-card input:focus, .um-card textarea:focus {
-          border-color: #3b82f6 !important;
-          box-shadow: 0 0 0 2px rgba(59,130,246,0.15) !important;
+          border-color: #6b7280 !important;
+          box-shadow: 0 0 0 2px rgba(107,114,128,0.15) !important;
           outline: none !important;
         }
-        /* labels */
         .um-card label, .um-card [class*="Field"] {
-          color: #3b82f6 !important;
+          color: #374151 !important;
           font-size: 11px !important;
           font-weight: 700 !important;
           letter-spacing: 0.05em !important;
           text-transform: uppercase !important;
         }
-        /* error text */
         .um-card [data-invalid] { border-color: #f87171 !important; }
 
         .btn-primary {
@@ -159,7 +258,7 @@ export default function UserMasterPage() {
           height: 38px;
           border-radius: 8px;
           border: none;
-          background: #3b82f6;
+          background: #111827;
           color: #fff;
           font-size: 13px;
           font-weight: 600;
@@ -168,75 +267,80 @@ export default function UserMasterPage() {
           font-family: inherit;
           width: 100%;
           justify-content: center;
-          box-shadow: 0 2px 8px rgba(59,130,246,0.25);
+          box-shadow: 0 1px 4px rgba(0,0,0,0.15);
         }
-        .btn-primary:hover { background: #2563eb; }
+        .btn-primary:hover { background: #1f2937; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* override CustomTable to light theme */
+        .btn-secondary {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          padding: 0 18px;
+          height: 38px;
+          border-radius: 8px;
+          border: 1px solid #d1d5db;
+          background: #ffffff;
+          color: #374151;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.15s;
+          font-family: inherit;
+          justify-content: center;
+        }
+        .btn-secondary:hover { background: #f3f4f6; }
+
         .um-table-wrap > div {
           background: #ffffff !important;
-          border: 1px solid #dbeafe !important;
-          box-shadow: 0 1px 6px rgba(59,130,246,0.07) !important;
+          border: 1px solid #e5e7eb !important;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
         }
         .um-table-wrap .ct-th {
-          background: #eff6ff !important;
-          color: #3b82f6 !important;
-          border-bottom: 1px solid #dbeafe !important;
+          background: #f9fafb !important;
+          color: #374151 !important;
+          border-bottom: 1px solid #e5e7eb !important;
         }
         .um-table-wrap .ct-td {
           color: #374151 !important;
-          border-top: 1px solid #f0f6ff !important;
+          border-top: 1px solid #f3f4f6 !important;
         }
-        .um-table-wrap .ct-td.primary { color: #1e3a5f !important; }
-        .um-table-wrap .ct-tr:hover .ct-td { background: #f0f6ff !important; }
+        .um-table-wrap .ct-td.primary { color: #111827 !important; }
+        .um-table-wrap .ct-tr:hover .ct-td { background: #f9fafb !important; }
         .um-table-wrap .ct-search {
-          background: #f8faff !important;
-          border: 1px solid #bfdbfe !important;
-          color: #1e3a5f !important;
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
+          color: #111827 !important;
         }
-        .um-table-wrap .ct-search::placeholder { color: #93c5fd !important; }
-        .um-table-wrap .ct-search:focus { border-color: #3b82f6 !important; }
+        .um-table-wrap .ct-search::placeholder { color: #9ca3af !important; }
+        .um-table-wrap .ct-search:focus { border-color: #6b7280 !important; }
         .um-table-wrap .ct-size-select {
-          background: #f8faff !important;
-          border: 1px solid #bfdbfe !important;
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
           color: #374151 !important;
         }
-        .um-table-wrap .ct-page-btn { color: #3b82f6 !important; }
+        .um-table-wrap .ct-page-btn { color: #374151 !important; }
         .um-table-wrap .ct-page-btn.active {
-          background: #3b82f6 !important;
+          background: #111827 !important;
           color: #fff !important;
-          border-color: #3b82f6 !important;
+          border-color: #111827 !important;
         }
-        .um-table-wrap .ct-actions-btn { color: #3b82f6 !important; }
-        .um-table-wrap .ct-actions-btn:hover { background: #dbeafe !important; color: #1d4ed8 !important; }
+        .um-table-wrap .ct-actions-btn { color: #374151 !important; }
+        .um-table-wrap .ct-actions-btn:hover { background: #f3f4f6 !important; color: #111827 !important; }
         .um-table-wrap .ct-actions-btn.delete:hover { background: #fee2e2 !important; color: #ef4444 !important; }
       `}</style>
 
       <div className="um-page">
-        {/* Page header */}
-        <HStack justify="space-between" mb="20px" align="center">
-          <Box>
-            <Text fontSize="18px" fontWeight="700" color="#1e3a5f" letterSpacing="-0.02em">
-              User Master
-            </Text>
-            <Text fontSize="12px" color="#93c5fd" mt="2px">
-              Register new users and manage accounts
-            </Text>
-          </Box>
-        </HStack>
-
-        {/* Two-column layout */}
-        <Grid templateColumns="300px 1fr" gap="16px" alignItems="start">
+        <Grid templateColumns="350px 1fr" gap="16px" alignItems="start">
 
           {/* ── Left: Register Form ── */}
           <div className="um-card">
             <div className="um-card-head">
-              <Text fontSize="13.5px" fontWeight="700" color="#1e3a5f">
-                Register User
+              <Text fontSize="13.5px" fontWeight="700" color="#111827">
+                {isEditMode ? "Edit User" : "Register User"}
               </Text>
-              <Text fontSize="11px" color="#93c5fd" mt="2px">
-                Create a new user account
+              <Text fontSize="11px" color="#6b7280" mt="2px">
+                {isEditMode ? `Editing user ID: ${editId}` : "Create a new user account"}
               </Text>
             </div>
             <div className="um-card-body">
@@ -255,10 +359,20 @@ export default function UserMasterPage() {
                     <Text fontSize="12px" color="#16a34a" w="full">{successMsg}</Text>
                   )}
 
-                  <button type="submit" className="btn-primary" disabled={isPending}>
-                    <UserPlus size={14} />
-                    {isPending ? "Registering..." : "Register User"}
-                  </button>
+                  <HStack w="full" gap="8px">
+                    <button type="submit" className="btn-primary" disabled={isPending}
+                      tabIndex={4} style={{ flex: 1 }}>
+                      <Pencil size={14} />
+                      {isPending
+                        ? (isEditMode ? "Updating..." : "Registering...")
+                        : (isEditMode ? "Update User" : "Register User")}
+                    </button>
+                    {isEditMode && (
+                      <button type="button" className="btn-secondary" onClick={handleCancel} style={{ flex: 1 }}>
+                        Cancel
+                      </button>
+                    )}
+                  </HStack>
                 </VStack>
               </form>
             </div>
@@ -274,10 +388,20 @@ export default function UserMasterPage() {
               isLoading={isLoading}
               searchPlaceholder="Search users..."
               emptyMessage="No users registered yet."
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           </div>
         </Grid>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteRow}
+        message={`Are you sure you want to delete user "${deleteRow?.USERNAME}"? This action cannot be undone.`}
+        isPending={isDeleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteRow(null)}
+      />
     </>
   );
 }
