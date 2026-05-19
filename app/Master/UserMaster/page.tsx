@@ -13,6 +13,7 @@ import { useRegister, useGetAllUsers, useUpdateUser, useDeleteUser } from "@/hoo
 import { UserRecord, UpdateUserPayload } from "@/types/Auth/Auth";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { usePageHeader } from "@/context/PageHeaderContext";
+import { useToast } from "@/components/Toast";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -112,9 +113,9 @@ const COLUMNS: TableColumn<UserRecord & Record<string, unknown>>[] = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function UserMasterPage() {
-  const [apiError, setApiError]     = useState("");
-  const [successMsg, setSuccessMsg]  = useState("");
-  const [editId, setEditId]          = useState<number | null>(null);
+  const toast = useToast();
+
+  const [editId, setEditId]          = useState<string | null>(null);
   const [editRow, setEditRow]        = useState<UserRecord | null>(null);
   const [deleteRow, setDeleteRow]    = useState<UserRecord | null>(null);
 
@@ -139,10 +140,8 @@ export default function UserMasterPage() {
   const isPending = isRegistering || isUpdating;
 
   const handleEdit = (row: UserRecord & Record<string, unknown>) => {
-    setEditId(Number(row.USERID));
+    setEditId(row.USERID as string);
     setEditRow(row as UserRecord);
-    setApiError("");
-    setSuccessMsg("");
     reset({ username: row.USERNAME as string, password: "", confirmPassword: "" });
   };
 
@@ -152,14 +151,14 @@ export default function UserMasterPage() {
 
   const confirmDelete = () => {
     if (!deleteRow) return;
-    deleteUser(Number(deleteRow.USERID), {
+    deleteUser(deleteRow.USERID, {
       onSuccess: () => {
-        setSuccessMsg(`User "${deleteRow.USERNAME}" deleted.`);
+        toast.success("User Deleted", `"${deleteRow.USERNAME}" deleted successfully.`);
         setDeleteRow(null);
         refetch();
       },
       onError: (err: any) => {
-        setApiError(err?.response?.data?.message || "Delete failed.");
+        toast.error("Delete Failed", err?.response?.data?.message || "Delete failed.");
         setDeleteRow(null);
       },
     });
@@ -168,40 +167,39 @@ export default function UserMasterPage() {
   const handleCancel = () => {
     setEditId(null);
     setEditRow(null);
-    setApiError("");
-    setSuccessMsg("");
     reset({ username: "", password: "", confirmPassword: "" });
   };
 
   const onSubmit = (data: UserForm) => {
-    setApiError("");
-    setSuccessMsg("");
     const { confirmPassword: _, ...payload } = data;
 
     if (isEditMode) {
       const updatePayload = {
-        USERID:   String(editId),
-        USERNAME: payload.username,
-        PWD:      payload.password || editRow?.PWD || "",
-        ACTIVE:   editRow?.ACTIVE ?? "Y",
-        AUTHPWD:  editRow?.AUTHPWD ?? null,
+        username: payload.username,
+        password: payload.password || editRow?.PWD || "",
+        active:   editRow?.ACTIVE ?? "Y",
       };
+      console.log("[UserMaster] UPDATE payload:", updatePayload);
       updateUser({ id: editId!, payload: updatePayload }, {
-        onSuccess: () => {
-          setSuccessMsg("User updated successfully.");
+        onSuccess: (res) => {
+          console.log("[UserMaster] UPDATE response:", res);
+          toast.success("User Updated", `"${payload.username}" updated successfully.`);
           refetch();
           handleCancel();
         },
-        onError: (err: any) => setApiError(err?.response?.data?.message || "Update failed."),
+        onError: (err: any) => {
+          console.error("[UserMaster] UPDATE error:", err?.response ?? err);
+          toast.error("Update Failed", err?.response?.data?.message || "Update failed.");
+        },
       });
     } else {
       register(payload, {
         onSuccess: (res) => {
-          setSuccessMsg(`User "${res.username}" registered successfully.`);
+          toast.success("User Registered", `"${res.username}" registered successfully.`);
           refetch();
           reset();
         },
-        onError: (err: any) => setApiError(err?.response?.data?.message || "Registration failed."),
+        onError: (err: any) => toast.error("Registration Failed", err?.response?.data?.message || "Registration failed."),
       });
     }
   };
@@ -351,13 +349,6 @@ export default function UserMasterPage() {
                       <FormField field={f} control={control} errors={errors} />
                     </Box>
                   ))}
-
-                  {apiError && (
-                    <Text fontSize="12px" color="#ef4444" w="full">{apiError}</Text>
-                  )}
-                  {successMsg && (
-                    <Text fontSize="12px" color="#16a34a" w="full">{successMsg}</Text>
-                  )}
 
                   <HStack w="full" gap="8px">
                     <button type="submit" className="btn-primary" disabled={isPending}

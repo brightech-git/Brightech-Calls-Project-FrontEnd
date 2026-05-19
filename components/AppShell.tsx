@@ -73,7 +73,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           overflow: hidden; min-width: 0;
         }
         .app-content {
-          flex: 1; overflow-y: auto; padding: 20px;
+          flex: 1; overflow-y: auto; padding: 12px;
           background: ${COLORS.contentBg};
         }
         .app-content::-webkit-scrollbar { width: 4px; }

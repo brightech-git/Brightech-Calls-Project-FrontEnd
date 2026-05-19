@@ -13,11 +13,9 @@ export interface RegisterPayload {
 }
 
 export interface UpdateUserPayload {
-  USERID?: string;
-  USERNAME: string;
-  PWD: string;
-  ACTIVE: string;
-  AUTHPWD?: string | null;
+  username: string;
+  password: string;
+  active: string;
 }
 
 export interface AuthResponse {

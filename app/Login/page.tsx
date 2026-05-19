@@ -22,7 +22,6 @@ export default function LoginPage() {
       { username, password },
       {
         onSuccess: () => {
-          localStorage.setItem("isLoggedIn", "true");
           router.push("/Home");
         },
         onError: (err: any) => {

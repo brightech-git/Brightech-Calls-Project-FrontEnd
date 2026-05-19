@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Box, HStack, Text, VStack, Grid } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, UserPlus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 
 import { FormField, FieldConfig } from "@/components/FormField";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { usePageHeader } from "@/context/PageHeaderContext";
+import { COLORS, FONT, RADIUS } from "@/utils/theme";
+import { useToast } from "@/components/Toast";
 import {
   useStaffList,
   useCreateStaff,
@@ -21,12 +24,12 @@ import { StaffRecord, StaffRecord_Table } from "@/types/StaffMaster/StaffMaster"
 
 const staffSchema = z.object({
   STAFFNAME: z.string().min(1, "Name is required"),
-  MOBILENO:  z.string().min(10, "Enter a valid mobile number"),
+  MOBILENO:  z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"),
   ROLE:      z.string().min(1, "Role is required"),
-  ADDRESS1:  z.string().min(1, "Address line 1 is required"),
-  ADDRESS2:  z.string(),
-  ADDRESS3:  z.string(),
-  DOJ:       z.string(),
+  ADDRESS1:  z.string().optional(),
+  ADDRESS2:  z.string().optional(),
+  ADDRESS3:  z.string().optional(),
+  DOJ:       z.string().optional(),
   ACTIVE:    z.enum(["Y", "N"]),
 });
 
@@ -35,9 +38,9 @@ type StaffForm = z.infer<typeof staffSchema>;
 // ─── Fields ───────────────────────────────────────────────────────────────────
 
 const FIELDS: FieldConfig<StaffForm>[] = [
-  { name: "STAFFNAME", label: "Staff Name",   type: "text",   placeholder: "e.g. Sathyapriya", required: true, colSpan: 1 },
-  { name: "MOBILENO",  label: "Mobile No",    type: "tel",    placeholder: "e.g. 9659721856",  required: true, colSpan: 1 },
-  { name: "ROLE",      label: "Role",         type: "select", placeholder: "Pick a role",      required: true, colSpan: 1,
+  { name: "STAFFNAME", label: "Staff Name",     type: "text",   placeholder: "Enter staff name",  required: true,  tabIndex: 1, inline: true, labelWidth: "110px", capitalize: true },
+  { name: "MOBILENO",  label: "Mobile No",      type: "tel",    placeholder: "e.g. 9659721856",   required: true,  tabIndex: 2, inline: true, labelWidth: "110px" },
+  { name: "ROLE",      label: "Role",           type: "select", placeholder: "Select role",        required: true,  tabIndex: 3, inline: true, labelWidth: "110px",
     options: [
       { label: "Admin",    value: "ADMIN" },
       { label: "Manager",  value: "MANAGER" },
@@ -45,50 +48,63 @@ const FIELDS: FieldConfig<StaffForm>[] = [
       { label: "Staff",    value: "STAFF" },
     ],
   },
-  { name: "ACTIVE",    label: "Status",       type: "select", placeholder: "Pick status",      required: true, colSpan: 1,
+  { name: "ACTIVE",    label: "Status",         type: "select", placeholder: "Select status",      required: true,  tabIndex: 4, inline: true, labelWidth: "110px",
     options: [
       { label: "Active",   value: "Y" },
       { label: "Inactive", value: "N" },
     ],
   },
-  { name: "DOJ",       label: "Date of Join", type: "date",   colSpan: 1 },
-  { name: "ADDRESS1",  label: "Address Line 1", type: "text", placeholder: "Street",           required: true, colSpan: 1 },
-  { name: "ADDRESS2",  label: "Address Line 2", type: "text", placeholder: "Area",             colSpan: 1 },
-  { name: "ADDRESS3",  label: "City",           type: "text", placeholder: "City",             colSpan: 1 },
+  { name: "DOJ",       label: "Date of Join",   type: "date",   tabIndex: 5, inline: true, labelWidth: "110px" },
+  { name: "ADDRESS1",  label: "Address 1",      type: "text",   placeholder: "Street",             tabIndex: 6, inline: true, labelWidth: "110px" },
+  { name: "ADDRESS2",  label: "Address 2",      type: "text",   placeholder: "Area",               tabIndex: 7, inline: true, labelWidth: "110px" },
+  { name: "ADDRESS3",  label: "City",           type: "text",   placeholder: "City",               tabIndex: 8, inline: true, labelWidth: "110px" },
 ];
 
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
 const COLUMNS: TableColumn<StaffRecord_Table>[] = [
   { key: "SNO",       header: "#",        align: "center", width: "50px" },
-  { key: "STAFFID",   header: "Staff ID", sortable: true,  width: "80px" },
+  { key: "STAFFID",   header: "Staff ID", sortable: true,  width: "90px" },
   { key: "STAFFNAME", header: "Name",     sortable: true },
   { key: "MOBILENO",  header: "Mobile",   sortable: true },
   { key: "ROLE",      header: "Role",     sortable: true },
-  { key: "ADDRESS1",  header: "Address",  sortable: true },
   { key: "DOJ",       header: "DOJ",      sortable: true },
-  { key: "ACTIVE",    header: "Status",   sortable: true,  isStatus: true,
-    render: (row) => (row.ACTIVE === "Y" ? "Active" : "Inactive"),
+  { key: "ACTIVE",    header: "Status",   sortable: true,
+    render: (row) => (
+      <span style={{
+        padding: "2px 10px", borderRadius: 20,
+        fontSize: 11, fontWeight: 600,
+        background: row.ACTIVE === "Y" ? COLORS.successBg : COLORS.errorBg,
+        color:      row.ACTIVE === "Y" ? COLORS.success   : COLORS.error,
+      }}>
+        {row.ACTIVE === "Y" ? "Active" : "Inactive"}
+      </span>
+    ),
   },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function StaffMasterPage() {
-  const [open, setOpen]       = useState(false);
-  const [editRow, setEditRow] = useState<StaffRecord | null>(null);
+  usePageHeader({ title: "Staff Master", subtitle: "Manage your staff records" });
+
+  const toast = useToast();
+
+  const [open, setOpen]           = useState(false);
+  const [editRow, setEditRow]     = useState<StaffRecord | null>(null);
+  const [deleteRow, setDeleteRow] = useState<StaffRecord | null>(null);
 
   const { data: staffList = [], isLoading } = useStaffList();
   const createMutation = useCreateStaff();
   const updateMutation = useUpdateStaff();
   const deleteMutation = useDeleteStaff();
 
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
   const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<StaffForm, unknown, StaffForm>({
+    control, handleSubmit, reset,
+    formState: { errors },
+  } = useForm<StaffForm>({
     resolver: zodResolver(staffSchema),
     defaultValues: { STAFFNAME: "", MOBILENO: "", ROLE: "", ADDRESS1: "", ADDRESS2: "", ADDRESS3: "", DOJ: "", ACTIVE: "Y" },
   });
@@ -116,184 +132,221 @@ export default function StaffMasterPage() {
   };
 
   const onSubmit = async (data: StaffForm) => {
-    if (editRow) {
-      await updateMutation.mutateAsync({ id: editRow.SNO, payload: data });
-    } else {
-      await createMutation.mutateAsync(data);
+    try {
+      const formatDOJ = (d?: string) => {
+        if (!d) return null;
+        const [y, m, day] = d.split("-");
+        if (!y || !m || !day) return d;
+        return `${m}-${day}-${y}`;
+      };
+
+      if (editRow) {
+        const payload = {
+          ...data,
+          DOJ:     formatDOJ(data.DOJ),
+          SNO:     editRow.SNO,
+          STAFFID: editRow.STAFFID,
+          USERID:  editRow.USERID ?? null,
+        };
+        console.log("[StaffMaster] UPDATE payload:", payload);
+        const res = await updateMutation.mutateAsync({ id: editRow.STAFFID, payload });
+        console.log("[StaffMaster] UPDATE response:", res);
+        toast.success("Staff Updated", `"${res.STAFFNAME}" updated successfully.`);
+      } else {
+        const payload = { ...data, DOJ: formatDOJ(data.DOJ) };
+        console.log("[StaffMaster] CREATE payload:", payload);
+        const res = await createMutation.mutateAsync(payload);
+        console.log("[StaffMaster] CREATE response:", res);
+        toast.success("Staff Created", `"${res.STAFFNAME}" created successfully.`);
+      }
+      setOpen(false);
+      reset();
+    } catch (err: any) {
+      console.error("[StaffMaster] ERROR:", err?.response ?? err);
+      const msg = err?.response?.data?.message || err?.message || "Operation failed.";
+      toast.error(editRow ? "Update Failed" : "Create Failed", msg);
     }
-    setOpen(false);
-    reset();
   };
 
-  const handleDelete = (row: StaffRecord_Table) => {
-    if (confirm(`Delete staff "${row.STAFFNAME}"?`)) {
-      deleteMutation.mutate((row as StaffRecord).SNO);
-    }
-  };
+  const handleDelete = (row: StaffRecord_Table) => setDeleteRow(row as StaffRecord);
 
-  const tableData = staffList as StaffRecord_Table[];
+  const confirmDelete = () => {
+    if (!deleteRow) return;
+    deleteMutation.mutate(deleteRow.STAFFID, {
+      onSuccess: () => {
+        toast.success("Staff Deleted", `"${deleteRow.STAFFNAME}" deleted successfully.`);
+        setDeleteRow(null);
+      },
+      onError: (err: any) => {
+        toast.error("Delete Failed", err?.response?.data?.message || "Delete failed.");
+        setDeleteRow(null);
+      },
+    });
+  };
 
   return (
     <>
       <style>{`
-        .modal-overlay {
+        .sm-modal-overlay {
           position: fixed; inset: 0;
-          background: rgba(30,58,95,0.35);
-          backdrop-filter: blur(4px);
-          display: flex; align-items: flex-start; justify-content: center;
-          padding: 40px 16px; z-index: 1000; overflow-y: auto;
+          background: rgba(0,0,0,0.4);
+          display: flex; align-items: center; justify-content: center;
+          z-index: 1000; padding: 16px;
         }
-        .modal-box {
-          background: #ffffff; border: 1px solid #dbeafe;
-          border-radius: 14px; width: 100%; max-width: 740px;
-          font-family: 'DM Sans','Inter',sans-serif; margin: auto;
-          box-shadow: 0 8px 32px rgba(59,130,246,0.12);
+        .sm-modal-box {
+          background: ${COLORS.cardBg};
+          border: 1px solid ${COLORS.cardBorder};
+          border-radius: ${RADIUS.xl};
+          width: 100%; max-width: 480px;
+          max-height: 88vh;
+          display: flex; flex-direction: column;
+          font-family: ${FONT.family};
+          box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+          animation: sm-slide-up 0.18s ease;
         }
-        .modal-head {
-          padding: 18px 22px 14px; border-bottom: 1px solid #dbeafe;
+        @keyframes sm-slide-up {
+          from { transform: translateY(10px); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+        .sm-modal-head {
+          padding: 10px 14px 8px;
+          border-bottom: 1px solid ${COLORS.cardBorder};
           display: flex; align-items: center; justify-content: space-between;
-          background: #eff6ff; border-radius: 14px 14px 0 0;
+          background: ${COLORS.gray50};
+          border-radius: ${RADIUS.xl} ${RADIUS.xl} 0 0;
+          flex-shrink: 0;
         }
-        .modal-body  { padding: 22px; background: #ffffff; }
-        .modal-footer {
-          padding: 14px 22px; border-top: 1px solid #dbeafe;
-          display: flex; justify-content: flex-end; gap: 10px;
-          background: #f8faff; border-radius: 0 0 14px 14px;
+        .sm-modal-title { font-size: 13px; font-weight: 700; color: ${COLORS.textPrimary}; }
+        .sm-modal-sub   { font-size: 10px; color: ${COLORS.textMuted}; margin-top: 1px; }
+        .sm-modal-body  { padding: 10px 14px; overflow-y: auto; flex: 1; min-height: 0; }
+        .sm-modal-footer {
+          padding: 8px 14px;
+          border-top: 1px solid ${COLORS.cardBorder};
+          display: flex; justify-content: flex-end; gap: 8px;
+          background: ${COLORS.gray50};
+          border-radius: 0 0 ${RADIUS.xl} ${RADIUS.xl};
+          flex-shrink: 0;
         }
-        .section-divider {
-          font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em;
-          text-transform: uppercase; color: #3b82f6;
-          padding-bottom: 8px; border-bottom: 1px solid #dbeafe;
-          margin-bottom: 14px; margin-top: 20px;
+        .sm-section-label {
+          font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+          text-transform: uppercase; color: ${COLORS.textMuted};
+          padding-bottom: 4px; border-bottom: 1px solid ${COLORS.cardBorder};
+          margin-bottom: 6px; margin-top: 10px;
         }
-        .section-divider:first-of-type { margin-top: 0; }
-        .btn-primary {
+        .sm-section-label:first-of-type { margin-top: 0; }
+        .sm-btn-primary {
           display: inline-flex; align-items: center; gap: 7px;
-          padding: 0 18px; height: 36px; border-radius: 8px; border: none;
-          background: #3b82f6; color: #fff; font-size: 13px; font-weight: 600;
-          cursor: pointer; transition: background 0.15s; font-family: inherit;
-          box-shadow: 0 2px 8px rgba(59,130,246,0.2);
+          padding: 0 18px; height: 36px; border-radius: ${RADIUS.md};
+          border: none; background: ${COLORS.btnPrimaryBg};
+          color: ${COLORS.btnPrimaryText};
+          font-size: 13px; font-weight: 600; cursor: pointer;
+          transition: background 0.15s; font-family: inherit;
         }
-        .btn-primary:hover { background: #2563eb; }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-ghost {
+        .sm-btn-primary:hover { background: ${COLORS.btnPrimaryHover}; }
+        .sm-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .sm-btn-secondary {
           display: inline-flex; align-items: center; gap: 7px;
-          padding: 0 18px; height: 36px; border-radius: 8px;
-          border: 1px solid #dbeafe; background: #ffffff; color: #64748b;
+          padding: 0 18px; height: 36px; border-radius: ${RADIUS.md};
+          border: 1px solid ${COLORS.btnSecondaryBorder};
+          background: ${COLORS.btnSecondaryBg};
+          color: ${COLORS.btnSecondaryText};
           font-size: 13px; font-weight: 500; cursor: pointer;
-          transition: background 0.15s, color 0.15s; font-family: inherit;
+          transition: background 0.15s; font-family: inherit;
         }
-        .btn-ghost:hover { background: #eff6ff; color: #3b82f6; }
-        .close-btn {
+        .sm-btn-secondary:hover { background: ${COLORS.btnSecondaryHover}; }
+        .sm-close-btn {
           width: 28px; height: 28px; border-radius: 7px;
-          border: 1px solid #dbeafe; background: #ffffff; color: #93c5fd;
+          border: 1px solid ${COLORS.cardBorder};
+          background: ${COLORS.cardBg}; color: ${COLORS.textMuted};
           cursor: pointer; display: flex; align-items: center; justify-content: center;
           transition: background 0.15s, color 0.15s;
         }
-        .close-btn:hover { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
-        .modal-box input, .modal-box textarea, .modal-box select {
-          background: #f8faff !important; border: 1px solid #bfdbfe !important; color: #1e3a5f !important;
+        .sm-close-btn:hover { background: ${COLORS.errorBg}; color: ${COLORS.error}; }
+        .sm-modal-box input, .sm-modal-box textarea, .sm-modal-box select {
+          background: ${COLORS.inputBg} !important;
+          border: 1px solid ${COLORS.inputBorder} !important;
+          color: ${COLORS.inputText} !important;
         }
-        .modal-box input::placeholder, .modal-box textarea::placeholder { color: #93c5fd !important; }
-        .modal-box input:focus, .modal-box textarea:focus {
-          border-color: #3b82f6 !important; box-shadow: 0 0 0 2px rgba(59,130,246,0.15) !important;
+        .sm-modal-box input::placeholder, .sm-modal-box textarea::placeholder {
+          color: ${COLORS.inputPlaceholder} !important;
         }
-        .modal-box label { color: #3b82f6 !important; }
+        .sm-modal-box input:focus, .sm-modal-box textarea:focus {
+          border-color: ${COLORS.inputBorderFocus} !important;
+          box-shadow: 0 0 0 2px rgba(107,114,128,0.15) !important;
+        }
       `}</style>
-
-      {/* Page header */}
-      <HStack justify="space-between" mb="20px" align="center">
-        <Box>
-          <Text fontSize="18px" fontWeight="700" color="#1e3a5f" letterSpacing="-0.02em">
-            Staff Master
-          </Text>
-          <Text fontSize="12px" color="#93c5fd" mt="2px">
-            Manage your staff records
-          </Text>
-        </Box>
-        <button className="btn-primary" onClick={openCreate}>
-          <Plus size={14} /> Add Staff
-        </button>
-      </HStack>
 
       {/* Table */}
       <CustomTable
         title="All Staff"
         columns={COLUMNS}
-        data={tableData}
+        data={staffList as StaffRecord_Table[]}
         rowKey="SNO"
-        selectable
         isLoading={isLoading}
         onEdit={openEdit}
         onDelete={handleDelete}
         searchPlaceholder="Search by name, role, mobile..."
         emptyMessage="No staff found. Add your first record."
         toolbarRight={
-          <button className="btn-primary" onClick={openCreate}>
-            <UserPlus size={13} /> Add Staff
+          <button className="sm-btn-primary" onClick={openCreate}>
+            <Plus size={14} /> Add Staff
           </button>
         }
-        bulkActionSlot={(rows, clear) => (
-          <HStack gap="8px">
-            <Text fontSize="12px" color="#1d4ed8">{rows.length} selected</Text>
-            <button className="btn-ghost" style={{ height: 28, padding: "0 12px", fontSize: 12 }} onClick={clear}>
-              Clear
-            </button>
-          </HStack>
-        )}
       />
 
       {/* Modal */}
       {open && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
-          <div className="modal-box">
-            <div className="modal-head">
-              <Box>
-                <Text fontSize="15px" fontWeight="700" color="#1e3a5f">
-                  {editRow ? "Edit Staff" : "Add New Staff"}
-                </Text>
-                <Text fontSize="11px" color="#93c5fd" mt="1px">
+        <div className="sm-modal-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
+          <div className="sm-modal-box">
+            <div className="sm-modal-head">
+              <div>
+                <div className="sm-modal-title">{editRow ? "Edit Staff" : "Add New Staff"}</div>
+                <div className="sm-modal-sub">
                   {editRow ? `Editing: ${editRow.STAFFNAME}` : "Fill in the details below"}
-                </Text>
-              </Box>
-              <button className="close-btn" onClick={() => setOpen(false)}>✕</button>
+                </div>
+              </div>
+              <button className="sm-close-btn" onClick={() => setOpen(false)}>✕</button>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="modal-body">
-                <div className="section-divider">Basic Information</div>
-                <Grid templateColumns="1fr 1fr" gap="14px">
-                  {FIELDS.filter((f) => ["STAFFNAME", "MOBILENO", "ROLE", "ACTIVE", "DOJ"].includes(f.name)).map((f) => (
-                    <Box key={f.name}>
-                      <FormField field={f} control={control} errors={errors} />
-                    </Box>
+              <div className="sm-modal-body">
+                <div className="sm-section-label">Basic Information</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {FIELDS.filter((f) => ["STAFFNAME","MOBILENO","ROLE","ACTIVE","DOJ"].includes(f.name)).map((f) => (
+                    <FormField key={f.name} field={f} control={control} errors={errors} />
                   ))}
-                </Grid>
+                </div>
 
-                <div className="section-divider">Address</div>
-                <Grid templateColumns="1fr 1fr" gap="14px">
-                  {FIELDS.filter((f) => ["ADDRESS1", "ADDRESS2", "ADDRESS3"].includes(f.name)).map((f) => (
-                    <Box key={f.name}>
-                      <FormField field={f} control={control} errors={errors} />
-                    </Box>
+                <div className="sm-section-label">Address</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {FIELDS.filter((f) => ["ADDRESS1","ADDRESS2","ADDRESS3"].includes(f.name)).map((f) => (
+                    <FormField key={f.name} field={f} control={control} errors={errors} />
                   ))}
-                </Grid>
+                </div>
               </div>
 
-              <div className="modal-footer">
-                <button type="button" className="btn-ghost" onClick={() => setOpen(false)}>
+              <div className="sm-modal-footer">
+                <button type="button" className="sm-btn-secondary" onClick={() => setOpen(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary" disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}>
-                  {isSubmitting || createMutation.isPending || updateMutation.isPending
-                    ? "Saving..."
-                    : editRow ? "Update Staff" : "Create Staff"}
+                <button type="submit" className="sm-btn-primary" disabled={isPending}>
+                  <Pencil size={13} />
+                  {isPending ? "Saving..." : editRow ? "Update Staff" : "Create Staff"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Delete Confirm */}
+      <ConfirmDialog
+        open={!!deleteRow}
+        message={`Are you sure you want to delete staff "${deleteRow?.STAFFNAME}"? This action cannot be undone.`}
+        isPending={deleteMutation.isPending}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteRow(null)}
+      />
     </>
   );
 }

@@ -34,12 +34,18 @@ export const useLogin = () => {
     onSuccess: (data: AuthResponse) => {
       console.log("Login Success:", data);
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data));
+      localStorage.setItem("isLoggedIn",  "true");
+      localStorage.setItem("token",       data.token ?? "");
+      localStorage.setItem("userId",      String(data.userId ?? ""));
+      localStorage.setItem("staffId",     String(data.staffId ?? ""));
+      localStorage.setItem("username",    data.username ?? "");
+      localStorage.setItem("staffName",   data.staffName ?? "");
+      localStorage.setItem("role",        data.role ?? "");
+      localStorage.setItem("mobileNo",    data.mobileNo ?? "");
+      localStorage.setItem("active",      data.active ?? "");
+      localStorage.setItem("user",        JSON.stringify(data));
 
-      queryClient.invalidateQueries({
-        queryKey: ["auth-login"],
-      });
+      queryClient.invalidateQueries({ queryKey: ["auth-login"] });
     },
 
     onError: (error) => {
@@ -84,7 +90,7 @@ export const useGetAllUsers = () => {
 };
 
 // GET USER BY ID HOOK
-export const useGetUserById = (id: number) => {
+export const useGetUserById = (id: string) => {
   return useQuery<UserRecord>({
     queryKey: ["user", id],
     queryFn: () => getUserById(id),
@@ -96,7 +102,7 @@ export const useGetUserById = (id: number) => {
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: UpdateUserPayload }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateUserPayload }) =>
       updateUser(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-users"] });
@@ -108,7 +114,7 @@ export const useUpdateUser = () => {
 export const useDeleteUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => deleteUser(id),
+    mutationFn: (id: string) => deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-users"] });
     },

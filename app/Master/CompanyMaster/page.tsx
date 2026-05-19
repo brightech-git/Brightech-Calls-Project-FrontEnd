@@ -13,17 +13,18 @@ import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
 import { COLORS, FONT, RADIUS } from "@/utils/theme";
 import {
-  useClientList,
-  useCreateClient,
-  useUpdateClient,
-  useDeleteClient,
-} from "@/hooks/ClientMaster/useClientMaster";
-import { ClientRecord, ClientRecord_Table } from "@/types/ClientMaster/ClientMaster";
+  useCompanyList,
+  useCreateCompany,
+  useUpdateCompany,
+  useDeleteCompany,
+} from "@/hooks/CompanyMaster/useCompanyMaster";
+import { CompanyRecord, CompanyRecord_Table } from "@/types/CompanyMaster/CompanyMaster";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const clientSchema = z.object({
-  CLIENTNAME:   z.string().min(1, "Client name is required"),
+const companySchema = z.object({
+  COMPANYID:    z.string().min(1, "Company ID is required"),
+  COMPANYNAME:  z.string().min(1, "Company name is required"),
   COSTID:       z.string().optional(),
   PHONE:        z.string().optional(),
   MOBILE:       z.string().regex(/^[6-9]\d{9}$/, "Enter valid 10-digit mobile"),
@@ -31,7 +32,7 @@ const clientSchema = z.object({
   ADDRESS1:     z.string().optional(),
   ADDRESS2:     z.string().optional(),
   ADDRESS3:     z.string().optional(),
-  REMARKS:      z.string().optional(),
+  ADDRESS4:     z.string().optional(),
   AREACODE:     z.string().optional(),
   GSTNO:        z.string().optional(),
   PANNO:        z.string().optional(),
@@ -44,49 +45,51 @@ const clientSchema = z.object({
   ACTIVE:       z.enum(["Y", "N"]),
 });
 
-type ClientForm = z.infer<typeof clientSchema>;
+type CompanyForm = z.infer<typeof companySchema>;
 
 // ─── Fields ───────────────────────────────────────────────────────────────────
 
 const LW = "120px";
 
-const FIELDS: FieldConfig<ClientForm>[] = [
-  { name: "CLIENTNAME",  label: "Client Name",  type: "text",   placeholder: "Full client name",   required: true, inline: true, labelWidth: LW, capitalize: true, tabIndex: 1 },
-  { name: "COSTID",      label: "Cost ID",       type: "text",   placeholder: "e.g. BT",            inline: true, labelWidth: LW, tabIndex: 2 },
-  { name: "SHORTKEY",    label: "Short Key",     type: "text",   placeholder: "e.g. A",             inline: true, labelWidth: LW, tabIndex: 3 },
-  { name: "PHONE",       label: "Phone",         type: "text",   placeholder: "e.g. 04412345678",   inline: true, labelWidth: LW, tabIndex: 4 },
-  { name: "MOBILE",      label: "Mobile",        type: "tel",    placeholder: "10-digit mobile",    required: true, inline: true, labelWidth: LW, tabIndex: 5 },
-  { name: "EMAIL",       label: "Email",         type: "email",  placeholder: "email@example.com",  required: true, inline: true, labelWidth: LW, tabIndex: 6 },
-  { name: "ACTIVE",      label: "Status",        type: "select", placeholder: "Select status",      required: true, inline: true, labelWidth: LW, tabIndex: 7,
+const FIELDS: FieldConfig<CompanyForm>[] = [
+  { name: "COMPANYID",   label: "Company ID",   type: "text",   placeholder: "e.g. BTS",          required: true, inline: true, labelWidth: LW, capitalize: true, tabIndex: 1 },
+  { name: "COMPANYNAME", label: "Company Name", type: "text",   placeholder: "Full company name",  required: true, inline: true, labelWidth: LW, capitalize: true, tabIndex: 2 },
+  { name: "COSTID",      label: "Cost ID",      type: "text",   placeholder: "e.g. BT",            inline: true, labelWidth: LW, tabIndex: 3 },
+  { name: "SHORTKEY",    label: "Short Key",    type: "text",   placeholder: "e.g. B",             inline: true, labelWidth: LW, tabIndex: 4 },
+  { name: "PHONE",       label: "Phone",        type: "text",   placeholder: "e.g. 04422334455",   inline: true, labelWidth: LW, tabIndex: 5 },
+  { name: "MOBILE",      label: "Mobile",       type: "tel",    placeholder: "10-digit mobile",    required: true, inline: true, labelWidth: LW, tabIndex: 6 },
+  { name: "EMAIL",       label: "Email",        type: "email",  placeholder: "email@example.com",  required: true, inline: true, labelWidth: LW, tabIndex: 7 },
+  { name: "ACTIVE",      label: "Status",       type: "select", placeholder: "Select status",      required: true, inline: true, labelWidth: LW, tabIndex: 8,
     options: [{ label: "Active", value: "Y" }, { label: "Inactive", value: "N" }],
   },
-  { name: "ADDRESS1",    label: "Address 1",     type: "text",   placeholder: "Street",             inline: true, labelWidth: LW, tabIndex: 8 },
-  { name: "ADDRESS2",    label: "Address 2",     type: "text",   placeholder: "Area",               inline: true, labelWidth: LW, tabIndex: 9 },
-  { name: "ADDRESS3",    label: "Address 3",     type: "text",   placeholder: "City",               inline: true, labelWidth: LW, tabIndex: 10 },
-  { name: "AREACODE",    label: "Area Code",     type: "text",   placeholder: "PIN code",           inline: true, labelWidth: LW, tabIndex: 11 },
-  { name: "REMARKS",     label: "Remarks",       type: "textarea", placeholder: "Any remarks...",   inline: true, labelWidth: LW, tabIndex: 12 },
-  { name: "GSTNO",       label: "GST No",        type: "text",   placeholder: "GST number",         inline: true, labelWidth: LW, capitalize: true, tabIndex: 13 },
-  { name: "PANNO",       label: "PAN No",        type: "text",   placeholder: "PAN number",         inline: true, labelWidth: LW, capitalize: true, tabIndex: 14 },
-  { name: "TANNO",       label: "TAN No",        type: "text",   placeholder: "TAN number",         inline: true, labelWidth: LW, capitalize: true, tabIndex: 15 },
-  { name: "TDSNO",       label: "TDS No",        type: "text",   placeholder: "TDS number",         inline: true, labelWidth: LW, tabIndex: 16 },
-  { name: "TINNO",       label: "TIN No",        type: "text",   placeholder: "TIN number",         inline: true, labelWidth: LW, tabIndex: 17 },
-  { name: "CSTNO",       label: "CST No",        type: "text",   placeholder: "CST number",         inline: true, labelWidth: LW, tabIndex: 18 },
-  { name: "LOCALTAXNO",  label: "Local Tax No",  type: "text",   placeholder: "Local tax number",   inline: true, labelWidth: LW, tabIndex: 19 },
+  { name: "ADDRESS1",    label: "Address 1",    type: "text",   placeholder: "Street",             inline: true, labelWidth: LW, tabIndex: 9 },
+  { name: "ADDRESS2",    label: "Address 2",    type: "text",   placeholder: "Area",               inline: true, labelWidth: LW, tabIndex: 10 },
+  { name: "ADDRESS3",    label: "Address 3",    type: "text",   placeholder: "City",               inline: true, labelWidth: LW, tabIndex: 11 },
+  { name: "ADDRESS4",    label: "Address 4",    type: "text",   placeholder: "State",              inline: true, labelWidth: LW, tabIndex: 12 },
+  { name: "AREACODE",    label: "Area Code",    type: "text",   placeholder: "PIN code",           inline: true, labelWidth: LW, tabIndex: 13 },
+  { name: "GSTNO",       label: "GST No",       type: "text",   placeholder: "GST number",         inline: true, labelWidth: LW, capitalize: true, tabIndex: 14 },
+  { name: "PANNO",       label: "PAN No",       type: "text",   placeholder: "PAN number",         inline: true, labelWidth: LW, capitalize: true, tabIndex: 15 },
+  { name: "TANNO",       label: "TAN No",       type: "text",   placeholder: "TAN number",         inline: true, labelWidth: LW, capitalize: true, tabIndex: 16 },
+  { name: "TDSNO",       label: "TDS No",       type: "text",   placeholder: "TDS number",         inline: true, labelWidth: LW, tabIndex: 17 },
+  { name: "TINNO",       label: "TIN No",       type: "text",   placeholder: "TIN number",         inline: true, labelWidth: LW, tabIndex: 18 },
+  { name: "CSTNO",       label: "CST No",       type: "text",   placeholder: "CST number",         inline: true, labelWidth: LW, tabIndex: 19 },
+  { name: "LOCALTAXNO",  label: "Local Tax No", type: "text",   placeholder: "Local tax number",   inline: true, labelWidth: LW, tabIndex: 20 },
 ];
 
-const BASIC   = ["CLIENTNAME", "COSTID", "SHORTKEY", "PHONE", "MOBILE", "EMAIL", "ACTIVE"];
-const ADDRESS = ["ADDRESS1", "ADDRESS2", "ADDRESS3", "AREACODE", "REMARKS"];
-const TAX     = ["GSTNO", "PANNO", "TANNO", "TDSNO", "TINNO", "CSTNO", "LOCALTAXNO"];
+const BASIC   = ["COMPANYID","COMPANYNAME","COSTID","SHORTKEY","PHONE","MOBILE","EMAIL","ACTIVE"];
+const ADDRESS = ["ADDRESS1","ADDRESS2","ADDRESS3","ADDRESS4","AREACODE"];
+const TAX     = ["GSTNO","PANNO","TANNO","TDSNO","TINNO","CSTNO","LOCALTAXNO"];
 
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
-const COLUMNS: TableColumn<ClientRecord_Table>[] = [
-  { key: "CLIENTID",   header: "#",           align: "center", width: "50px" },
-  { key: "CLIENTNAME", header: "Client Name", sortable: true },
-  { key: "MOBILE",     header: "Mobile",      sortable: true },
-  { key: "EMAIL",      header: "Email",       sortable: true },
-  { key: "GSTNO",      header: "GST No",      sortable: true },
-  { key: "ACTIVE",     header: "Status",      sortable: true,
+const COLUMNS: TableColumn<CompanyRecord_Table>[] = [
+  { key: "COMPID",      header: "#",           align: "center", width: "50px" },
+  { key: "COMPANYID",   header: "Company ID",  sortable: true,  width: "100px" },
+  { key: "COMPANYNAME", header: "Name",        sortable: true },
+  { key: "MOBILE",      header: "Mobile",      sortable: true },
+  { key: "EMAIL",       header: "Email",       sortable: true },
+  { key: "GSTNO",       header: "GST No",      sortable: true },
+  { key: "ACTIVE",      header: "Status",      sortable: true,
     render: (row) => (
       <span style={{
         padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
@@ -101,31 +104,31 @@ const COLUMNS: TableColumn<ClientRecord_Table>[] = [
 
 // ─── Default values ───────────────────────────────────────────────────────────
 
-const DEFAULTS: ClientForm = {
-  CLIENTNAME: "", COSTID: "", SHORTKEY: "",
+const DEFAULTS: CompanyForm = {
+  COMPANYID: "", COMPANYNAME: "", COSTID: "", SHORTKEY: "",
   PHONE: "", MOBILE: "", EMAIL: "", ACTIVE: "Y",
-  ADDRESS1: "", ADDRESS2: "", ADDRESS3: "", AREACODE: "", REMARKS: "",
+  ADDRESS1: "", ADDRESS2: "", ADDRESS3: "", ADDRESS4: "", AREACODE: "",
   GSTNO: "", PANNO: "", TANNO: "", TDSNO: "", TINNO: "", CSTNO: "", LOCALTAXNO: "",
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function ClientMasterPage() {
-  usePageHeader({ title: "Client Master", subtitle: "Manage client records" });
+export default function CompanyMasterPage() {
+  usePageHeader({ title: "Company Master", subtitle: "Manage company records" });
 
   const toast = useToast();
   const [open, setOpen]           = useState(false);
-  const [editRow, setEditRow]     = useState<ClientRecord | null>(null);
-  const [deleteRow, setDeleteRow] = useState<ClientRecord | null>(null);
+  const [editRow, setEditRow]     = useState<CompanyRecord | null>(null);
+  const [deleteRow, setDeleteRow] = useState<CompanyRecord | null>(null);
 
-  const { data: clients = [], isLoading } = useClientList();
-  const createMutation = useCreateClient();
-  const updateMutation = useUpdateClient();
-  const deleteMutation = useDeleteClient();
+  const { data: companies = [], isLoading } = useCompanyList();
+  const createMutation = useCreateCompany();
+  const updateMutation = useUpdateCompany();
+  const deleteMutation = useDeleteCompany();
   const isPending = createMutation.isPending || updateMutation.isPending;
 
-  const { control, handleSubmit, reset, formState: { errors } } = useForm<ClientForm>({
-    resolver: zodResolver(clientSchema),
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<CompanyForm>({
+    resolver: zodResolver(companySchema),
     defaultValues: DEFAULTS,
   });
 
@@ -135,11 +138,12 @@ export default function ClientMasterPage() {
     setOpen(true);
   };
 
-  const openEdit = (row: ClientRecord_Table) => {
-    const r = row as ClientRecord;
+  const openEdit = (row: CompanyRecord_Table) => {
+    const r = row as CompanyRecord;
     setEditRow(r);
     reset({
-      CLIENTNAME:  r.CLIENTNAME  ?? "",
+      COMPANYID:   r.COMPANYID   ?? "",
+      COMPANYNAME: r.COMPANYNAME ?? "",
       COSTID:      r.COSTID      ?? "",
       SHORTKEY:    r.SHORTKEY    ?? "",
       PHONE:       r.PHONE       ?? "",
@@ -149,8 +153,8 @@ export default function ClientMasterPage() {
       ADDRESS1:    r.ADDRESS1    ?? "",
       ADDRESS2:    r.ADDRESS2    ?? "",
       ADDRESS3:    r.ADDRESS3    ?? "",
+      ADDRESS4:    r.ADDRESS4    ?? "",
       AREACODE:    r.AREACODE    ?? "",
-      REMARKS:     r.REMARKS     ?? "",
       GSTNO:       r.GSTNO       ?? "",
       PANNO:       r.PANNO       ?? "",
       TANNO:       r.TANNO       ?? "",
@@ -162,28 +166,33 @@ export default function ClientMasterPage() {
     setOpen(true);
   };
 
-  const onSubmit = async (data: ClientForm) => {
+  const onSubmit = async (data: CompanyForm) => {
     try {
       if (editRow) {
-        const payload = { ...data, CLIENTID: editRow.CLIENTID, USERID: editRow.USERID };
-        const res = await updateMutation.mutateAsync({ id: String(editRow.CLIENTID), payload });
-        toast.success("Client Updated", `"${res.CLIENTNAME}" updated successfully.`);
+        const payload = { ...data, COMPID: editRow.COMPID, USERID: editRow.USERID };
+        console.log("[CompanyMaster] UPDATE payload:", payload);
+        const res = await updateMutation.mutateAsync({ id: String(editRow.COMPID), payload });
+        console.log("[CompanyMaster] UPDATE response:", res);
+        toast.success("Company Updated", `"${res.COMPANYNAME}" updated successfully.`);
       } else {
+        console.log("[CompanyMaster] CREATE payload:", data);
         const res = await createMutation.mutateAsync(data);
-        toast.success("Client Created", `"${res.CLIENTNAME}" created successfully.`);
+        console.log("[CompanyMaster] CREATE response:", res);
+        toast.success("Company Created", `"${res.COMPANYNAME}" created successfully.`);
       }
       setOpen(false);
       reset(DEFAULTS);
     } catch (err: any) {
+      console.error("[CompanyMaster] ERROR:", err?.response ?? err);
       toast.error(editRow ? "Update Failed" : "Create Failed", err?.response?.data?.message || err?.message || "Operation failed.");
     }
   };
 
   const confirmDelete = () => {
     if (!deleteRow) return;
-    deleteMutation.mutate(String(deleteRow.CLIENTID), {
+    deleteMutation.mutate(String(deleteRow.COMPID), {
       onSuccess: () => {
-        toast.success("Client Deleted", `"${deleteRow.CLIENTNAME}" deleted successfully.`);
+        toast.success("Company Deleted", `"${deleteRow.COMPANYNAME}" deleted successfully.`);
         setDeleteRow(null);
       },
       onError: (err: any) => {
@@ -294,18 +303,18 @@ export default function ClientMasterPage() {
 
       {/* Table */}
       <CustomTable
-        title="All Clients"
+        title="All Companies"
         columns={COLUMNS}
-        data={clients as ClientRecord_Table[]}
-        rowKey="CLIENTID"
+        data={companies as CompanyRecord_Table[]}
+        rowKey="COMPID"
         isLoading={isLoading}
         onEdit={openEdit}
-        onDelete={(row) => setDeleteRow(row as ClientRecord)}
+        onDelete={(row) => setDeleteRow(row as CompanyRecord)}
         searchPlaceholder="Search by name, GST, mobile..."
-        emptyMessage="No clients found."
+        emptyMessage="No companies found."
         toolbarRight={
           <button className="cm-btn-primary" onClick={openCreate}>
-            <Plus size={13} /> Add Client
+            <Plus size={13} /> Add Company
           </button>
         }
       />
@@ -316,8 +325,8 @@ export default function ClientMasterPage() {
           <div className="cm-modal-box">
             <div className="cm-modal-head">
               <div>
-                <div className="cm-modal-title">{editRow ? "Edit Client" : "Add Client"}</div>
-                <div className="cm-modal-sub">{editRow ? `Editing: ${editRow.CLIENTNAME}` : "Fill in the details below"}</div>
+                <div className="cm-modal-title">{editRow ? "Edit Company" : "Add Company"}</div>
+                <div className="cm-modal-sub">{editRow ? `Editing: ${editRow.COMPANYNAME}` : "Fill in the details below"}</div>
               </div>
               <button className="cm-close-btn" onClick={() => setOpen(false)}>✕</button>
             </div>
@@ -331,7 +340,7 @@ export default function ClientMasterPage() {
                 <div className="cm-section-label">Basic Information</div>
                 <div className="cm-grid-2">
                   {FIELDS.filter((f) => BASIC.includes(f.name)).map((f) => (
-                    <FormField key={f.name} field={f} control={control} errors={errors} />
+                    <FormField key={f.name} field={{ ...f, readOnly: f.name === "COMPANYID" && !!editRow }} control={control} errors={errors} />
                   ))}
                 </div>
 
@@ -354,7 +363,7 @@ export default function ClientMasterPage() {
                 <button type="button" className="cm-btn-secondary" onClick={() => setOpen(false)}>Cancel</button>
                 <button type="submit" className="cm-btn-primary" disabled={isPending}>
                   <Pencil size={12} />
-                  {isPending ? "Saving..." : editRow ? "Update Client" : "Create Client"}
+                  {isPending ? "Saving..." : editRow ? "Update Company" : "Create Company"}
                 </button>
               </div>
             </form>
@@ -365,7 +374,7 @@ export default function ClientMasterPage() {
       {/* Delete Confirm */}
       <ConfirmDialog
         open={!!deleteRow}
-        message={`Are you sure you want to delete "${deleteRow?.CLIENTNAME}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete "${deleteRow?.COMPANYNAME}"? This action cannot be undone.`}
         isPending={deleteMutation.isPending}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteRow(null)}

@@ -35,23 +35,23 @@ export const registerUser = async (payload: RegisterPayload): Promise<AuthRespon
 
 // GET ALL USERS
 export const getAllUsers = async (): Promise<UserRecord[]> => {
-  const response = await axiosInstance.get<UserRecord[]>("/user");
+  const response = await axiosInstance.get<UserRecord[]>("/auth/users");
   return response.data;
 };
 
 // GET USER BY ID
-export const getUserById = async (id: number): Promise<UserRecord> => {
-  const response = await axiosInstance.get<UserRecord>(`/user/${id}`);
+export const getUserById = async (id: string): Promise<UserRecord> => {
+  const response = await axiosInstance.get<UserRecord>(`/auth/users/${id}`);
   return response.data;
 };
 
 // UPDATE USER
-export const updateUser = async (id: number, payload: UpdateUserPayload): Promise<UserRecord> => {
-  const response = await axiosInstance.put<UserRecord>(`/user/${id}`, payload);
+export const updateUser = async (id: string, payload: UpdateUserPayload): Promise<UserRecord> => {
+  const response = await axiosInstance.put<UserRecord>(`/auth/users/${id}`, payload);
   return response.data;
 };
 
 // DELETE USER
-export const deleteUser = async (id: number): Promise<void> => {
-  await axiosInstance.delete(`/user/${id}`);
+export const deleteUser = async (id: string): Promise<void> => {
+  await axiosInstance.delete(`/auth/users/${id}`);
 };

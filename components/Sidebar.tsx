@@ -6,13 +6,13 @@ import { useState } from "react";
 import {
   LayoutDashboard, Database,
   Settings, Bolt, ChevronDown, LogOut, Users, UserCheck,
-  Briefcase,
+  Briefcase, FileBarChart
 } from "lucide-react";
 import { COLORS, FONT, RADIUS } from "@/utils/theme";
 
 interface NavChild { label: string; href: string; icon?: React.ReactNode; }
 interface NavGroup { label: string; icon: React.ReactNode; children: NavChild[]; }
-interface NavLink  { label: string; href: string; icon: React.ReactNode; }
+interface NavLink { label: string; href: string; icon: React.ReactNode; }
 type NavItem = NavGroup | NavLink;
 function isNavGroup(item: NavItem): item is NavGroup { return "children" in item; }
 
@@ -21,18 +21,21 @@ const menuItems: NavItem[] = [
   {
     label: "Master", icon: <Database size={16} />,
     children: [
-      { label: "User Master",   href: "/Master/UserMaster",   icon: <UserCheck size={13} /> },
-      { label: "Staff Master",  href: "/Master/StaffMaster",  icon: <Users size={13} /> },
+      { label: "User Master", href: "/Master/UserMaster", icon: <UserCheck size={13} /> },
+      { label: "Staff Master", href: "/Master/StaffMaster", icon: <Users size={13} /> },
+      { label: "Company Master", href: "/Master/CompanyMaster", icon: <Users size={13} /> },
       { label: "Client Master", href: "/Master/ClientMaster", icon: <Briefcase size={13} /> },
+
     ],
   },
-  // {
-  //   label: "Reports", icon: <FileBarChart size={16} />,
-  //   children: [
-  //     { label: "Sales Report",  href: "/reports/sales", icon: <BarChart2 size={13} /> },
-  //     { label: "Stock Summary", href: "/reports/stock", icon: <Package size={13} /> },
-  //   ],
-  // },
+  {
+    label: "Project Management", icon: <FileBarChart size={16} />,
+    children: [
+      { label: "Project Master", href: "/ProjectManagement/ProjectMaster", icon: <Briefcase size={13} /> },
+      { label: "Module Master", href: "/ProjectManagement/ModuleMaster", icon: <Briefcase size={13} /> },
+      { label: "Task Assignment", href: "/ProjectManagement/TaskAssignment", icon: <Briefcase size={13} /> },
+    ],
+  },
   // { label: "Settings", href: "/settings", icon: <Settings size={16} /> },
 ];
 
@@ -40,17 +43,15 @@ function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 }
 
-function NavGroupItem({ item, pathname }: { item: NavGroup; pathname: string }) {
-  const isChildActive = item.children.some((c) => pathname === c.href);
-  const [open, setOpen] = useState(isChildActive);
+function NavGroupItem({ item, pathname, isOpen, onToggle }: { item: NavGroup; pathname: string; isOpen: boolean; onToggle: () => void; }) {
   return (
     <div>
-      <button onClick={() => setOpen((p) => !p)} className={`sidebar-group-btn ${open ? "open" : ""}`} aria-expanded={open}>
+      <button onClick={onToggle} className={`sidebar-group-btn ${isOpen ? "open" : ""}`} aria-expanded={isOpen}>
         <span className="sidebar-group-icon">{item.icon}</span>
         <span className="sidebar-group-label">{item.label}</span>
-        <ChevronDown size={13} className={`sidebar-chevron ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={13} className={`sidebar-chevron ${isOpen ? "rotate-180" : ""}`} />
       </button>
-      <div className={`sidebar-children ${open ? "open" : ""}`}>
+      <div className={`sidebar-children ${isOpen ? "open" : ""}`}>
         {item.children.map((child) => {
           const active = pathname === child.href;
           return (
@@ -94,6 +95,13 @@ function getLoggedUser() {
 export default function Sidebar() {
   const pathname = usePathname();
   const user = getLoggedUser();
+
+  const groups = menuItems.filter(isNavGroup) as NavGroup[];
+  const defaultOpen = groups.find((g) => g.children.some((c) => pathname === c.href))?.label ?? null;
+  const [openLabel, setOpenLabel] = useState<string | null>(defaultOpen);
+
+  const handleToggle = (label: string) =>
+    setOpenLabel((prev) => (prev === label ? null : label));
 
   return (
     <>
@@ -231,7 +239,7 @@ export default function Sidebar() {
             <div className="sidebar-section-label">Management</div>
             {menuItems.slice(1).map((item) =>
               isNavGroup(item)
-                ? <NavGroupItem key={item.label} item={item} pathname={pathname} />
+                ? <NavGroupItem key={item.label} item={item} pathname={pathname} isOpen={openLabel === item.label} onToggle={() => handleToggle(item.label)} />
                 : <NavLinkItem key={item.href} item={item} pathname={pathname} />
             )}
           </div>

@@ -458,6 +458,12 @@ export function CustomTable<T extends Record<string, unknown>>({
                   </Box>
                 )}
 
+                {hasActions && (
+                  <Box as="th" className="ct-th" style={{ textAlign: "left", width: "70px" }}>
+                    Actions
+                  </Box>
+                )}
+
                 {columns.map((col) => {
                   const isSortActive = sortKey === col.key;
                   return (
@@ -492,11 +498,6 @@ export function CustomTable<T extends Record<string, unknown>>({
                   );
                 })}
 
-                {hasActions && (
-                  <Box as="th" className="ct-th" style={{ textAlign: "right" }}>
-                    Actions
-                  </Box>
-                )}
               </Box>
             </Box>
 
@@ -540,6 +541,28 @@ export function CustomTable<T extends Record<string, unknown>>({
                         </Box>
                       )}
 
+                      {hasActions && (
+                        <Box as="td" className="ct-td" style={{ textAlign: "left" }}>
+                          <HStack gap="4px" justify="flex-start">
+                            {extraActions.map((act, ai) => (
+                              <button type="button" key={ai} className="ct-actions-btn" title={act.label} onClick={() => act.onClick(row)}>
+                                {act.icon}
+                              </button>
+                            ))}
+                            {onEdit && (
+                              <button type="button" className="ct-actions-btn edit" title="Edit" onClick={() => onEdit(row)}>
+                                <Pencil size={13} />
+                              </button>
+                            )}
+                            {onDelete && (
+                              <button type="button" className="ct-actions-btn delete" title="Delete" onClick={() => onDelete(row)}>
+                                <Trash2 size={13} />
+                              </button>
+                            )}
+                          </HStack>
+                        </Box>
+                      )}
+
                       {columns.map((col, colIdx) => {
                         const rawVal = getVal(row, col.key as string);
                         return (
@@ -559,44 +582,6 @@ export function CustomTable<T extends Record<string, unknown>>({
                           </Box>
                         );
                       })}
-
-                      {hasActions && (
-                        <Box as="td" className="ct-td" style={{ textAlign: "right" }}>
-                          <HStack gap="4px" justify="flex-end">
-                            {extraActions.map((act, ai) => (
-                              <button
-                                type="button"
-                                key={ai}
-                                className="ct-actions-btn"
-                                title={act.label}
-                                onClick={() => act.onClick(row)}
-                              >
-                                {act.icon}
-                              </button>
-                            ))}
-                            {onEdit && (
-                              <button
-                                type="button"
-                                className="ct-actions-btn edit"
-                                title="Edit"
-                                onClick={() => onEdit(row)}
-                              >
-                                <Pencil size={13} />
-                              </button>
-                            )}
-                            {onDelete && (
-                              <button
-                                type="button"
-                                className="ct-actions-btn delete"
-                                title="Delete"
-                                onClick={() => onDelete(row)}
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            )}
-                          </HStack>
-                        </Box>
-                      )}
                     </Box>
                   );
                 })

@@ -133,7 +133,7 @@ const inputStyles = {
   borderColor: "#d1d5db",
   borderRadius: "6px",
   color: "#111827",
-  fontSize: "13px",
+  fontSize: "12px",
   _placeholder: { color: "#9ca3af" },
   _hover: { borderColor: "#9ca3af", bg: "#ffffff" },
   _focus: {
@@ -143,29 +143,30 @@ const inputStyles = {
     outline: "none",
   },
   _disabled: { opacity: 0.4, cursor: "not-allowed" },
+  _readOnly: { bg: "#f0fdf4", color: "#15803d", cursor: "default", borderColor: "#bbf7d0" },
   _invalid: { borderColor: "#f87171", boxShadow: "0 0 0 2px rgba(248,113,113,0.18)" },
-  height: "34px",
-  px: "10px",
+  height: "30px",
+  px: "8px",
 };
 
 const labelStyle = {
-  fontSize: "12px",
+  fontSize: "11px",
   fontWeight: "600",
   color: "#374151",
   letterSpacing: "0.02em",
-  mb: "4px",
+  mb: "3px",
 };
 
 const helperStyle = {
-  fontSize: "11px",
+  fontSize: "10px",
   color: "#6b7280",
-  mt: "3px",
+  mt: "2px",
 };
 
 const errorStyle = {
-  fontSize: "11px",
+  fontSize: "10px",
   color: "#ef4444",
-  mt: "3px",
+  mt: "2px",
 };
 
 // ─── Helper: get nested error message ─────────────────────────────────────────
@@ -242,26 +243,54 @@ function TextInput({
 
   return (
     <Box position="relative">
-      <Input
-        type={type}
-        value={(value as string) ?? ""}
-        onChange={(e) => {
-          const v = field.capitalize
-            ? e.target.value.toUpperCase()
-            : e.target.value;
-          onChange(v);
-        }}
-        onBlur={onBlur}
-        onKeyDown={handleKeyDown}
-        placeholder={field.placeholder}
-        disabled={field.disabled}
-        readOnly={field.readOnly}
-        aria-invalid={invalid}
-        tabIndex={tabIndex ?? field.tabIndex}
-        {...inputStyles}
-        pr={field.type === "password" ? "40px" : inputStyles.px}
-      />
-      {field.type === "password" && (
+      {field.readOnly ? (
+        <input
+          type={type}
+          value={(value as string) ?? ""}
+          readOnly
+          tabIndex={-1}
+          style={{
+            width: "100%",
+            height: "30px",
+            backgroundColor: "#f0fdf4",
+            border: "1px solid #bbf7d0",
+            borderRadius: "6px",
+            color: "#15803d",
+            fontSize: "12px",
+            padding: "0 8px",
+            cursor: "default",
+            outline: "none",
+            boxSizing: "border-box",
+          }}
+        />
+      ) : (
+        <Input
+          type={type}
+          value={(value as string) ?? ""}
+          onChange={(e) => {
+            if (field.type === "number") {
+              onChange(e.target.value === "" ? "" : Number(e.target.value));
+              return;
+            }
+            let v = field.type === "tel"
+              ? e.target.value.replace(/\D/g, "").slice(0, 10)
+              : field.capitalize
+              ? e.target.value.toUpperCase()
+              : e.target.value;
+            onChange(v);
+          }}
+          onBlur={onBlur}
+          onKeyDown={handleKeyDown}
+          placeholder={field.placeholder}
+          disabled={field.disabled}
+          aria-invalid={invalid}
+          tabIndex={tabIndex ?? field.tabIndex}
+          {...inputStyles}
+          pr={field.type === "password" ? "40px" : inputStyles.px}
+        />
+      )}
+      
+      {field.type === "password" && !field.readOnly && (
         <button
           type="button"
           onClick={() => setShowPw((p) => !p)}
@@ -375,7 +404,11 @@ function SelectInput({
     <NativeSelect.Root disabled={field.disabled}>
       <NativeSelect.Field
         value={(value as string) ?? ""}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+            const val = e.target.value;
+            const num = Number(val);
+            onChange(!isNaN(num) && val !== "" ? num : val);
+          }}
         onBlur={onBlur}
         aria-invalid={invalid}
         {...inputStyles}
@@ -750,9 +783,9 @@ export function FormField<T extends FieldValues>({
                   gap="4px"
                 >
                   <Text
-                    fontSize="12px"
+                    fontSize="11px"
                     fontWeight="600"
-                    color="#374151"
+                    color={field.readOnly ? "#9ca3af" : "#374151"}
                     letterSpacing="0.02em"
                   >
                     {field.label}
