@@ -8,6 +8,7 @@ import { Plus, Pencil } from "lucide-react";
 
 import { FormField, FieldConfig } from "@/components/FormField";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
+import { DataExport, ExportColumn } from "@/components/DataExport";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 import { usePageHeader } from "@/context/PageHeaderContext";
@@ -102,6 +103,18 @@ const COLUMNS: TableColumn<ModuleRecord_Table>[] = [
       </span>
     ),
   },
+];
+
+// ─────────────────────────────────────────────
+// Export Columns
+// ─────────────────────────────────────────────
+
+const EXPORT_COLUMNS: ExportColumn<ModuleRecord_Table>[] = [
+  { key: "projectName", label: "Project Name", exportValue: (_, row) => (row.projectName as string) ?? "-" },
+  { key: "moduleId",    label: "Module ID" },
+  { key: "moduleName",  label: "Module Name" },
+  { key: "updated",     label: "Updated",     exportValue: (v) => v ? new Date(v as string).toLocaleDateString() : "-" },
+  { key: "active",      label: "Status",      exportValue: (v) => v === "Y" ? "Active" : "Inactive" },
 ];
 
 // ─────────────────────────────────────────────
@@ -450,13 +463,23 @@ export default function ModuleMasterPage() {
         searchPlaceholder="Search module..."
         emptyMessage="No modules found."
         toolbarRight={
-          <button
-            className="mm-btn-primary"
-            onClick={openCreate}
-          >
-            <Plus size={13} />
-            Add Module
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <DataExport
+              data={modules as ModuleRecord_Table[]}
+              columns={EXPORT_COLUMNS}
+              filename="module-master"
+              title="Module Master"
+              showButtons={["excel", "pdf", "print"]}
+              buttonSize="sm"
+            />
+            <button
+              className="mm-btn-primary"
+              onClick={openCreate}
+            >
+              <Plus size={13} />
+              Add Module
+            </button>
+          </div>
         }
       />
 

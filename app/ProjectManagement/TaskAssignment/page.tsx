@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Pencil } from "lucide-react";
@@ -21,6 +21,11 @@ import {
   useUpdateCallsBooking,
   useDeleteCallsBooking,
 } from "@/hooks/TaskAssignment/useTaskAssignment";
+import { useCompanyList } from "@/hooks/CompanyMaster/useCompanyMaster";
+import { useClientList }  from "@/hooks/ClientMaster/useClientMaster";
+import { useProjectList } from "@/hooks/ProjectMaster/useProjectMaster";
+import { useModuleList }  from "@/hooks/ModuleMaster/useModuleMaster";
+import { useStaffList }   from "@/hooks/StaffMaster/useStaffMaster";
 
 import {
   CallsBookingRecord,
@@ -32,42 +37,20 @@ import {
 // ─────────────────────────────────────────────
 
 const callsBookingSchema = z.object({
-  TKTID: z.number().min(1, "Ticket ID is required"),
-
-  TKTDATE: z.string().optional(),
-
-  COMPID: z.number().min(1, "Company ID is required"),
-
-  PROJECTID: z.string().optional(),
-
+  COMPID:      z.number().min(1, "Company is required"),
+  CLIENTID:    z.number().min(1, "Client is required"),
+  PROJECTID:   z.string().optional(),
   PROJECTNAME: z.string().optional(),
-
-  MODULEID: z.string().optional(),
-
-  MODULENAME: z.string().optional(),
-
+  MODULEID:    z.string().optional(),
+  MODULENAME:  z.string().optional(),
   DESCRIPTION: z.string().optional(),
-
-  REMARK: z.string().optional(),
-
-  STAFFID: z.string().min(
-    1,
-    "Staff ID is required"
-  ),
-
-  STATUS: z.string().optional(),
-
-  USERID: z.string().min(
-    1,
-    "User ID is required"
-  ),
-
-  ACTIVE: z.enum(["Y", "N"]),
+  REMARK:      z.string().optional(),
+  STAFFID:     z.string().min(1, "Staff is required"),
+  STATUS:      z.string().optional(),
+  ACTIVE:      z.enum(["Y", "N"]),
 });
 
-type CallsBookingForm = z.infer<
-  typeof callsBookingSchema
->;
+type CallsBookingForm = z.infer<typeof callsBookingSchema>;
 
 // ─────────────────────────────────────────────
 // Fields
@@ -75,324 +58,64 @@ type CallsBookingForm = z.infer<
 
 const LW = "120px";
 
-const FIELDS: FieldConfig<CallsBookingForm>[] =
-  [
-    {
-      name: "TKTID",
-      label: "Ticket ID",
-      type: "number",
-      placeholder: "Enter ticket id",
-      required: true,
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 1,
-    },
-
-    {
-      name: "TKTDATE",
-      label: "Ticket Date",
-      type: "date",
-      placeholder: "Select date",
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 2,
-    },
-
-    {
-      name: "COMPID",
-      label: "Company ID",
-      type: "number",
-      placeholder: "Enter company id",
-      required: true,
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 3,
-    },
-
-    {
-      name: "PROJECTID",
-      label: "Project ID",
-      type: "text",
-      placeholder: "Enter project id",
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 4,
-    },
-
-    {
-      name: "PROJECTNAME",
-      label: "Project Name",
-      type: "text",
-      placeholder: "Enter project name",
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 5,
-    },
-
-    {
-      name: "MODULEID",
-      label: "Module ID",
-      type: "text",
-      placeholder: "Enter module id",
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 6,
-    },
-
-    {
-      name: "MODULENAME",
-      label: "Module Name",
-      type: "text",
-      placeholder: "Enter module name",
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 7,
-    },
-
-    {
-      name: "STAFFID",
-      label: "Staff ID",
-      type: "text",
-      placeholder: "Enter staff id",
-      required: true,
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 8,
-    },
-
-    {
-      name: "USERID",
-      label: "User ID",
-      type: "text",
-      placeholder: "Enter user id",
-      required: true,
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 9,
-    },
-
-    {
-      name: "STATUS",
-      label: "Status",
-      type: "select",
-      placeholder: "Select status",
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 10,
-
-      options: [
-        {
-          label: "Open",
-          value: "OPEN",
-        },
-        {
-          label: "In Progress",
-          value: "INPROGRESS",
-        },
-        {
-          label: "Completed",
-          value: "COMPLETED",
-        },
-        {
-          label: "Cancelled",
-          value: "CANCELLED",
-        },
-      ],
-    },
-
-    {
-      name: "ACTIVE",
-      label: "Active",
-      type: "select",
-      placeholder: "Select status",
-      required: true,
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 11,
-
-      options: [
-        {
-          label: "Active",
-          value: "Y",
-        },
-        {
-          label: "Inactive",
-          value: "N",
-        },
-      ],
-    },
-
-    {
-      name: "DESCRIPTION",
-      label: "Description",
-      type: "textarea",
-      placeholder: "Enter description",
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 12,
-    },
-
-    {
-      name: "REMARK",
-      label: "Remark",
-      type: "textarea",
-      placeholder: "Enter remarks",
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 13,
-    },
-  ];
-
-// ─────────────────────────────────────────────
-// Sections
-// ─────────────────────────────────────────────
-
-const BASIC = [
-  "TKTID",
-  "TKTDATE",
-  "COMPID",
-  "PROJECTID",
-  "PROJECTNAME",
-  "MODULEID",
-  "MODULENAME",
-];
-
-const ASSIGNMENT = [
-  "STAFFID",
-  "USERID",
-  "STATUS",
-  "ACTIVE",
-];
-
-const DETAILS = [
-  "DESCRIPTION",
-  "REMARK",
-];
+const ASSIGNMENT = ["STAFFID", "STATUS", "ACTIVE"];
+const DETAILS    = ["DESCRIPTION", "REMARK"];
+const BASIC      = ["COMPID", "CLIENTID", "PROJECTID", "MODULEID"];
 
 // ─────────────────────────────────────────────
 // Columns
 // ─────────────────────────────────────────────
 
-const COLUMNS: TableColumn<CallsBookingRecord_Table>[] =
-  [
-    {
-      key: "TKTID",
-      header: "Ticket ID",
-      sortable: true,
-      width: "100px",
+const COLUMNS: TableColumn<CallsBookingRecord_Table>[] = [
+  { key: "TKTID",       header: "Ticket ID",   sortable: true, width: "90px" },
+  { key: "COMPANYNAME", header: "Company",     sortable: true },
+  { key: "CLIENTNAME",  header: "Client",      sortable: true, render: (row) => (row.CLIENTNAME as string) || "-" },
+  { key: "PROJECTNAME", header: "Project",     sortable: true },
+  { key: "MODULENAME",  header: "Module",      sortable: true },
+  { key: "STAFFNAME",   header: "Staff",       sortable: true },
+  { key: "TKTDATE",     header: "Date",        sortable: true, render: (row) => row.TKTDATE ? new Date(row.TKTDATE as string).toLocaleDateString() : "-" },
+  {
+    key: "STATUS",
+    header: "Status",
+    sortable: true,
+    render: (row) => {
+      const s = row.STATUS as string;
+      const bg = s === "C" || s === "COMPLETED" ? COLORS.successBg : s === "X" || s === "CANCELLED" ? COLORS.errorBg : COLORS.warningBg;
+      const color = s === "C" || s === "COMPLETED" ? COLORS.success : s === "X" || s === "CANCELLED" ? COLORS.error : COLORS.warning;
+      const label = s === "O" ? "Open" : s === "I" || s === "INPROGRESS" ? "In Progress" : s === "C" || s === "COMPLETED" ? "Completed" : s === "X" || s === "CANCELLED" ? "Cancelled" : s;
+      return <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: bg, color }}>{label}</span>;
     },
-
-    {
-      key: "PROJECTNAME",
-      header: "Project",
-      sortable: true,
-    },
-
-    {
-      key: "MODULENAME",
-      header: "Module",
-      sortable: true,
-    },
-
-    {
-      key: "STAFFID",
-      header: "Staff",
-      sortable: true,
-    },
-
-    {
-      key: "STATUS",
-      header: "Status",
-      sortable: true,
-
-      render: (row) => (
-        <span
-          style={{
-            padding: "2px 10px",
-            borderRadius: 20,
-            fontSize: 11,
-            fontWeight: 600,
-
-            background:
-              row.STATUS ===
-              "COMPLETED"
-                ? COLORS.successBg
-                : row.STATUS ===
-                  "CANCELLED"
-                ? COLORS.errorBg
-                : COLORS.warningBg,
-
-            color:
-              row.STATUS ===
-              "COMPLETED"
-                ? COLORS.success
-                : row.STATUS ===
-                  "CANCELLED"
-                ? COLORS.error
-                : COLORS.warning,
-          }}
-        >
-          {row.STATUS || "OPEN"}
-        </span>
-      ),
-    },
-
-    {
-      key: "ACTIVE",
-      header: "Active",
-
-      render: (row) => (
-        <span
-          style={{
-            padding: "2px 10px",
-            borderRadius: 20,
-            fontSize: 11,
-            fontWeight: 600,
-
-            background:
-              row.ACTIVE === "Y"
-                ? COLORS.successBg
-                : COLORS.errorBg,
-
-            color:
-              row.ACTIVE === "Y"
-                ? COLORS.success
-                : COLORS.error,
-          }}
-        >
-          {row.ACTIVE === "Y"
-            ? "Active"
-            : "Inactive"}
-        </span>
-      ),
-    },
-  ];
+  },
+  {
+    key: "ACTIVE",
+    header: "Active",
+    render: (row) => (
+      <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+        background: row.ACTIVE === "Y" ? COLORS.successBg : COLORS.errorBg,
+        color: row.ACTIVE === "Y" ? COLORS.success : COLORS.error,
+      }}>
+        {row.ACTIVE === "Y" ? "Active" : "Inactive"}
+      </span>
+    ),
+  },
+];
 
 // ─────────────────────────────────────────────
 // Defaults
 // ─────────────────────────────────────────────
 
 const DEFAULTS: CallsBookingForm = {
-  TKTID: 0,
-  TKTDATE: "",
-
-  COMPID: 0,
-
-  PROJECTID: "",
+  COMPID:      0,
+  CLIENTID:    0,
+  PROJECTID:   "",
   PROJECTNAME: "",
-
-  MODULEID: "",
-  MODULENAME: "",
-
+  MODULEID:    "",
+  MODULENAME:  "",
   DESCRIPTION: "",
-  REMARK: "",
-
-  STAFFID: "",
-  USERID: "",
-
-  STATUS: "OPEN",
-
-  ACTIVE: "Y",
+  REMARK:      "",
+  STAFFID:     "",
+  STATUS:      "O",
+  ACTIVE:      "Y",
 };
 
 // ─────────────────────────────────────────────
@@ -421,6 +144,12 @@ export default function CallsBookingPage() {
       null
     );
 
+  const { data: companies = [] } = useCompanyList();
+  const { data: clients   = [] } = useClientList();
+  const { data: projects  = [] } = useProjectList();
+  const { data: modules   = [] } = useModuleList();
+  const { data: staffList = [] } = useStaffList();
+
   const {
     data: bookings = [],
     isLoading,
@@ -443,23 +172,74 @@ export default function CallsBookingPage() {
     control,
     handleSubmit,
     reset,
-
+    setValue,
     formState: { errors },
   } = useForm<CallsBookingForm>({
-    resolver: zodResolver(
-      callsBookingSchema
-    ),
-
+    resolver: zodResolver(callsBookingSchema),
     defaultValues: DEFAULTS,
   });
+
+  const watchedProjectId = useWatch({ control, name: "PROJECTID" });
+  const watchedModuleId  = useWatch({ control, name: "MODULEID" });
+
+  // Auto-select company when only one exists
+  useEffect(() => {
+    if (companies.length === 1) setValue("COMPID", companies[0].COMPID);
+  }, [companies]);
+
+  // Auto-fill PROJECTNAME when PROJECTID changes
+  useEffect(() => {
+    const p = projects.find((p) => String(p.projectId) === String(watchedProjectId));
+    if (p) setValue("PROJECTNAME", p.projectName ?? "");
+  }, [watchedProjectId, projects]);
+
+  // Auto-fill MODULENAME when MODULEID changes
+  useEffect(() => {
+    const m = modules.find((m) => String(m.moduleId) === String(watchedModuleId));
+    if (m) setValue("MODULENAME", m.moduleName ?? "");
+  }, [watchedModuleId, modules]);
+
+  const FIELDS: FieldConfig<CallsBookingForm>[] = [
+    { name: "COMPID",    label: "Company",  type: "select", placeholder: "Select company",  required: true, inline: true, labelWidth: LW, tabIndex: 1,
+      disabled: companies.length === 1,
+      options: companies.map((c) => ({ label: c.COMPANYNAME, value: c.COMPID })),
+    },
+    { name: "CLIENTID",  label: "Client",   type: "select", placeholder: "Select client",   required: true, inline: true, labelWidth: LW, tabIndex: 2,
+      options: clients.map((c) => ({ label: c.CLIENTNAME, value: c.CLIENTID })),
+    },
+    { name: "PROJECTID", label: "Project",  type: "select", placeholder: "Select project",  inline: true, labelWidth: LW, tabIndex: 3,
+      options: projects.map((p) => ({ label: p.projectName, value: String(p.projectId) })),
+    },
+    { name: "MODULEID",  label: "Module",   type: "select", placeholder: "Select module",   inline: true, labelWidth: LW, tabIndex: 4,
+      options: modules.map((m) => ({ label: m.moduleName, value: String(m.moduleId) })),
+    },
+    { name: "STAFFID",   label: "Staff",    type: "select", placeholder: "Select staff",    required: true, inline: true, labelWidth: LW, tabIndex: 5,
+      options: staffList.map((s) => ({ label: s.STAFFNAME ?? "", value: s.STAFFID })),
+    },
+    { name: "STATUS",    label: "Status",   type: "select", placeholder: "Select status",   inline: true, labelWidth: LW, tabIndex: 6,
+      options: [
+        { label: "Open",        value: "O" },
+        { label: "In Progress", value: "I" },
+        { label: "Completed",   value: "C" },
+        { label: "Cancelled",   value: "X" },
+      ],
+    },
+    { name: "ACTIVE",    label: "Active",   type: "select", placeholder: "Select active",   required: true, inline: true, labelWidth: LW, tabIndex: 7,
+      options: [
+        { label: "Active",   value: "Y" },
+        { label: "Inactive", value: "N" },
+      ],
+    },
+    { name: "DESCRIPTION", label: "Description", type: "textarea", placeholder: "Enter description", inline: true, labelWidth: LW, tabIndex: 8 },
+    { name: "REMARK",      label: "Remark",      type: "textarea", placeholder: "Enter remarks",      inline: true, labelWidth: LW, tabIndex: 9 },
+  ];
 
   // ─────────────────────────
 
   const openCreate = () => {
     setEditRow(null);
-
-    reset(DEFAULTS);
-
+    const defaultCompId = companies.length === 1 ? companies[0].COMPID : 0;
+    reset({ ...DEFAULTS, COMPID: defaultCompId });
     setOpen(true);
   };
 
@@ -472,35 +252,17 @@ export default function CallsBookingPage() {
     setEditRow(r);
 
     reset({
-      TKTID: r.TKTID,
-      TKTDATE:
-        r.TKTDATE?.split("T")[0] || "",
-
-      COMPID: r.COMPID,
-
-      PROJECTID: r.PROJECTID || "",
-      PROJECTNAME:
-        r.PROJECTNAME || "",
-
-      MODULEID: r.MODULEID || "",
-      MODULENAME:
-        r.MODULENAME || "",
-
-      DESCRIPTION:
-        r.DESCRIPTION || "",
-
-      REMARK: r.REMARK || "",
-
-      STAFFID: r.STAFFID || "",
-
-      USERID: r.USERID || "",
-
-      STATUS: r.STATUS || "OPEN",
-
-      ACTIVE:
-        r.ACTIVE === "N"
-          ? "N"
-          : "Y",
+      COMPID:      r.COMPID,
+      CLIENTID:    r.CLIENTID,
+      PROJECTID:   r.PROJECTID  || "",
+      PROJECTNAME: r.PROJECTNAME || "",
+      MODULEID:    r.MODULEID   || "",
+      MODULENAME:  r.MODULENAME  || "",
+      DESCRIPTION: r.DESCRIPTION || "",
+      REMARK:      r.REMARK      || "",
+      STAFFID:     r.STAFFID,
+      STATUS:      r.STATUS      || "O",
+      ACTIVE:      r.ACTIVE === "N" ? "N" : "Y",
     });
 
     setOpen(true);

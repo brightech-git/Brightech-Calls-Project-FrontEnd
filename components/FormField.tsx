@@ -49,7 +49,7 @@ import {
   Path,
 } from "react-hook-form";
 import { Eye, EyeOff, Upload } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -400,14 +400,28 @@ function SelectInput({
   onBlur: () => void;
   invalid: boolean;
 }) {
+  const options = field.options ?? [];
+  const firstVal = options[0]?.value;
+  const shouldBeNumber = typeof firstVal === "number";
+
+  // Only auto-select first option for required number fields when value is 0
+  const isEmpty = (value === 0 || value === "") && field.required && shouldBeNumber;
+
+  const effectiveValue = isEmpty && options.length > 0 ? firstVal : value;
+
+  useEffect(() => {
+    if (isEmpty && options.length > 0) {
+      onChange(firstVal);
+    }
+  }, [options.length]);
+
   return (
     <NativeSelect.Root disabled={field.disabled}>
       <NativeSelect.Field
-        value={(value as string) ?? ""}
+        value={String(effectiveValue ?? "")}
         onChange={(e) => {
             const val = e.target.value;
-            const num = Number(val);
-            onChange(!isNaN(num) && val !== "" ? num : val);
+            onChange(shouldBeNumber && val !== "" ? Number(val) : val);
           }}
         onBlur={onBlur}
         aria-invalid={invalid}
@@ -419,7 +433,7 @@ function SelectInput({
         {field.options?.map((opt) => (
           <option
             key={opt.value}
-            value={opt.value}
+            value={String(opt.value)}
             style={{ background: "#1a1d2e", color: "rgba(255,255,255,0.85)" }}
           >
             {opt.label}
