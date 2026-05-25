@@ -34,6 +34,7 @@ const menuItems: NavItem[] = [
       { label: "Project Master", href: "/ProjectManagement/ProjectMaster", icon: <Briefcase size={13} /> },
       { label: "Module Master", href: "/ProjectManagement/ModuleMaster", icon: <Briefcase size={13} /> },
       { label: "Task Assignment", href: "/ProjectManagement/TaskAssignment", icon: <Briefcase size={13} /> },
+      { label: "Call Status", href: "/ProjectManagement/CallStatus", icon: <Briefcase size={13} /> },
     ],
   },
   // { label: "Settings", href: "/settings", icon: <Settings size={16} /> },

@@ -164,12 +164,13 @@ export default function ClientMasterPage() {
 
   const onSubmit = async (data: ClientForm) => {
     try {
+      const userId = Number(localStorage.getItem("userId") || 0);
       if (editRow) {
-        const payload = { ...data, CLIENTID: editRow.CLIENTID, USERID: editRow.USERID };
+        const payload = { ...data, CLIENTID: editRow.CLIENTID, USERID: userId };
         const res = await updateMutation.mutateAsync({ id: String(editRow.CLIENTID), payload });
         toast.success("Client Updated", `"${res.CLIENTNAME}" updated successfully.`);
       } else {
-        const res = await createMutation.mutateAsync(data);
+        const res = await createMutation.mutateAsync({ ...data, USERID: userId });
         toast.success("Client Created", `"${res.CLIENTNAME}" created successfully.`);
       }
       setOpen(false);

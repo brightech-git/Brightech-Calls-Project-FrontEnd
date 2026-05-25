@@ -46,6 +46,7 @@ const FIELDS: FieldConfig<StaffForm>[] = [
       { label: "Manager",  value: "MANAGER" },
       { label: "Operator", value: "OPERATOR" },
       { label: "Staff",    value: "STAFF" },
+      { label: "Developer",    value: "DEVELOPER" },
     ],
   },
   { name: "ACTIVE",    label: "Status",         type: "select", placeholder: "Select status",      required: true,  tabIndex: 4, inline: true, labelWidth: "110px",

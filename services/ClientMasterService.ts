@@ -2,10 +2,11 @@ import { axiosInstance } from "@/api/axiosInstance";
 import { ClientPayload, ClientRecord } from "@/types/ClientMaster/ClientMaster";
 
 export const createClient = async (payload: ClientPayload): Promise<ClientRecord> => {
+  console.log("Creating client with payload:", payload);
   const response = await axiosInstance.post<ClientRecord>("/client", payload);
+  console.log("Client created successfully:", response);
   return response.data;
 };
-
 export const getAllClients = async (): Promise<ClientRecord[]> => {
   const response = await axiosInstance.get<ClientRecord[]>("/client");
   return response.data;
