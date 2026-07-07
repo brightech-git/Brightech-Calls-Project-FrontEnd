@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import { COLORS, FONT } from "@/utils/theme";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -58,13 +59,13 @@ export default function ConfirmDialog({
           margin-bottom: 14px;
         }
         .cd-title {
-          font-size: 15px; font-weight: 700; color: #111827;
+          font-size: 15px; font-weight: 700; color: ${COLORS.textPrimary};
           margin-bottom: 6px;
-          font-family: 'DM Sans', 'Inter', sans-serif;
+          font-family: ${FONT.family};
         }
         .cd-message {
-          font-size: 13px; color: #6b7280; line-height: 1.5;
-          font-family: 'DM Sans', 'Inter', sans-serif;
+          font-size: 13px; color: ${COLORS.textSecondary}; line-height: 1.5;
+          font-family: ${FONT.family};
           margin-bottom: 22px;
         }
         .cd-actions {
@@ -73,7 +74,7 @@ export default function ConfirmDialog({
         .cd-btn-cancel {
           height: 36px; padding: 0 16px; border-radius: 8px;
           border: 1px solid #d1d5db; background: #ffffff;
-          color: #374151; font-size: 13px; font-weight: 600;
+          color: ${COLORS.textSecondary}; font-size: 13px; font-weight: 600;
           cursor: pointer; font-family: inherit;
           transition: background 0.15s;
         }

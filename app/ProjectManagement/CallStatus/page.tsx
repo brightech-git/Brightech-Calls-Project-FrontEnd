@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, Resolver } from "react-hook-form";
+import { Controller, useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, Pencil, Plus } from "lucide-react";
 
-import { FormField, FieldConfig } from "@/components/FormField";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
+import { SelectCombobox } from "@/components/ui/SelectComboBox";
+import { DatePickerInput } from "@/components/ui/DatePicker";
+import { TextareaField } from "@/components/ui/CapitalizesTextArea";
+import { FileUploader } from "@/components/ui/FileUploadInput";
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
 import { COLORS, RADIUS, FONT } from "@/utils/theme";
@@ -31,30 +34,18 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+const STATUS_ITEMS = [
+  { label: "Open",    value: "OPEN"    },
+  { label: "Process", value: "PROCESS" },
+  { label: "Closed",  value: "CLOSED"  },
+];
+
 const DEFAULTS: FormValues = {
   TKTDATE:     "",
   STATUS:      "OPEN",
   DESCRIPTION: "",
   REMARK:      "",
 };
-
-// ─── Form fields (only what user fills) ──────────────────────────────────────
-
-const LW = "110px";
-
-const FIELDS: FieldConfig<FormValues>[] = [
-  { name: "TKTDATE",     label: "Date",        type: "date",     required: true, inline: true, labelWidth: LW },
-  {
-    name: "STATUS", label: "Status", type: "select", required: true, inline: true, labelWidth: LW,
-    options: [
-      { label: "Open",    value: "OPEN"    },
-      { label: "Process", value: "PROCESS" },
-      { label: "Closed",  value: "CLOSED"  },
-    ],
-  },
-  { name: "DESCRIPTION", label: "Description", type: "textarea", inline: true, labelWidth: LW },
-  { name: "REMARK",      label: "Remark",      type: "textarea", inline: true, labelWidth: LW },
-];
 
 // ─── Table columns (from booking list) ───────────────────────────────────────
 
@@ -302,6 +293,9 @@ export default function CallStatusPage() {
           background: ${COLORS.gray50}; border-radius: 0 0 ${RADIUS.xl} ${RADIUS.xl};
         }
         .cs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
+        .cs-field-row { display: flex; flex-direction: column; gap: 4px; }
+        .cs-field-label { font-size: 12px; font-weight: 600; color: ${COLORS.textSecondary}; }
+        .cs-field-error { font-size: 11px; color: ${COLORS.error}; }
         .cs-info-bar {
           display: flex; flex-wrap: wrap; gap: 6px 20px;
           background: ${COLORS.gray50}; border: 1px solid ${COLORS.cardBorder};
@@ -384,14 +378,89 @@ export default function CallStatusPage() {
 
                 {/* User-entered fields */}
                 <div className="cs-grid">
-                  {FIELDS.map((f) => (
-                    <FormField key={f.name} field={f} control={control} errors={errors} />
-                  ))}
+                  <div className="cs-field-row">
+                    <label className="cs-field-label">Date *</label>
+                    <Controller
+                      name="TKTDATE"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePickerInput
+                          value={field.value}
+                          onChange={(iso) => field.onChange(iso)}
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.TKTDATE && <span className="cs-field-error">{errors.TKTDATE.message}</span>}
+                  </div>
 
-                  <div>
-                    <label className="cs-file-label">Image</label>
-                    <input type="file" accept="image/*" style={{ fontSize: 12, width: "100%" }}
-                      onChange={(e) => setImage(e.target.files?.[0] || null)} />
+                  <div className="cs-field-row">
+                    <label className="cs-field-label">Status *</label>
+                    <Controller
+                      name="STATUS"
+                      control={control}
+                      render={({ field }) => (
+                        <SelectCombobox
+                          value={field.value}
+                          onChange={(val) => field.onChange(val)}
+                          items={STATUS_ITEMS}
+                          placeholder="Select status"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.STATUS && <span className="cs-field-error">{errors.STATUS.message}</span>}
+                  </div>
+
+                  <div className="cs-field-row">
+                    <label className="cs-field-label">Description</label>
+                    <Controller
+                      name="DESCRIPTION"
+                      control={control}
+                      render={({ field }) => (
+                        <TextareaField
+                          value={field.value}
+                          field="DESCRIPTION"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Enter description"
+                          mode="inline"
+                          rows={3}
+                        />
+                      )}
+                    />
+                    {errors.DESCRIPTION && <span className="cs-field-error">{errors.DESCRIPTION.message}</span>}
+                  </div>
+
+                  <div className="cs-field-row">
+                    <label className="cs-field-label">Remark</label>
+                    <Controller
+                      name="REMARK"
+                      control={control}
+                      render={({ field }) => (
+                        <TextareaField
+                          value={field.value}
+                          field="REMARK"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Enter remark"
+                          mode="inline"
+                          rows={3}
+                        />
+                      )}
+                    />
+                    {errors.REMARK && <span className="cs-field-error">{errors.REMARK.message}</span>}
+                  </div>
+
+                  <div className="cs-field-row">
+                    <label className="cs-field-label">Image</label>
+                    <FileUploader
+                      mode="single"
+                      acceptTypes="image"
+                      compact
+                      showPreview
+                      buttonText="Choose Image"
+                      onFilesChange={(files) => setImage(files[0] ?? null)}
+                      onError={(msg) => toast.error("Error", msg)}
+                    />
                   </div>
                 </div>
               </div>

@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Pencil } from "lucide-react";
 
-import { FormField, FieldConfig } from "@/components/FormField";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
 import { DataExport, ExportColumn } from "@/components/DataExport";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { SelectCombobox } from "@/components/ui/SelectComboBox";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+import { SwitchInput } from "@/components/ui/SwitchInput";
 
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
@@ -40,40 +42,6 @@ const moduleSchema = z.object({
 });
 
 type ModuleForm = z.infer<typeof moduleSchema>;
-
-// ─────────────────────────────────────────────
-// Fields
-// ─────────────────────────────────────────────
-
-const LW = "120px";
-
-const BASE_FIELDS: FieldConfig<ModuleForm>[] = [
-  {
-    name: "MODULENAME",
-    label: "Module Name",
-    type: "text",
-    placeholder: "Enter module name",
-    required: true,
-    inline: true,
-    labelWidth: LW,
-    capitalize: true,
-    tabIndex: 2,
-  },
-  {
-    name: "ACTIVE",
-    label: "Status",
-    type: "select",
-    placeholder: "Select status",
-    required: true,
-    inline: true,
-    labelWidth: LW,
-    tabIndex: 3,
-    options: [
-      { label: "Active", value: "Y" },
-      { label: "Inactive", value: "N" },
-    ],
-  },
-];
 
 // ─────────────────────────────────────────────
 // Columns
@@ -150,20 +118,10 @@ export default function ModuleMasterPage() {
   const { data: projects = [] } = useProjectList();
   const { data: modules = [], isLoading } = useModuleList();
 
-  const FIELDS: FieldConfig<ModuleForm>[] = [
-    {
-      name: "PROJECTID",
-      label: "Project",
-      type: "select",
-      placeholder: "Select project",
-      required: true,
-      inline: true,
-      labelWidth: LW,
-      tabIndex: 1,
-      options: projects.map((p) => ({ label: p.projectName, value: p.projectId })),
-    },
-    ...BASE_FIELDS,
-  ];
+  const projectItems = projects.map((p) => ({
+    label: p.projectName,
+    value: String(p.projectId),
+  }));
 
   const createMutation = useCreateModule();
   const updateMutation = useUpdateModule();
@@ -367,6 +325,23 @@ export default function ModuleMasterPage() {
           gap: 10px 24px;
         }
 
+        .mm-field-row {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .mm-field-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: ${COLORS.textSecondary};
+        }
+
+        .mm-field-error {
+          font-size: 11px;
+          color: ${COLORS.error};
+        }
+
         .mm-modal-footer {
           padding: 12px 16px;
 
@@ -522,14 +497,62 @@ export default function ModuleMasterPage() {
             >
               <div className="mm-modal-body">
                 <div className="mm-grid">
-                  {FIELDS.map((field) => (
-                    <FormField
-                      key={field.name}
-                      field={field}
+                  <div className="mm-field-row">
+                    <label className="mm-field-label">Project *</label>
+                    <Controller
+                      name="PROJECTID"
                       control={control}
-                      errors={errors}
+                      render={({ field }) => (
+                        <SelectCombobox
+                          value={field.value ? String(field.value) : undefined}
+                          onChange={(val) => field.onChange(val ? Number(val) : 0)}
+                          editId={editRow?.moduleId ?? null}
+                          items={projectItems}
+                          placeholder="Select project"
+                          maxWidth="100%"
+                        />
+                      )}
                     />
-                  ))}
+                    {errors.PROJECTID && <span className="mm-field-error">{errors.PROJECTID.message}</span>}
+                  </div>
+
+                  <div className="mm-field-row">
+                    <label className="mm-field-label">Module Name *</label>
+                    <Controller
+                      name="MODULENAME"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="MODULENAME"
+                          isCapitalized
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Enter module name"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.MODULENAME && <span className="mm-field-error">{errors.MODULENAME.message}</span>}
+                  </div>
+
+                  <div className="mm-field-row">
+                    <label className="mm-field-label">Status *</label>
+                    <Controller
+                      name="ACTIVE"
+                      control={control}
+                      render={({ field }) => (
+                        <SwitchInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          trueValue="Y"
+                          falseValue="N"
+                          labels={{ on: "Active", off: "Inactive" }}
+                          size="sm"
+                        />
+                      )}
+                    />
+                    {errors.ACTIVE && <span className="mm-field-error">{errors.ACTIVE.message}</span>}
+                  </div>
                 </div>
               </div>
 

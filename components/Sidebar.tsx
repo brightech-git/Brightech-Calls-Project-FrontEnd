@@ -32,9 +32,11 @@ const menuItems: NavItem[] = [
     label: "Project Management", icon: <FileBarChart size={16} />,
     children: [
       { label: "Project Master", href: "/ProjectManagement/ProjectMaster", icon: <Briefcase size={13} /> },
+      { label: "Project Type Master", href: "/ProjectManagement/ProjectTypeMaster", icon: <Briefcase size={13} /> },
       { label: "Module Master", href: "/ProjectManagement/ModuleMaster", icon: <Briefcase size={13} /> },
       { label: "Task Assignment", href: "/ProjectManagement/TaskAssignment", icon: <Briefcase size={13} /> },
       { label: "Call Status", href: "/ProjectManagement/CallStatus", icon: <Briefcase size={13} /> },
+      { label: "Project Links", href: "/ProjectManagement/ProjectLink", icon: <Briefcase size={13} /> },
     ],
   },
   // { label: "Settings", href: "/settings", icon: <Settings size={16} /> },
@@ -127,7 +129,8 @@ export default function Sidebar() {
           flex-shrink: 0; color: ${COLORS.sidebarLogoIconColor};
         }
         .sidebar-logo-text {
-          font-size: 13.5px; font-weight: 700;
+          font-size: 13.5px;
+           font-weight: 700;
           color: ${COLORS.sidebarLogoText}; letter-spacing: -0.01em; line-height: 1.2;
         }
         .sidebar-logo-sub {
@@ -180,7 +183,7 @@ export default function Sidebar() {
           transition: background 0.15s, color 0.15s; margin-top: 1px;
         }
         .sidebar-child:hover { background: ${COLORS.sidebarNavHoverBg}; color: ${COLORS.sidebarNavHoverText}; }
-        .sidebar-child.active { background: ${COLORS.sidebarNavActiveBg}; color: ${COLORS.sidebarNavActiveText}; font-weight: 600; }
+        .sidebar-child.active { background: ${COLORS.sidebarNavActiveBg}; color: ${COLORS.sidebarNavActiveText}; font-weight: 700; }
         .sidebar-child-dot {
           position: absolute; left: 10px; width: 4px; height: 4px;
           border-radius: 50%; background: ${COLORS.sidebarChildDot};

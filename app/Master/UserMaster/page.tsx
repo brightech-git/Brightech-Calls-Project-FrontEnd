@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Box, Grid, HStack, Text, VStack } from "@chakra-ui/react";
+import { Grid, HStack, Text, VStack } from "@chakra-ui/react";
 import { Pencil } from "lucide-react";
 
-import { FormField, FieldConfig } from "@/components/FormField";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
 import { useRegister, useGetAllUsers, useUpdateUser, useDeleteUser } from "@/hooks/Auth/useAuth";
 import { UserRecord, UpdateUserPayload } from "@/types/Auth/Auth";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
+import { COLORS, FONT } from "@/utils/theme";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -36,42 +38,6 @@ const editSchema = z.object({
 });
 
 type UserForm = z.infer<typeof userSchema>;
-
-// ─── Field config ─────────────────────────────────────────────────────────────
-
-const FIELDS: FieldConfig<UserForm>[] = [
-  {
-    name: "username",
-    label: "Username",
-    type: "text",
-    placeholder: "Enter username",
-    required: true,
-    inline: true,
-    labelWidth: "120px",
-    capitalize: true,
-    tabIndex: 1,
-  },
-  {
-    name: "password",
-    label: "Password",
-    type: "password",
-    placeholder: "Min 5 characters",
-    required: true,
-    inline: true,
-    labelWidth: "120px",
-    tabIndex: 2,
-  },
-  {
-    name: "confirmPassword",
-    label: "Confirm Pwd",
-    type: "password",
-    placeholder: "Re-enter password",
-    required: true,
-    inline: true,
-    labelWidth: "120px",
-    tabIndex: 3,
-  },
-];
 
 // ─── Table columns ────────────────────────────────────────────────────────────
 
@@ -210,7 +176,7 @@ export default function UserMasterPage() {
         .um-page {
           background: transparent;
           min-height: 100%;
-          font-family: 'DM Sans', 'Inter', sans-serif;
+          font-family: ${FONT.family};
         }
         .um-card {
           background: #ffffff;
@@ -228,25 +194,43 @@ export default function UserMasterPage() {
           background: #ffffff !important;
           border: 1px solid #d1d5db !important;
           border-radius: 8px !important;
-          color: #111827 !important;
+          color: ${COLORS.textPrimary} !important;
           font-size: 13px !important;
         }
         .um-card input::placeholder, .um-card textarea::placeholder {
-          color: #9ca3af !important;
+          color: ${COLORS.textMuted} !important;
         }
         .um-card input:focus, .um-card textarea:focus {
-          border-color: #6b7280 !important;
+          border-color: ${COLORS.textSecondary} !important;
           box-shadow: 0 0 0 2px rgba(107,114,128,0.15) !important;
           outline: none !important;
         }
         .um-card label, .um-card [class*="Field"] {
-          color: #374151 !important;
+          color: ${COLORS.textSecondary} !important;
           font-size: 11px !important;
           font-weight: 700 !important;
           letter-spacing: 0.05em !important;
           text-transform: uppercase !important;
         }
         .um-card [data-invalid] { border-color: #f87171 !important; }
+
+        .um-field-row {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          width: 100%;
+        }
+        .um-field-label {
+          color: ${COLORS.textSecondary};
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+        .um-field-error {
+          font-size: 11px;
+          color: #ef4444;
+        }
 
         .btn-primary {
           display: inline-flex;
@@ -256,7 +240,7 @@ export default function UserMasterPage() {
           height: 38px;
           border-radius: 8px;
           border: none;
-          background: #111827;
+          background: ${COLORS.primary};
           color: #fff;
           font-size: 13px;
           font-weight: 600;
@@ -267,7 +251,7 @@ export default function UserMasterPage() {
           justify-content: center;
           box-shadow: 0 1px 4px rgba(0,0,0,0.15);
         }
-        .btn-primary:hover { background: #1f2937; }
+        .btn-primary:hover { background: ${COLORS.primaryHover}; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-secondary {
@@ -279,7 +263,7 @@ export default function UserMasterPage() {
           border-radius: 8px;
           border: 1px solid #d1d5db;
           background: #ffffff;
-          color: #374151;
+          color: ${COLORS.textSecondary};
           font-size: 13px;
           font-weight: 600;
           cursor: pointer;
@@ -296,35 +280,35 @@ export default function UserMasterPage() {
         }
         .um-table-wrap .ct-th {
           background: #f9fafb !important;
-          color: #374151 !important;
+          color: ${COLORS.textSecondary} !important;
           border-bottom: 1px solid #e5e7eb !important;
         }
         .um-table-wrap .ct-td {
-          color: #374151 !important;
+          color: ${COLORS.textSecondary} !important;
           border-top: 1px solid #f3f4f6 !important;
         }
-        .um-table-wrap .ct-td.primary { color: #111827 !important; }
+        .um-table-wrap .ct-td.primary { color: ${COLORS.textPrimary} !important; }
         .um-table-wrap .ct-tr:hover .ct-td { background: #f9fafb !important; }
         .um-table-wrap .ct-search {
           background: #ffffff !important;
           border: 1px solid #d1d5db !important;
-          color: #111827 !important;
+          color: ${COLORS.textPrimary} !important;
         }
-        .um-table-wrap .ct-search::placeholder { color: #9ca3af !important; }
-        .um-table-wrap .ct-search:focus { border-color: #6b7280 !important; }
+        .um-table-wrap .ct-search::placeholder { color: ${COLORS.textMuted} !important; }
+        .um-table-wrap .ct-search:focus { border-color: ${COLORS.textSecondary} !important; }
         .um-table-wrap .ct-size-select {
           background: #ffffff !important;
           border: 1px solid #d1d5db !important;
-          color: #374151 !important;
+          color: ${COLORS.textSecondary} !important;
         }
-        .um-table-wrap .ct-page-btn { color: #374151 !important; }
+        .um-table-wrap .ct-page-btn { color: ${COLORS.textSecondary} !important; }
         .um-table-wrap .ct-page-btn.active {
-          background: #111827 !important;
+          background: ${COLORS.primary} !important;
           color: #fff !important;
-          border-color: #111827 !important;
+          border-color: ${COLORS.primary} !important;
         }
-        .um-table-wrap .ct-actions-btn { color: #374151 !important; }
-        .um-table-wrap .ct-actions-btn:hover { background: #f3f4f6 !important; color: #111827 !important; }
+        .um-table-wrap .ct-actions-btn { color: ${COLORS.textSecondary} !important; }
+        .um-table-wrap .ct-actions-btn:hover { background: #f3f4f6 !important; color: ${COLORS.textPrimary} !important; }
         .um-table-wrap .ct-actions-btn.delete:hover { background: #fee2e2 !important; color: #ef4444 !important; }
       `}</style>
 
@@ -344,11 +328,56 @@ export default function UserMasterPage() {
             <div className="um-card-body">
               <form onSubmit={handleSubmit(onSubmit)}>
                 <VStack gap="14px">
-                  {FIELDS.map((f) => (
-                    <Box key={f.name} w="full">
-                      <FormField field={f} control={control} errors={errors} />
-                    </Box>
-                  ))}
+                  <div className="um-field-row">
+                    <label className="um-field-label">Username *</label>
+                    <Controller
+                      name="username"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="username"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Enter username"
+                          isCapitalized
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.username && <span className="um-field-error">{errors.username.message}</span>}
+                  </div>
+
+                  <div className="um-field-row">
+                    <label className="um-field-label">Password *</label>
+                    <Controller
+                      name="password"
+                      control={control}
+                      render={({ field }) => (
+                        <PasswordInput
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          placeholder="Min 5 characters"
+                        />
+                      )}
+                    />
+                    {errors.password && <span className="um-field-error">{errors.password.message}</span>}
+                  </div>
+
+                  <div className="um-field-row">
+                    <label className="um-field-label">Confirm Password *</label>
+                    <Controller
+                      name="confirmPassword"
+                      control={control}
+                      render={({ field }) => (
+                        <PasswordInput
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          placeholder="Re-enter password"
+                        />
+                      )}
+                    />
+                    {errors.confirmPassword && <span className="um-field-error">{errors.confirmPassword.message}</span>}
+                  </div>
 
                   <HStack w="full" gap="8px">
                     <button type="submit" className="btn-primary" disabled={isPending}

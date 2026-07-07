@@ -3,67 +3,79 @@
 // Change values here to update the entire app
 // ============================================
 
+// ===== TEXT (slate, tinted toward the brand blue for a more
+// professional/readable feel than flat neutral gray) =====
+const TEXT_PRIMARY = "#1b2499";
+const TEXT_SECONDARY = "#111";
+const TEXT_MUTED = "#333";
+const TEXT_DISABLED = "#444";
+const TEXT_INVERSE = "#DEDEDE";
+const TEXT_WHITE = "#FFF"
+
 export const COLORS = {
   // ===== BRAND =====
-  primary:            "#111827",
-  primaryHover:       "#1f2937",
+  primary:            "#FFFFFF",
+  primaryHover:       "#DDDDDD",
   primaryLight:       "#f3f4f6",
+  secondary:          "#216fec",
+  secondaryHover:     "#073eb6",
+  secondaryLight:     "#eff6ff",
 
   // ===== SHELL (Sidebar + Topbar share these) =====
-  shellBg:            "#ffffff",
+  shellBg:            "#03163d",
   shellBorder:        "#e5e7eb",
   contentBg:          "#f5f5f5",
 
   // ===== SIDEBAR =====
-  sidebarLogoIconBg:      "#111827",
+  sidebarLogoIconBg:      "#071638",
   sidebarLogoIconColor:   "#ffffff",
-  sidebarLogoText:        "#111827",
-  sidebarLogoSub:         "#6b7280",
-  sidebarSectionLabel:    "#9ca3af",
-  sidebarNavText:         "#6b7280",
-  sidebarNavHoverBg:      "#f3f4f6",
-  sidebarNavHoverText:    "#111827",
-  sidebarNavActiveBg:     "#f3f4f6",
-  sidebarNavActiveText:   "#111827",
-  sidebarChevron:         "#9ca3af",
-  sidebarChevronActive:   "#111827",
+  sidebarLogoText:        TEXT_WHITE,
+  sidebarLogoSub:         TEXT_INVERSE,
+  sidebarSectionLabel:    TEXT_MUTED,
+  sidebarNavText:         TEXT_INVERSE,
+  sidebarNavHoverBg:      TEXT_WHITE,
+  sidebarNavHoverText:    TEXT_PRIMARY,
+  sidebarNavActiveBg:     TEXT_WHITE,
+  sidebarNavActiveText:   TEXT_PRIMARY,
+  sidebarChevron:         TEXT_MUTED,
+  sidebarChevronActive:   TEXT_WHITE,
   sidebarChildDot:        "#d1d5db",
-  sidebarChildDotActive:  "#111827",
-  sidebarScrollThumb:     "#d1d5db",
-  sidebarUserName:        "#111827",
-  sidebarUserRole:        "#6b7280",
-  sidebarUserHoverBg:     "#f3f4f6",
+  sidebarChildDotActive:  TEXT_WHITE,
+  sidebarScrollThumb:     TEXT_WHITE,
+  sidebarUserName:        TEXT_WHITE,
+  sidebarUserRole:        TEXT_SECONDARY,
+  sidebarUserHoverBg:      TEXT_WHITE,
   sidebarLogoutBg:        "#f3f4f6",
-  sidebarLogoutColor:     "#6b7280",
+  sidebarLogoutColor:     TEXT_SECONDARY,
   sidebarLogoutHoverBg:   "#fee2e2",
   sidebarLogoutHoverColor:"#ef4444",
 
   // ===== TOPBAR =====
-  topbarTitle:            "#111827",
-  topbarSubtitle:         "#6b7280",
+  topbarTitle:          TEXT_WHITE,
+  topbarSubtitle:         TEXT_INVERSE,
   topbarDivider:          "#e5e7eb",
   topbarIconBg:           "#f9fafb",
-  topbarIconColor:        "#6b7280",
+  topbarIconColor: TEXT_INVERSE,
   topbarIconHoverBg:      "#f3f4f6",
-  topbarIconHoverColor:   "#111827",
+  topbarIconHoverColor: TEXT_WHITE,
 
   // ===== TEXT =====
-  textPrimary:   "#111827",
-  textSecondary: "#6b7280",
-  textMuted:     "#9ca3af",
-  textDisabled:  "#d1d5db",
+  textPrimary:   TEXT_PRIMARY,
+  textSecondary: TEXT_SECONDARY,
+  textMuted:     TEXT_MUTED,
+  textDisabled:  TEXT_DISABLED,
 
   // ===== GRAY SCALE =====
   gray50:  "#f9fafb",
   gray100: "#f3f4f6",
   gray200: "#e5e7eb",
   gray300: "#d1d5db",
-  gray400: "#9ca3af",
-  gray500: "#6b7280",
+  gray400: TEXT_MUTED,
+  gray500: TEXT_SECONDARY,
   gray600: "#4b5563",
   gray700: "#374151",
   gray800: "#1f2937",
-  gray900: "#111827",
+  gray900: TEXT_PRIMARY,
 
   // ===== STATUS =====
   success:    "#16a34a",
@@ -83,16 +95,16 @@ export const COLORS = {
   // ===== INPUT =====
   inputBg:           "#ffffff",
   inputBorder:       "#d1d5db",
-  inputBorderFocus:  "#6b7280",
-  inputPlaceholder:  "#9ca3af",
-  inputText:         "#111827",
+  inputBorderFocus:  TEXT_SECONDARY,
+  inputPlaceholder:  TEXT_MUTED,
+  inputText:         TEXT_PRIMARY,
 
   // ===== BUTTON =====
   btnPrimaryBg:       "#111827",
   btnPrimaryText:     "#ffffff",
   btnPrimaryHover:    "#1f2937",
   btnSecondaryBg:     "#ffffff",
-  btnSecondaryText:   "#374151",
+  btnSecondaryText:   TEXT_SECONDARY,
   btnSecondaryBorder: "#d1d5db",
   btnSecondaryHover:  "#f3f4f6",
 };

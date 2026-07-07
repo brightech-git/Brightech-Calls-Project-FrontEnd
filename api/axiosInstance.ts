@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const baseURL =
-  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8111/api/v1" || 
   "https://calls.brightechsoftware.com/api/v1";
 
 export const axiosInstance = axios.create({
@@ -42,7 +42,7 @@ axiosInstance.interceptors.request.use(async (config) => {
 
   if (!isAuthRoute && typeof window !== "undefined") {
     const userId = localStorage.getItem("userId");
-    const token  = localStorage.getItem("token");
+    const token = localStorage.getItem("calls_token");
     if (userId) config.headers["USERID"]        = userId;
     if (token)  config.headers["Authorization"] = `Bearer ${token}`;
 

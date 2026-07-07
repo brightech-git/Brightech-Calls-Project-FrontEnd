@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Pencil } from "lucide-react";
 
-import { FormField, FieldConfig } from "@/components/FormField";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { SelectCombobox } from "@/components/ui/SelectComboBox";
+import { TextareaField } from "@/components/ui/CapitalizesTextArea";
+import { SwitchInput } from "@/components/ui/SwitchInput";
 
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
@@ -51,16 +53,6 @@ const callsBookingSchema = z.object({
 });
 
 type CallsBookingForm = z.infer<typeof callsBookingSchema>;
-
-// ─────────────────────────────────────────────
-// Fields
-// ─────────────────────────────────────────────
-
-const LW = "120px";
-
-const ASSIGNMENT = ["STAFFID", "STATUS", "ACTIVE"];
-const DETAILS    = ["DESCRIPTION", "REMARK"];
-const BASIC      = ["COMPID", "CLIENTID", "PROJECTID", "MODULEID"];
 
 // ─────────────────────────────────────────────
 // Columns
@@ -199,39 +191,17 @@ export default function CallsBookingPage() {
     if (m) setValue("MODULENAME", m.moduleName ?? "");
   }, [watchedModuleId, modules]);
 
-  const FIELDS: FieldConfig<CallsBookingForm>[] = [
-    { name: "COMPID",    label: "Company",  type: "select", placeholder: "Select company",  required: true, inline: true, labelWidth: LW, tabIndex: 1,
-      disabled: companies.length === 1,
-      options: companies.map((c) => ({ label: c.COMPANYNAME, value: c.COMPID })),
-    },
-    { name: "CLIENTID",  label: "Client",   type: "select", placeholder: "Select client",   required: true, inline: true, labelWidth: LW, tabIndex: 2,
-      options: clients.map((c) => ({ label: c.CLIENTNAME, value: c.CLIENTID })),
-    },
-    { name: "PROJECTID", label: "Project",  type: "select", placeholder: "Select project",  inline: true, labelWidth: LW, tabIndex: 3,
-      options: projects.map((p) => ({ label: p.projectName, value: String(p.projectId) })),
-    },
-    { name: "MODULEID",  label: "Module",   type: "select", placeholder: "Select module",   inline: true, labelWidth: LW, tabIndex: 4,
-      options: modules.map((m) => ({ label: m.moduleName, value: String(m.moduleId) })),
-    },
-    { name: "STAFFID",   label: "Staff",    type: "select", placeholder: "Select staff",    required: true, inline: true, labelWidth: LW, tabIndex: 5,
-      options: staffList.map((s) => ({ label: s.STAFFNAME ?? "", value: s.STAFFID })),
-    },
-    { name: "STATUS",    label: "Status",   type: "select", placeholder: "Select status",   inline: true, labelWidth: LW, tabIndex: 6,
-      options: [
-        { label: "Open",        value: "O" },
-        { label: "In Progress", value: "I" },
-        { label: "Completed",   value: "C" },
-        { label: "Cancelled",   value: "X" },
-      ],
-    },
-    { name: "ACTIVE",    label: "Active",   type: "select", placeholder: "Select active",   required: true, inline: true, labelWidth: LW, tabIndex: 7,
-      options: [
-        { label: "Active",   value: "Y" },
-        { label: "Inactive", value: "N" },
-      ],
-    },
-    { name: "DESCRIPTION", label: "Description", type: "textarea", placeholder: "Enter description", inline: true, labelWidth: LW, tabIndex: 8 },
-    { name: "REMARK",      label: "Remark",      type: "textarea", placeholder: "Enter remarks",      inline: true, labelWidth: LW, tabIndex: 9 },
+  const companyItems = companies.map((c) => ({ label: c.COMPANYNAME, value: String(c.COMPID) }));
+  const clientItems  = clients.map((c) => ({ label: c.CLIENTNAME, value: String(c.CLIENTID) }));
+  const projectItems = projects.map((p) => ({ label: p.projectName, value: String(p.projectId) }));
+  const moduleItems  = modules.map((m) => ({ label: m.moduleName, value: String(m.moduleId) }));
+  const staffItems   = staffList.map((s) => ({ label: s.STAFFNAME ?? "", value: String(s.STAFFID) }));
+
+  const statusItems = [
+    { label: "Open",        value: "O" },
+    { label: "In Progress", value: "I" },
+    { label: "Completed",   value: "C" },
+    { label: "Cancelled",   value: "X" },
   ];
 
   // ─────────────────────────
@@ -494,6 +464,23 @@ export default function CallsBookingPage() {
           gap: 6px 24px;
         }
 
+        .cb-field-row {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .cb-field-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: ${COLORS.textSecondary};
+        }
+
+        .cb-field-error {
+          font-size: 11px;
+          color: ${COLORS.error};
+        }
+
         .cb-btn-primary {
           display: inline-flex;
           align-items: center;
@@ -638,16 +625,82 @@ export default function CallsBookingPage() {
                 </div>
 
                 <div className="cb-grid-2">
-                  {FIELDS.filter((f) =>
-                    BASIC.includes(f.name)
-                  ).map((field) => (
-                    <FormField
-                      key={field.name}
-                      field={field}
+                  <div className="cb-field-row">
+                    <label className="cb-field-label">Company *</label>
+                    <Controller
+                      name="COMPID"
                       control={control}
-                      errors={errors}
+                      render={({ field }) => (
+                        <SelectCombobox
+                          value={field.value ? String(field.value) : undefined}
+                          onChange={(val) => field.onChange(val ? Number(val) : 0)}
+                          editId={editRow?.SNO ?? null}
+                          items={companyItems}
+                          placeholder="Select company"
+                          disable={companies.length === 1}
+                          maxWidth="100%"
+                        />
+                      )}
                     />
-                  ))}
+                    {errors.COMPID && <span className="cb-field-error">{errors.COMPID.message}</span>}
+                  </div>
+
+                  <div className="cb-field-row">
+                    <label className="cb-field-label">Client *</label>
+                    <Controller
+                      name="CLIENTID"
+                      control={control}
+                      render={({ field }) => (
+                        <SelectCombobox
+                          value={field.value ? String(field.value) : undefined}
+                          onChange={(val) => field.onChange(val ? Number(val) : 0)}
+                          editId={editRow?.SNO ?? null}
+                          items={clientItems}
+                          placeholder="Select client"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.CLIENTID && <span className="cb-field-error">{errors.CLIENTID.message}</span>}
+                  </div>
+
+                  <div className="cb-field-row">
+                    <label className="cb-field-label">Project</label>
+                    <Controller
+                      name="PROJECTID"
+                      control={control}
+                      render={({ field }) => (
+                        <SelectCombobox
+                          value={field.value || undefined}
+                          onChange={(val) => field.onChange(val)}
+                          editId={editRow?.SNO ?? null}
+                          items={projectItems}
+                          placeholder="Select project"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.PROJECTID && <span className="cb-field-error">{errors.PROJECTID.message}</span>}
+                  </div>
+
+                  <div className="cb-field-row">
+                    <label className="cb-field-label">Module</label>
+                    <Controller
+                      name="MODULEID"
+                      control={control}
+                      render={({ field }) => (
+                        <SelectCombobox
+                          value={field.value || undefined}
+                          onChange={(val) => field.onChange(val)}
+                          editId={editRow?.SNO ?? null}
+                          items={moduleItems}
+                          placeholder="Select module"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.MODULEID && <span className="cb-field-error">{errors.MODULEID.message}</span>}
+                  </div>
                 </div>
 
                 <div className="cb-section-label">
@@ -655,18 +708,62 @@ export default function CallsBookingPage() {
                 </div>
 
                 <div className="cb-grid-2">
-                  {FIELDS.filter((f) =>
-                    ASSIGNMENT.includes(
-                      f.name
-                    )
-                  ).map((field) => (
-                    <FormField
-                      key={field.name}
-                      field={field}
+                  <div className="cb-field-row">
+                    <label className="cb-field-label">Staff *</label>
+                    <Controller
+                      name="STAFFID"
                       control={control}
-                      errors={errors}
+                      render={({ field }) => (
+                        <SelectCombobox
+                          value={field.value || undefined}
+                          onChange={(val) => field.onChange(val)}
+                          editId={editRow?.SNO ?? null}
+                          items={staffItems}
+                          placeholder="Select staff"
+                          maxWidth="100%"
+                        />
+                      )}
                     />
-                  ))}
+                    {errors.STAFFID && <span className="cb-field-error">{errors.STAFFID.message}</span>}
+                  </div>
+
+                  <div className="cb-field-row">
+                    <label className="cb-field-label">Status</label>
+                    <Controller
+                      name="STATUS"
+                      control={control}
+                      render={({ field }) => (
+                        <SelectCombobox
+                          value={field.value || undefined}
+                          onChange={(val) => field.onChange(val)}
+                          editId={editRow?.SNO ?? null}
+                          items={statusItems}
+                          placeholder="Select status"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.STATUS && <span className="cb-field-error">{errors.STATUS.message}</span>}
+                  </div>
+
+                  <div className="cb-field-row">
+                    <label className="cb-field-label">Active *</label>
+                    <Controller
+                      name="ACTIVE"
+                      control={control}
+                      render={({ field }) => (
+                        <SwitchInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          trueValue="Y"
+                          falseValue="N"
+                          labels={{ on: "Active", off: "Inactive" }}
+                          size="sm"
+                        />
+                      )}
+                    />
+                    {errors.ACTIVE && <span className="cb-field-error">{errors.ACTIVE.message}</span>}
+                  </div>
                 </div>
 
                 <div className="cb-section-label">
@@ -674,18 +771,41 @@ export default function CallsBookingPage() {
                 </div>
 
                 <div className="cb-grid-2">
-                  {FIELDS.filter((f) =>
-                    DETAILS.includes(
-                      f.name
-                    )
-                  ).map((field) => (
-                    <FormField
-                      key={field.name}
-                      field={field}
+                  <div className="cb-field-row">
+                    <label className="cb-field-label">Description</label>
+                    <Controller
+                      name="DESCRIPTION"
                       control={control}
-                      errors={errors}
+                      render={({ field }) => (
+                        <TextareaField
+                          value={field.value}
+                          field="DESCRIPTION"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Enter description"
+                          mode="inline"
+                        />
+                      )}
                     />
-                  ))}
+                    {errors.DESCRIPTION && <span className="cb-field-error">{errors.DESCRIPTION.message}</span>}
+                  </div>
+
+                  <div className="cb-field-row">
+                    <label className="cb-field-label">Remark</label>
+                    <Controller
+                      name="REMARK"
+                      control={control}
+                      render={({ field }) => (
+                        <TextareaField
+                          value={field.value}
+                          field="REMARK"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Enter remarks"
+                          mode="inline"
+                        />
+                      )}
+                    />
+                    {errors.REMARK && <span className="cb-field-error">{errors.REMARK.message}</span>}
+                  </div>
                 </div>
               </div>
 

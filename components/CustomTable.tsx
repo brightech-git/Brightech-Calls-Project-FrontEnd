@@ -54,6 +54,7 @@ import {
   Inbox,
 } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
+import { COLORS, FONT } from "@/utils/theme";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -321,58 +322,58 @@ export function CustomTable<T extends Record<string, unknown>>({
         .ct-table { width: 100%; border-collapse: collapse; }
         .ct-th {
           font-size: 10px; font-weight: 700; letter-spacing: 0.09em;
-          text-transform: uppercase; color: #374151;
+          text-transform: uppercase; color: ${COLORS.textSecondary};
           padding: 10px 16px; text-align: left; white-space: nowrap;
           border-bottom: 1px solid #e5e7eb; background: #f9fafb;
           position: sticky; top: 0; z-index: 1;
         }
         .ct-th.sortable { cursor: pointer; user-select: none; }
-        .ct-th.sortable:hover { color: #111827; }
-        .ct-th.active { color: #111827; }
+        .ct-th.sortable:hover { color: ${COLORS.textPrimary}; }
+        .ct-th.active { color: ${COLORS.textPrimary}; }
         .ct-td {
-          font-size: 13px; color: #6b7280;
+          font-size: 13px; color: ${COLORS.textSecondary};
           padding: 10px 16px; border-top: 1px solid #f3f4f6;
           vertical-align: middle; white-space: nowrap;
         }
-        .ct-td.primary { color: #111827; font-weight: 600; }
+        .ct-td.primary { color: ${COLORS.textPrimary}; font-weight: 600; }
         .ct-tr:hover .ct-td { background: #f9fafb; }
         .ct-actions-btn {
           display: inline-flex; align-items: center; justify-content: center;
           width: 28px; height: 28px; border-radius: 7px; border: none;
           cursor: pointer; transition: background 0.15s, color 0.15s;
-          background: transparent; color: #9ca3af;
+          background: transparent; color: ${COLORS.textMuted};
         }
-        .ct-actions-btn:hover { background: #f3f4f6; color: #111827; }
+        .ct-actions-btn:hover { background: #f3f4f6; color: ${COLORS.textPrimary}; }
         .ct-actions-btn.delete:hover { background: #fee2e2; color: #ef4444; }
-        .ct-actions-btn.edit:hover   { background: #f3f4f6; color: #111827; }
+        .ct-actions-btn.edit:hover   { background: #f3f4f6; color: ${COLORS.textPrimary}; }
         .ct-page-btn {
           min-width: 30px; height: 30px; border-radius: 7px;
           border: 1px solid transparent; background: transparent;
-          color: #6b7280; font-size: 12px; font-family: inherit;
+          color: ${COLORS.textSecondary}; font-size: 12px; font-family: inherit;
           cursor: pointer; display: inline-flex; align-items: center;
           justify-content: center; transition: background 0.15s, color 0.15s; padding: 0 6px;
         }
-        .ct-page-btn:hover:not(:disabled) { background: #f3f4f6; color: #111827; }
-        .ct-page-btn.active { background: #111827; color: #fff; border-color: #111827; font-weight: 600; }
+        .ct-page-btn:hover:not(:disabled) { background: #f3f4f6; color: ${COLORS.textPrimary}; }
+        .ct-page-btn.active { background: ${COLORS.primary}; color: #fff; border-color: ${COLORS.primary}; font-weight: 600; }
         .ct-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
         .ct-search {
           background: #ffffff; border: 1px solid #d1d5db; border-radius: 8px;
-          color: #111827; font-size: 13px; padding: 0 12px 0 34px;
+          color: ${COLORS.textPrimary}; font-size: 13px; padding: 0 12px 0 34px;
           height: 34px; outline: none; width: 220px;
           transition: border-color 0.15s; font-family: inherit;
         }
-        .ct-search::placeholder { color: #9ca3af; }
-        .ct-search:focus { border-color: #6b7280; }
+        .ct-search::placeholder { color: ${COLORS.textMuted}; }
+        .ct-search:focus { border-color: ${COLORS.textSecondary}; }
         .ct-size-select {
           background: #ffffff; border: 1px solid #d1d5db; border-radius: 7px;
-          color: #6b7280; font-size: 12px; padding: 4px 8px;
+          color: ${COLORS.textSecondary}; font-size: 12px; padding: 4px 8px;
           outline: none; cursor: pointer; font-family: inherit;
         }
         .ct-size-select option { background: #ffffff; }
       `}</style>
 
       <Box bg="#ffffff" border="1px solid #e5e7eb" borderRadius="12px"
-        fontFamily="'DM Sans', 'Inter', sans-serif"
+        fontFamily={FONT.family}
         boxShadow="0 1px 4px rgba(0,0,0,0.06)"
         display="flex" flexDirection="column"
         minH="480px"
@@ -388,7 +389,7 @@ export function CustomTable<T extends Record<string, unknown>>({
         >
           <HStack gap="8px">
             {title && (
-              <Text fontSize="13.5px" fontWeight="700" color="#1e3a5f" mr="4px">
+              <Text fontSize="13.5px" fontWeight="700" color={COLORS.textPrimary} mr="4px">
                 {title}
               </Text>
             )}
@@ -399,7 +400,7 @@ export function CustomTable<T extends Record<string, unknown>>({
                 left="10px"
                 top="50%"
                 transform="translateY(-50%)"
-                color="#93c5fd"
+                color={COLORS.textMuted}
                 pointerEvents="none"
               >
                 <Search size={13} />
@@ -509,7 +510,7 @@ export function CustomTable<T extends Record<string, unknown>>({
               ) : paged.length === 0 ? (
                 <Box as="tr">
                   <td colSpan={colCount} style={{ padding: "48px 0", textAlign: "center" }}>
-                    <VStack gap="8px" color="#9ca3af">
+                    <VStack gap="8px" color={COLORS.textMuted}>
                       <Inbox size={32} strokeWidth={1.2} />
                       <Text fontSize="13px">{emptyMessage}</Text>
                     </VStack>
@@ -601,7 +602,7 @@ export function CustomTable<T extends Record<string, unknown>>({
         >
           {/* Row count + page size */}
           <HStack gap="10px">
-            <Text fontSize="12px" color="#6b7280">
+            <Text fontSize="12px" color={COLORS.textSecondary}>
               {sorted.length === 0
                 ? "0 records"
                 : `${(safePage - 1) * pageSize + 1}–${Math.min(
@@ -648,7 +649,7 @@ export function CustomTable<T extends Record<string, unknown>>({
               <>
                 <button className="ct-page-btn" onClick={() => setPage(1)}>1</button>
                 {pageWindow[0] > 2 && (
-                  <span style={{ fontSize: 12, color: "#9ca3af", padding: "0 2px" }}>…</span>
+                  <span style={{ fontSize: 12, color: COLORS.textMuted, padding: "0 2px" }}>…</span>
                 )}
               </>
             )}
@@ -666,7 +667,7 @@ export function CustomTable<T extends Record<string, unknown>>({
             {pageWindow[pageWindow.length - 1] < totalPages && (
               <>
                 {pageWindow[pageWindow.length - 1] < totalPages - 1 && (
-                  <span style={{ fontSize: 12, color: "#9ca3af", padding: "0 2px" }}>…</span>
+                  <span style={{ fontSize: 12, color: COLORS.textMuted, padding: "0 2px" }}>…</span>
                 )}
                 <button className="ct-page-btn" onClick={() => setPage(totalPages)}>
                   {totalPages}

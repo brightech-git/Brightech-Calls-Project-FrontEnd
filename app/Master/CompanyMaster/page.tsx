@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Pencil } from "lucide-react";
 
-import { FormField, FieldConfig } from "@/components/FormField";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+import { SwitchInput } from "@/components/ui/SwitchInput";
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
 import { COLORS, FONT, RADIUS } from "@/utils/theme";
@@ -46,39 +47,6 @@ const companySchema = z.object({
 });
 
 type CompanyForm = z.infer<typeof companySchema>;
-
-// ─── Fields ───────────────────────────────────────────────────────────────────
-
-const LW = "120px";
-
-const FIELDS: FieldConfig<CompanyForm>[] = [
-  { name: "COMPANYID",   label: "Company ID",   type: "text",   placeholder: "e.g. BTS",          required: true, inline: true, labelWidth: LW, capitalize: true, tabIndex: 1 },
-  { name: "COMPANYNAME", label: "Company Name", type: "text",   placeholder: "Full company name",  required: true, inline: true, labelWidth: LW, capitalize: true, tabIndex: 2 },
-  { name: "COSTID",      label: "Cost ID",      type: "text",   placeholder: "e.g. BT",            inline: true, labelWidth: LW, tabIndex: 3 },
-  { name: "SHORTKEY",    label: "Short Key",    type: "text",   placeholder: "e.g. B",             inline: true, labelWidth: LW, tabIndex: 4 },
-  { name: "PHONE",       label: "Phone",        type: "text",   placeholder: "e.g. 04422334455",   inline: true, labelWidth: LW, tabIndex: 5 },
-  { name: "MOBILE",      label: "Mobile",       type: "tel",    placeholder: "10-digit mobile",    required: true, inline: true, labelWidth: LW, tabIndex: 6 },
-  { name: "EMAIL",       label: "Email",        type: "email",  placeholder: "email@example.com",  required: true, inline: true, labelWidth: LW, tabIndex: 7 },
-  { name: "ACTIVE",      label: "Status",       type: "select", placeholder: "Select status",      required: true, inline: true, labelWidth: LW, tabIndex: 8,
-    options: [{ label: "Active", value: "Y" }, { label: "Inactive", value: "N" }],
-  },
-  { name: "ADDRESS1",    label: "Address 1",    type: "text",   placeholder: "Street",             inline: true, labelWidth: LW, tabIndex: 9 },
-  { name: "ADDRESS2",    label: "Address 2",    type: "text",   placeholder: "Area",               inline: true, labelWidth: LW, tabIndex: 10 },
-  { name: "ADDRESS3",    label: "Address 3",    type: "text",   placeholder: "City",               inline: true, labelWidth: LW, tabIndex: 11 },
-  { name: "ADDRESS4",    label: "Address 4",    type: "text",   placeholder: "State",              inline: true, labelWidth: LW, tabIndex: 12 },
-  { name: "AREACODE",    label: "Area Code",    type: "text",   placeholder: "PIN code",           inline: true, labelWidth: LW, tabIndex: 13 },
-  { name: "GSTNO",       label: "GST No",       type: "text",   placeholder: "GST number",         inline: true, labelWidth: LW, capitalize: true, tabIndex: 14 },
-  { name: "PANNO",       label: "PAN No",       type: "text",   placeholder: "PAN number",         inline: true, labelWidth: LW, capitalize: true, tabIndex: 15 },
-  { name: "TANNO",       label: "TAN No",       type: "text",   placeholder: "TAN number",         inline: true, labelWidth: LW, capitalize: true, tabIndex: 16 },
-  { name: "TDSNO",       label: "TDS No",       type: "text",   placeholder: "TDS number",         inline: true, labelWidth: LW, tabIndex: 17 },
-  { name: "TINNO",       label: "TIN No",       type: "text",   placeholder: "TIN number",         inline: true, labelWidth: LW, tabIndex: 18 },
-  { name: "CSTNO",       label: "CST No",       type: "text",   placeholder: "CST number",         inline: true, labelWidth: LW, tabIndex: 19 },
-  { name: "LOCALTAXNO",  label: "Local Tax No", type: "text",   placeholder: "Local tax number",   inline: true, labelWidth: LW, tabIndex: 20 },
-];
-
-const BASIC   = ["COMPANYID","COMPANYNAME","COSTID","SHORTKEY","PHONE","MOBILE","EMAIL","ACTIVE"];
-const ADDRESS = ["ADDRESS1","ADDRESS2","ADDRESS3","ADDRESS4","AREACODE"];
-const TAX     = ["GSTNO","PANNO","TANNO","TDSNO","TINNO","CSTNO","LOCALTAXNO"];
 
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
@@ -262,6 +230,20 @@ export default function CompanyMasterPage() {
           grid-template-columns: 1fr 1fr;
           gap: 6px 24px;
         }
+        .cm-field-row {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .cm-field-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: ${COLORS.textSecondary};
+        }
+        .cm-field-error {
+          font-size: 11px;
+          color: ${COLORS.error};
+        }
         .cm-btn-primary {
           display: inline-flex; align-items: center; gap: 6px;
           padding: 0 16px; height: 34px; border-radius: ${RADIUS.md};
@@ -339,23 +321,367 @@ export default function CompanyMasterPage() {
               <div className="cm-modal-body">
                 <div className="cm-section-label">Basic Information</div>
                 <div className="cm-grid-2">
-                  {FIELDS.filter((f) => BASIC.includes(f.name)).map((f) => (
-                    <FormField key={f.name} field={{ ...f, readOnly: f.name === "COMPANYID" && !!editRow }} control={control} errors={errors} />
-                  ))}
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Company ID *</label>
+                    <Controller
+                      name="COMPANYID"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="COMPANYID"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="e.g. BTS"
+                          isCapitalized
+                          disabled={!!editRow}
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.COMPANYID && <span className="cm-field-error">{errors.COMPANYID.message}</span>}
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Company Name *</label>
+                    <Controller
+                      name="COMPANYNAME"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="COMPANYNAME"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Full company name"
+                          isCapitalized
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.COMPANYNAME && <span className="cm-field-error">{errors.COMPANYNAME.message}</span>}
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Cost ID</label>
+                    <Controller
+                      name="COSTID"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="COSTID"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="e.g. BT"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Short Key</label>
+                    <Controller
+                      name="SHORTKEY"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="SHORTKEY"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="e.g. B"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Phone</label>
+                    <Controller
+                      name="PHONE"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="PHONE"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="e.g. 04422334455"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Mobile *</label>
+                    <Controller
+                      name="MOBILE"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="MOBILE"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="10-digit mobile"
+                          inputModeType="mobile"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.MOBILE && <span className="cm-field-error">{errors.MOBILE.message}</span>}
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Email *</label>
+                    <Controller
+                      name="EMAIL"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="EMAIL"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="email@example.com"
+                          inputModeType="email"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.EMAIL && <span className="cm-field-error">{errors.EMAIL.message}</span>}
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Status *</label>
+                    <Controller
+                      name="ACTIVE"
+                      control={control}
+                      render={({ field }) => (
+                        <SwitchInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          trueValue="Y"
+                          falseValue="N"
+                          labels={{ on: "Active", off: "Inactive" }}
+                          size="sm"
+                        />
+                      )}
+                    />
+                    {errors.ACTIVE && <span className="cm-field-error">{errors.ACTIVE.message}</span>}
+                  </div>
                 </div>
 
                 <div className="cm-section-label">Address</div>
                 <div className="cm-grid-2">
-                  {FIELDS.filter((f) => ADDRESS.includes(f.name)).map((f) => (
-                    <FormField key={f.name} field={f} control={control} errors={errors} />
-                  ))}
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Address 1</label>
+                    <Controller
+                      name="ADDRESS1"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="ADDRESS1"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Street"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Address 2</label>
+                    <Controller
+                      name="ADDRESS2"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="ADDRESS2"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Area"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Address 3</label>
+                    <Controller
+                      name="ADDRESS3"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="ADDRESS3"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="City"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Address 4</label>
+                    <Controller
+                      name="ADDRESS4"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="ADDRESS4"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="State"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Area Code</label>
+                    <Controller
+                      name="AREACODE"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="AREACODE"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="PIN code"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <div className="cm-section-label">Tax Information</div>
                 <div className="cm-grid-2">
-                  {FIELDS.filter((f) => TAX.includes(f.name)).map((f) => (
-                    <FormField key={f.name} field={f} control={control} errors={errors} />
-                  ))}
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">GST No</label>
+                    <Controller
+                      name="GSTNO"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="GSTNO"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="GST number"
+                          isCapitalized
+                          inputModeType="gst"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">PAN No</label>
+                    <Controller
+                      name="PANNO"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="PANNO"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="PAN number"
+                          isCapitalized
+                          inputModeType="pan"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">TAN No</label>
+                    <Controller
+                      name="TANNO"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="TANNO"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="TAN number"
+                          isCapitalized
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">TDS No</label>
+                    <Controller
+                      name="TDSNO"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="TDSNO"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="TDS number"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">TIN No</label>
+                    <Controller
+                      name="TINNO"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="TINNO"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="TIN number"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">CST No</label>
+                    <Controller
+                      name="CSTNO"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="CSTNO"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="CST number"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Local Tax No</label>
+                    <Controller
+                      name="LOCALTAXNO"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="LOCALTAXNO"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Local tax number"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                  </div>
                 </div>
               </div>
 

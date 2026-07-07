@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Pencil } from "lucide-react";
 
-import { FormField, FieldConfig } from "@/components/FormField";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { SelectCombobox } from "@/components/ui/SelectComboBox";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+import { SwitchInput } from "@/components/ui/SwitchInput";
+import { DatePickerInput } from "@/components/ui/DatePicker";
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { COLORS, FONT, RADIUS } from "@/utils/theme";
 import { useToast } from "@/components/Toast";
@@ -35,30 +38,14 @@ const staffSchema = z.object({
 
 type StaffForm = z.infer<typeof staffSchema>;
 
-// ─── Fields ───────────────────────────────────────────────────────────────────
+// ─── Field Options ────────────────────────────────────────────────────────────
 
-const FIELDS: FieldConfig<StaffForm>[] = [
-  { name: "STAFFNAME", label: "Staff Name",     type: "text",   placeholder: "Enter staff name",  required: true,  tabIndex: 1, inline: true, labelWidth: "110px", capitalize: true },
-  { name: "MOBILENO",  label: "Mobile No",      type: "tel",    placeholder: "e.g. 9659721856",   required: true,  tabIndex: 2, inline: true, labelWidth: "110px" },
-  { name: "ROLE",      label: "Role",           type: "select", placeholder: "Select role",        required: true,  tabIndex: 3, inline: true, labelWidth: "110px",
-    options: [
-      { label: "Admin",    value: "ADMIN" },
-      { label: "Manager",  value: "MANAGER" },
-      { label: "Operator", value: "OPERATOR" },
-      { label: "Staff",    value: "STAFF" },
-      { label: "Developer",    value: "DEVELOPER" },
-    ],
-  },
-  { name: "ACTIVE",    label: "Status",         type: "select", placeholder: "Select status",      required: true,  tabIndex: 4, inline: true, labelWidth: "110px",
-    options: [
-      { label: "Active",   value: "Y" },
-      { label: "Inactive", value: "N" },
-    ],
-  },
-  { name: "DOJ",       label: "Date of Join",   type: "date",   tabIndex: 5, inline: true, labelWidth: "110px" },
-  { name: "ADDRESS1",  label: "Address 1",      type: "text",   placeholder: "Street",             tabIndex: 6, inline: true, labelWidth: "110px" },
-  { name: "ADDRESS2",  label: "Address 2",      type: "text",   placeholder: "Area",               tabIndex: 7, inline: true, labelWidth: "110px" },
-  { name: "ADDRESS3",  label: "City",           type: "text",   placeholder: "City",               tabIndex: 8, inline: true, labelWidth: "110px" },
+const ROLE_OPTIONS = [
+  { label: "Admin",     value: "ADMIN" },
+  { label: "Manager",   value: "MANAGER" },
+  { label: "Operator",  value: "OPERATOR" },
+  { label: "Staff",     value: "STAFF" },
+  { label: "Developer", value: "DEVELOPER" },
 ];
 
 // ─── Columns ──────────────────────────────────────────────────────────────────
@@ -235,6 +222,20 @@ export default function StaffMasterPage() {
           margin-bottom: 6px; margin-top: 10px;
         }
         .sm-section-label:first-of-type { margin-top: 0; }
+        .sm-field-row {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .sm-field-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: ${COLORS.textSecondary};
+        }
+        .sm-field-error {
+          font-size: 11px;
+          color: ${COLORS.error};
+        }
         .sm-btn-primary {
           display: inline-flex; align-items: center; gap: 7px;
           padding: 0 18px; height: 36px; border-radius: ${RADIUS.md};
@@ -313,16 +314,153 @@ export default function StaffMasterPage() {
               <div className="sm-modal-body">
                 <div className="sm-section-label">Basic Information</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {FIELDS.filter((f) => ["STAFFNAME","MOBILENO","ROLE","ACTIVE","DOJ"].includes(f.name)).map((f) => (
-                    <FormField key={f.name} field={f} control={control} errors={errors} />
-                  ))}
+                  <div className="sm-field-row">
+                    <label className="sm-field-label">Staff Name *</label>
+                    <Controller
+                      name="STAFFNAME"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="STAFFNAME"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Enter staff name"
+                          isCapitalized
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.STAFFNAME && <span className="sm-field-error">{errors.STAFFNAME.message}</span>}
+                  </div>
+
+                  <div className="sm-field-row">
+                    <label className="sm-field-label">Mobile No *</label>
+                    <Controller
+                      name="MOBILENO"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="MOBILENO"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="e.g. 9659721856"
+                          inputModeType="mobile"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.MOBILENO && <span className="sm-field-error">{errors.MOBILENO.message}</span>}
+                  </div>
+
+                  <div className="sm-field-row">
+                    <label className="sm-field-label">Role *</label>
+                    <Controller
+                      name="ROLE"
+                      control={control}
+                      render={({ field }) => (
+                        <SelectCombobox
+                          value={field.value || undefined}
+                          onChange={(val) => field.onChange(val)}
+                          items={ROLE_OPTIONS}
+                          placeholder="Select role"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.ROLE && <span className="sm-field-error">{errors.ROLE.message}</span>}
+                  </div>
+
+                  <div className="sm-field-row">
+                    <label className="sm-field-label">Status</label>
+                    <Controller
+                      name="ACTIVE"
+                      control={control}
+                      render={({ field }) => (
+                        <SwitchInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          trueValue="Y"
+                          falseValue="N"
+                          labels={{ on: "Active", off: "Inactive" }}
+                          size="sm"
+                        />
+                      )}
+                    />
+                    {errors.ACTIVE && <span className="sm-field-error">{errors.ACTIVE.message}</span>}
+                  </div>
+
+                  <div className="sm-field-row">
+                    <label className="sm-field-label">Date of Join</label>
+                    <Controller
+                      name="DOJ"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePickerInput
+                          value={field.value}
+                          onChange={(iso) => field.onChange(iso)}
+                          placeholder="dd-mm-yyyy"
+                        />
+                      )}
+                    />
+                    {errors.DOJ && <span className="sm-field-error">{errors.DOJ.message}</span>}
+                  </div>
                 </div>
 
                 <div className="sm-section-label">Address</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {FIELDS.filter((f) => ["ADDRESS1","ADDRESS2","ADDRESS3"].includes(f.name)).map((f) => (
-                    <FormField key={f.name} field={f} control={control} errors={errors} />
-                  ))}
+                  <div className="sm-field-row">
+                    <label className="sm-field-label">Address 1</label>
+                    <Controller
+                      name="ADDRESS1"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="ADDRESS1"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Street"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.ADDRESS1 && <span className="sm-field-error">{errors.ADDRESS1.message}</span>}
+                  </div>
+
+                  <div className="sm-field-row">
+                    <label className="sm-field-label">Address 2</label>
+                    <Controller
+                      name="ADDRESS2"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="ADDRESS2"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Area"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.ADDRESS2 && <span className="sm-field-error">{errors.ADDRESS2.message}</span>}
+                  </div>
+
+                  <div className="sm-field-row">
+                    <label className="sm-field-label">City</label>
+                    <Controller
+                      name="ADDRESS3"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="ADDRESS3"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="City"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.ADDRESS3 && <span className="sm-field-error">{errors.ADDRESS3.message}</span>}
+                  </div>
                 </div>
               </div>
 

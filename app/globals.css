@@ -1,11 +1,14 @@
 :root {
-  --bg: #f0f6ff;
+  --bg: #111827;
   --surface: #ffffff;
   --border: #dbeafe;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --primary-light: #eff6ff;
-  --text-main: #1e3a5f;
+  --primary: #111827;
+  --primary-hover: #1f2937;
+  --primary-light: #f3f4f6;
+  --secondary: #3b82f6;
+  --secondary-hover: #2563eb;
+  --secondary-light: #eff6ff;
+  --text-main: #3b82f6;
   --text-muted: #64748b;
   --text-faint: #93c5fd;
 }
@@ -18,6 +21,6 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--text-main);
-  font-family: 'DM Sans', 'Inter', Arial, sans-serif;
+  font-family: var(--font-sans, var(--font-dm-sans), var(--font-inter), 'DM Sans', 'Inter', Arial, sans-serif);
   -webkit-font-smoothing: antialiased;
 }

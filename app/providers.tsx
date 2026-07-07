@@ -4,6 +4,7 @@ import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { PageHeaderProvider } from "@/context/PageHeaderContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/components/Toast";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -12,11 +13,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ChakraProvider value={defaultSystem}>
-        <PageHeaderProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </PageHeaderProvider>
+        <ThemeProvider>
+          <PageHeaderProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </PageHeaderProvider>
+        </ThemeProvider>
       </ChakraProvider>
     </QueryClientProvider>
   );

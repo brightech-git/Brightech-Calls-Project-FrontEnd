@@ -35,7 +35,7 @@ export const useLogin = () => {
       console.log("Login Success:", data);
 
       localStorage.setItem("isLoggedIn",  "true");
-      localStorage.setItem("token",       data.token ?? "");
+      localStorage.setItem("calls_token",       data.token ?? "");
       localStorage.setItem("userId",      String(data.userId ?? ""));
       localStorage.setItem("staffId",     String(data.staffId ?? ""));
       localStorage.setItem("username",    data.username ?? "");
@@ -67,7 +67,7 @@ export const useRegister = () => {
     onSuccess: (data: AuthResponse) => {
       console.log("Register Success:", data);
 
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("calls_token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
 
       queryClient.invalidateQueries({

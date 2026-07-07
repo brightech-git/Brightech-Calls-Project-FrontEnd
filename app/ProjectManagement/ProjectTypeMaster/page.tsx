@@ -7,53 +7,48 @@ import { z } from "zod";
 import { Plus, Pencil } from "lucide-react";
 
 import { CustomTable, TableColumn } from "@/components/CustomTable";
+import { DataExport, ExportColumn } from "@/components/DataExport";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { SelectCombobox } from "@/components/ui/SelectComboBox";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { SwitchInput } from "@/components/ui/SwitchInput";
+
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
+
 import { COLORS, FONT, RADIUS } from "@/utils/theme";
 
 import {
-  useProjectList,
-  useCreateProject,
-  useUpdateProject,
-  useDeleteProject,
-} from "@/hooks/ProjectMaster/useProjectMaster";
-import { useClientList } from "@/hooks/ClientMaster/useClientMaster";
+  useProjectTypeList,
+  useCreateProjectType,
+  useUpdateProjectType,
+  useDeleteProjectType,
+} from "@/hooks/ProjectTypeMaster/useProjectTypeMaster";
 
 import {
-  ProjectRecord,
-  ProjectRecord_Table,
-} from "@/types/ProjectMaster/ProjectMaster";
+  ProjectTypeRecord,
+  ProjectTypeRecord_Table,
+} from "@/types/ProjectTypeMaster/ProjectTypeMaster";
 
 // ─────────────────────────────────────────────
 // Schema
 // ─────────────────────────────────────────────
 
-const projectSchema = z.object({
-  CLIENTID: z.number().min(1, "Client is required"),
-  PROJECTNAME: z.string().min(1, "Project name is required"),
-  ACTIVE: z.enum(["Y", "N"]),
+const projectTypeSchema = z.object({
+  projectTypeName: z.string().min(1, "Project type name is required"),
+  displayOrder: z.number().min(0, "Display order must be 0 or greater"),
+  active: z.boolean(),
 });
 
-type ProjectForm = z.infer<typeof projectSchema>;
+type ProjectTypeForm = z.infer<typeof projectTypeSchema>;
 
 // ─────────────────────────────────────────────
 // Columns
 // ─────────────────────────────────────────────
 
-const COLUMNS: TableColumn<ProjectRecord_Table>[] = [
-  { key: "projectId",   header: "ID",           sortable: true, width: "60px", align: "center" },
-  { key: "clientName",  header: "Client Name",  sortable: true },
-  { key: "projectName", header: "Project Name", sortable: true },
-  {
-    key: "updated",
-    header: "Updated",
-    sortable: true,
-    render: (row) => row.updated ? new Date(row.updated as string).toLocaleDateString() : "-",
-  },
+const COLUMNS: TableColumn<ProjectTypeRecord_Table>[] = [
+  { key: "projectTypeId",   header: "ID",             sortable: true, width: "80px", align: "center" },
+  { key: "projectTypeName", header: "Project Type Name", sortable: true },
+  { key: "displayOrder",    header: "Display Order",  sortable: true, width: "130px", align: "center" },
   {
     key: "active",
     header: "Status",
@@ -61,33 +56,44 @@ const COLUMNS: TableColumn<ProjectRecord_Table>[] = [
     render: (row) => (
       <span style={{
         padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
-        background: row.active === "Y" ? COLORS.successBg : COLORS.errorBg,
-        color:      row.active === "Y" ? COLORS.success   : COLORS.error,
+        background: row.active  ? COLORS.successBg : COLORS.errorBg,
+        color:      row.active  ? COLORS.success   : COLORS.error,
       }}>
-        {row.active === "Y" ? "Active" : "Inactive"}
+        {row.active ? "Active" : "Inactive"}
       </span>
     ),
   },
 ];
 
 // ─────────────────────────────────────────────
+// Export Columns
+// ─────────────────────────────────────────────
+
+const EXPORT_COLUMNS: ExportColumn<ProjectTypeRecord_Table>[] = [
+  { key: "projectTypeId",   label: "ID" },
+  { key: "projectTypeName", label: "Project Type Name" },
+  { key: "displayOrder",    label: "Display Order" },
+  { key: "active",          label: "Status", exportValue: (v) => v === "Y" ? "Active" : "Inactive" },
+];
+
+// ─────────────────────────────────────────────
 // Default Values
 // ─────────────────────────────────────────────
 
-const DEFAULTS: ProjectForm = {
-  CLIENTID: 0,
-  PROJECTNAME: "",
-  ACTIVE: "Y",
+const DEFAULTS: ProjectTypeForm = {
+  projectTypeName: "",
+  displayOrder: 0,
+  active: true,
 };
 
 // ─────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────
 
-export default function ProjectMasterPage() {
+export default function ProjectTypeMasterPage() {
   usePageHeader({
-    title: "Project Master",
-    subtitle: "Manage project records",
+    title: "Project Type Master",
+    subtitle: "Manage project type records",
   });
 
   const toast = useToast();
@@ -95,22 +101,18 @@ export default function ProjectMasterPage() {
   const [open, setOpen] = useState(false);
 
   const [editRow, setEditRow] =
-    useState<ProjectRecord | null>(null);
+    useState<ProjectTypeRecord | null>(null);
 
   const [deleteRow, setDeleteRow] =
-    useState<ProjectRecord | null>(null);
+    useState<ProjectTypeRecord | null>(null);
 
-  const { data: clients = [] } = useClientList();
-  const {
-    data: projects = [],
-    isLoading,
-  } = useProjectList();
+  const { data: projectTypes = [], isLoading } = useProjectTypeList();
 
-  const clientItems = clients.map((c) => ({ label: c.CLIENTNAME, value: String(c.CLIENTID) }));
+  console.log(projectTypes,'projectTypes')
 
-  const createMutation = useCreateProject();
-  const updateMutation = useUpdateProject();
-  const deleteMutation = useDeleteProject();
+  const createMutation = useCreateProjectType();
+  const updateMutation = useUpdateProjectType();
+  const deleteMutation = useDeleteProjectType();
 
   const isPending =
     createMutation.isPending ||
@@ -122,8 +124,8 @@ export default function ProjectMasterPage() {
     reset,
 
     formState: { errors },
-  } = useForm<ProjectForm>({
-    resolver: zodResolver(projectSchema),
+  } = useForm<ProjectTypeForm>({
+    resolver: zodResolver(projectTypeSchema),
     defaultValues: DEFAULTS,
   });
 
@@ -138,16 +140,16 @@ export default function ProjectMasterPage() {
   };
 
   const openEdit = (
-    row: ProjectRecord_Table
+    row: ProjectTypeRecord_Table
   ) => {
-    const r = row as ProjectRecord;
+    const r = row as ProjectTypeRecord;
 
     setEditRow(r);
 
     reset({
-      CLIENTID: r.clientId,
-      PROJECTNAME: r.projectName ?? "",
-      ACTIVE: r.active === "N" ? "N" : "Y",
+      projectTypeName: r.projectTypeName ?? "",
+      displayOrder: r.displayOrder ?? 0,
+      active: r.active
     });
 
     setOpen(true);
@@ -156,20 +158,28 @@ export default function ProjectMasterPage() {
   // ─────────────────────────
 
   const onSubmit = async (
-    data: ProjectForm
+    data: ProjectTypeForm
   ) => {
     try {
       if (editRow) {
         const res =
           await updateMutation.mutateAsync({
-            id: String(editRow.sno),
+            id: String(editRow.projectTypeId),
             payload: data,
           });
 
-        toast.success("Project Updated", `"${res.projectName}" updated successfully.`);
+        toast.success(
+          "Project Type Updated",
+          `"${res.projectTypeName}" updated successfully.`
+        );
       } else {
-        const res = await createMutation.mutateAsync(data);
-        toast.success("Project Created", `"${res.projectName}" created successfully.`);
+        const res =
+          await createMutation.mutateAsync(data);
+
+        toast.success(
+          "Project Type Created",
+          `"${res.projectTypeName}" created successfully.`
+        );
       }
 
       setOpen(false);
@@ -194,11 +204,14 @@ export default function ProjectMasterPage() {
     if (!deleteRow) return;
 
     deleteMutation.mutate(
-      String(deleteRow.sno),
+      String(deleteRow.projectTypeId),
 
       {
         onSuccess: () => {
-          toast.success("Project Deleted", `"${deleteRow.projectName}" deleted successfully.`);
+          toast.success(
+            "Project Type Deleted",
+            `"${deleteRow.projectTypeName}" deleted successfully.`
+          );
 
           setDeleteRow(null);
         },
@@ -221,7 +234,7 @@ export default function ProjectMasterPage() {
   return (
     <>
       <style>{`
-        .pm-modal-overlay {
+        .ptm-modal-overlay {
           position: fixed;
           inset: 0;
           background: rgba(0,0,0,0.4);
@@ -234,7 +247,7 @@ export default function ProjectMasterPage() {
           padding: 16px;
         }
 
-        .pm-modal-box {
+        .ptm-modal-box {
           background: ${COLORS.cardBg};
 
           border: 1px solid ${COLORS.cardBorder};
@@ -242,16 +255,16 @@ export default function ProjectMasterPage() {
           border-radius: ${RADIUS.xl};
 
           width: 100%;
-          max-width: 700px;
+          max-width: 720px;
 
           font-family: ${FONT.family};
 
           box-shadow: 0 8px 32px rgba(0,0,0,0.14);
 
-          animation: pm-slide-up 0.18s ease;
+          animation: ptm-slide-up 0.18s ease;
         }
 
-        @keyframes pm-slide-up {
+        @keyframes ptm-slide-up {
           from {
             transform: translateY(10px);
             opacity: 0;
@@ -263,7 +276,7 @@ export default function ProjectMasterPage() {
           }
         }
 
-        .pm-modal-head {
+        .ptm-modal-head {
           padding: 12px 16px;
 
           border-bottom: 1px solid ${COLORS.cardBorder};
@@ -277,46 +290,46 @@ export default function ProjectMasterPage() {
           border-radius: ${RADIUS.xl} ${RADIUS.xl} 0 0;
         }
 
-        .pm-modal-title {
+        .ptm-modal-title {
           font-size: 14px;
           font-weight: 700;
           color: ${COLORS.textPrimary};
         }
 
-        .pm-modal-sub {
+        .ptm-modal-sub {
           font-size: 11px;
           color: ${COLORS.textMuted};
           margin-top: 2px;
         }
 
-        .pm-modal-body {
+        .ptm-modal-body {
           padding: 16px;
         }
 
-        .pm-grid {
+        .ptm-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 10px 24px;
         }
 
-        .pm-field-row {
+        .ptm-field-row {
           display: flex;
           flex-direction: column;
           gap: 4px;
         }
 
-        .pm-field-label {
+        .ptm-field-label {
           font-size: 12px;
           font-weight: 600;
           color: ${COLORS.textSecondary};
         }
 
-        .pm-field-error {
+        .ptm-field-error {
           font-size: 11px;
           color: ${COLORS.error};
         }
 
-        .pm-modal-footer {
+        .ptm-modal-footer {
           padding: 12px 16px;
 
           border-top: 1px solid ${COLORS.cardBorder};
@@ -330,7 +343,7 @@ export default function ProjectMasterPage() {
           border-radius: 0 0 ${RADIUS.xl} ${RADIUS.xl};
         }
 
-        .pm-btn-primary {
+        .ptm-btn-primary {
           display: inline-flex;
           align-items: center;
           gap: 6px;
@@ -352,16 +365,16 @@ export default function ProjectMasterPage() {
           cursor: pointer;
         }
 
-        .pm-btn-primary:hover {
+        .ptm-btn-primary:hover {
           background: ${COLORS.btnPrimaryHover};
         }
 
-        .pm-btn-primary:disabled {
+        .ptm-btn-primary:disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
 
-        .pm-btn-secondary {
+        .ptm-btn-secondary {
           display: inline-flex;
           align-items: center;
           gap: 6px;
@@ -383,7 +396,7 @@ export default function ProjectMasterPage() {
           cursor: pointer;
         }
 
-        .pm-close-btn {
+        .ptm-close-btn {
           width: 26px;
           height: 26px;
 
@@ -400,25 +413,35 @@ export default function ProjectMasterPage() {
       {/* Table */}
 
       <CustomTable
-        title="All Projects"
+        title="All Project Types"
         columns={COLUMNS}
-        data={projects as ProjectRecord_Table[]}
-        rowKey="sno"
+        data={projectTypes as ProjectTypeRecord_Table[]}
+        rowKey="projectTypeId"
         isLoading={isLoading}
         onEdit={openEdit}
         onDelete={(row) =>
-          setDeleteRow(row as ProjectRecord)
+          setDeleteRow(row as ProjectTypeRecord)
         }
-        searchPlaceholder="Search project..."
-        emptyMessage="No projects found."
+        searchPlaceholder="Search project type..."
+        emptyMessage="No project types found."
         toolbarRight={
-          <button
-            className="pm-btn-primary"
-            onClick={openCreate}
-          >
-            <Plus size={13} />
-            Add Project
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <DataExport
+              data={projectTypes as ProjectTypeRecord_Table[]}
+              columns={EXPORT_COLUMNS}
+              filename="project-type-master"
+              title="Project Type Master"
+              showButtons={["excel", "pdf", "print"]}
+              buttonSize="sm"
+            />
+            <button
+              className="ptm-btn-primary"
+              onClick={openCreate}
+            >
+              <Plus size={13} />
+              Add Project Type
+            </button>
+          </div>
         }
       />
 
@@ -426,30 +449,30 @@ export default function ProjectMasterPage() {
 
       {open && (
         <div
-          className="pm-modal-overlay"
+          className="ptm-modal-overlay"
           onClick={(e) =>
             e.target === e.currentTarget &&
             setOpen(false)
           }
         >
-          <div className="pm-modal-box">
-            <div className="pm-modal-head">
+          <div className="ptm-modal-box">
+            <div className="ptm-modal-head">
               <div>
-                <div className="pm-modal-title">
+                <div className="ptm-modal-title">
                   {editRow
-                    ? "Edit Project"
-                    : "Add Project"}
+                    ? "Edit Project Type"
+                    : "Add Project Type"}
                 </div>
 
-                <div className="pm-modal-sub">
+                <div className="ptm-modal-sub">
                   {editRow
-                    ? `Editing: ${editRow.projectName}`
-                    : "Fill project details"}
+                    ? `Editing: ${editRow.projectTypeName}`
+                    : "Fill project type details"}
                 </div>
               </div>
 
               <button
-                className="pm-close-btn"
+                className="ptm-close-btn"
                 onClick={() => setOpen(false)}
               >
                 ✕
@@ -459,71 +482,69 @@ export default function ProjectMasterPage() {
             <form
               onSubmit={handleSubmit(onSubmit)}
             >
-              <div className="pm-modal-body">
-                <div className="pm-grid">
-                  <div className="pm-field-row">
-                    <label className="pm-field-label">Client *</label>
+              <div className="ptm-modal-body">
+                <div className="ptm-grid">
+                  <div className="ptm-field-row">
+                    <label className="ptm-field-label">Project Type Name *</label>
                     <Controller
-                      name="CLIENTID"
-                      control={control}
-                      render={({ field }) => (
-                        <SelectCombobox
-                          value={field.value ? String(field.value) : undefined}
-                          onChange={(val) => field.onChange(val ? Number(val) : 0)}
-                          editId={editRow?.sno ?? null}
-                          items={clientItems}
-                          placeholder="Select client"
-                          maxWidth="100%"
-                        />
-                      )}
-                    />
-                    {errors.CLIENTID && <span className="pm-field-error">{errors.CLIENTID.message}</span>}
-                  </div>
-
-                  <div className="pm-field-row">
-                    <label className="pm-field-label">Project Name *</label>
-                    <Controller
-                      name="PROJECTNAME"
+                      name="projectTypeName"
                       control={control}
                       render={({ field }) => (
                         <CapitalizedInput
                           value={field.value}
-                          field="PROJECTNAME"
+                          field="projectTypeName"
                           isCapitalized
                           onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter project name"
+                          placeholder="Enter project type name"
                           maxWidth="100%"
                         />
                       )}
                     />
-                    {errors.PROJECTNAME && <span className="pm-field-error">{errors.PROJECTNAME.message}</span>}
+                    {errors.projectTypeName && <span className="ptm-field-error">{errors.projectTypeName.message}</span>}
                   </div>
 
-                  <div className="pm-field-row">
-                    <label className="pm-field-label">Status *</label>
+                  <div className="ptm-field-row">
+                    <label className="ptm-field-label">Display Order *</label>
                     <Controller
-                      name="ACTIVE"
+                      name="displayOrder"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value != null ? String(field.value) : ""}
+                          field="displayOrder"
+                          type="number"
+                          onChange={(_, value) => field.onChange(value === "" ? 0 : Number(value))}
+                          placeholder="Enter display order"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.displayOrder && <span className="ptm-field-error">{errors.displayOrder.message}</span>}
+                  </div>
+
+                  <div className="ptm-field-row">
+                    <label className="ptm-field-label">Status *</label>
+                    <Controller
+                      name="active"
                       control={control}
                       render={({ field }) => (
                         <SwitchInput
                           value={field.value}
                           onChange={field.onChange}
-                          trueValue="Y"
-                          falseValue="N"
                           labels={{ on: "Active", off: "Inactive" }}
                           size="sm"
                         />
                       )}
                     />
-                    {errors.ACTIVE && <span className="pm-field-error">{errors.ACTIVE.message}</span>}
+                    {errors.active && <span className="ptm-field-error">{errors.active.message}</span>}
                   </div>
                 </div>
               </div>
 
-              <div className="pm-modal-footer">
+              <div className="ptm-modal-footer">
                 <button
                   type="button"
-                  className="pm-btn-secondary"
+                  className="ptm-btn-secondary"
                   onClick={() => setOpen(false)}
                 >
                   Cancel
@@ -531,7 +552,7 @@ export default function ProjectMasterPage() {
 
                 <button
                   type="submit"
-                  className="pm-btn-primary"
+                  className="ptm-btn-primary"
                   disabled={isPending}
                 >
                   <Pencil size={12} />
@@ -539,8 +560,8 @@ export default function ProjectMasterPage() {
                   {isPending
                     ? "Saving..."
                     : editRow
-                    ? "Update Project"
-                    : "Create Project"}
+                    ? "Update Project Type"
+                    : "Create Project Type"}
                 </button>
               </div>
             </form>
@@ -552,7 +573,7 @@ export default function ProjectMasterPage() {
 
       <ConfirmDialog
         open={!!deleteRow}
-        message={`Are you sure you want to delete "${deleteRow?.projectName}"?`}
+        message={`Are you sure you want to delete "${deleteRow?.projectTypeName}"?`}
         isPending={deleteMutation.isPending}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteRow(null)}
