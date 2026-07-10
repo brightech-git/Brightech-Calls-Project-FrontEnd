@@ -8,6 +8,7 @@ import {
   CallStatusPayload,
   CallStatusRecord,
 } from "@/types/CallStatus/CallStatus";
+import { CallsBookingRecord } from "@/types/TaskAssignment/TaskAssignment";
 
 // CREATE
 export const createCallStatus = async (
@@ -49,13 +50,13 @@ export const getAllCallStatus = async (): Promise<CallStatusRecord[]> => {
   return response.data;
 };
 
-// GET BY TICKET ID
+// GET BY TICKET ID (returns the full booking, including its media)
 export const getCallStatusById = async (
   id: string
-): Promise<CallStatusRecord[]> => {
+): Promise<CallsBookingRecord> => {
 
-  const response = await axiosInstance.get<CallStatusRecord[]>(
-    `/callstatus/ticket/${id}`
+  const response = await axiosInstance.get<CallsBookingRecord>(
+    `/callsbooking/${id}`
   );
 
   return response.data;

@@ -5,31 +5,64 @@
 import { axiosInstance } from "@/api/axiosInstance";
 
 import {
+  CallsBookingListItem,
+  CallsBookingMediaMeta,
   CallsBookingPayload,
   CallsBookingRecord,
 } from "@/types/TaskAssignment/TaskAssignment";
+import { PagedResponse, PageParams } from "@/types/common/Pagination";
 
 // CREATE
 export const createCallsBooking = async (
-  payload: CallsBookingPayload
+  payload: CallsBookingPayload,
+  media?: File[] | null,
+  mediaMeta?: CallsBookingMediaMeta[] | null
 ): Promise<CallsBookingRecord> => {
+  const formData = new FormData();
+
+  formData.append(
+    "booking",
+    JSON.stringify(payload)
+  );
+
+  (media ?? []).forEach((file) =>
+    formData.append("media", file)
+  );
+
+  if (mediaMeta && mediaMeta.length) {
+    formData.append(
+      "mediaMeta",
+      JSON.stringify(mediaMeta)
+    );
+  }
+
   const response =
     await axiosInstance.post<CallsBookingRecord>(
       "/callsbooking",
-      payload
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
 
   return response.data;
 };
 
-// GET ALL
-export const getAllCallsBookings = async (): Promise<
-  CallsBookingRecord[]
-> => {
+// GET ALL (paginated)
+export const getAllCallsBookings = async (
+  params?: PageParams
+): Promise<PagedResponse<CallsBookingListItem>> => {
   const response =
-    await axiosInstance.get<CallsBookingRecord[]>(
-      "/callsbooking"
-    );
+    await axiosInstance.get<
+      PagedResponse<CallsBookingListItem>
+    >("/callsbooking", {
+      params: {
+        page: params?.page ?? 0,
+        size: params?.size ?? 100,
+      },
+    });
 
   return response.data;
 };

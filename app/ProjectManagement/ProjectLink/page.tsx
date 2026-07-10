@@ -57,6 +57,11 @@ const TypeCollections = [
   {label:"Website",value:"W"}
 ]
 
+const ProjectStatuses = [
+  {label:"Live",value:"A"},
+  {label:"Test",value:"I"},
+]
+
 type ProjectLinkForm = z.infer<typeof projectLinkSchema>;
 
 // ─────────────────────────────────────────────
@@ -79,24 +84,24 @@ const DEFAULTS: ProjectLinkForm = {
 // ─────────────────────────────────────────────
 
 const COLUMNS: TableColumn<ProjectLinkRecord_Table>[] = [
-  { key: "linkId", header: "ID", sortable: true, width: "70px", align: "center" },
+  { key: "linkId", header: "ID",  width: "70px", align: "center" },
   {
-    key: "company", header: "Company", sortable: true,
+    key: "company", header: "Company", 
     render: (row) => row.client?.CLIENTNAME ?? row.client?.CLIENTID ?? "—",
   },
   {
-    key: "projectType", header: "Project Type", sortable: true,
+    key: "projectType", header: "Project Type", 
     render: (row) => row.projectType?.projectTypeName ?? row.projectType?.projectTypeId ?? "—",
   },
-  { key: "url", header: "URL", sortable: true },
-  { key: "userName", header: "User Name", sortable: true },
-  { key: "password", header: "Password", sortable: true },
-  { key: "status", header: "Status", sortable: true },
-  { key: "type", header: "Type", sortable: true },
+  { key: "url", header: "URL",  },
+  { key: "userName", header: "User Name",  },
+  { key: "password", header: "Password",  },
+  { key: "status", header: "Status",  },
+  { key: "type", header: "Type",  },
   {
     key: "active",
     header: "Active",
-    sortable: true,
+    
     render: (row) => (
       <span style={{
         padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
@@ -481,6 +486,7 @@ export default function ProjectLinkPage() {
         }
         searchPlaceholder="Search project link..."
         emptyMessage="No project links found."
+        
         toolbarRight={
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <DataExport
@@ -635,14 +641,27 @@ export default function ProjectLinkPage() {
                       name="status"
                       control={control}
                       render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="status"
-                          isCapitalized
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter status"
-                          maxWidth="100%"
+                        // <CapitalizedInput
+                        //   value={field.value}
+                        //   field="status"
+                        //   isCapitalized
+                        //   onChange={(_, value) => field.onChange(value)}
+                        //   placeholder="Enter status"
+                        //   maxWidth="100%"
+                        // />
+                        <NativeSelectWrapper 
+                          value={field.value ?? ""}
+                          onChange={(value)=>field.onChange(value)}
+                          items={ProjectStatuses}
+                          fontSize="sm"
+                          className="border-[#222]"
+                          placeholder="Select status"
+                          css={{
+                            border :"1px solid #DDD",
+                            bg :"#EEE"
+                          }}
                         />
+
                       )}
                     />
                   </div>
@@ -667,6 +686,10 @@ export default function ProjectLinkPage() {
                           onChange={(e) => field.onChange(e.target.value)}
                           items={TypeCollections}
                           className="border-[#222]"
+                          css={{
+                            border: "1px solid #DDD",
+                            bg: "#EEE"
+                          }}
                         />
                       )}
                     />

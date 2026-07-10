@@ -20,19 +20,29 @@ import {
 } from "@/services/TaskAssignmentService";
 
 import {
+  CallsBookingMediaMeta,
   CallsBookingPayload,
   UpdateStatusPayload,
 } from "@/types/TaskAssignment/TaskAssignment";
+import { PageParams } from "@/types/common/Pagination";
 
 const CALLS_BOOKING_KEY = [
   "calls-booking-list",
 ];
 
-// GET ALL
-export const useCallsBookingList = () =>
+// GET ALL (paginated — defaults to a large page so existing
+// client-side table pagination keeps working unchanged)
+export const useCallsBookingList = (
+  params?: PageParams
+) =>
   useQuery({
-    queryKey: CALLS_BOOKING_KEY,
-    queryFn: getAllCallsBookings,
+    queryKey: [
+      ...CALLS_BOOKING_KEY,
+      params?.page ?? 0,
+      params?.size ?? 100,
+    ],
+    queryFn: () =>
+      getAllCallsBookings(params),
   });
 
 // GET BY ID
@@ -75,10 +85,16 @@ export const useCreateCallsBooking =
     const qc = useQueryClient();
 
     return useMutation({
-      mutationFn: (
-        payload: CallsBookingPayload
-      ) =>
-        createCallsBooking(payload),
+      mutationFn: ({
+        payload,
+        media,
+        mediaMeta,
+      }: {
+        payload: CallsBookingPayload;
+        media?: File[] | null;
+        mediaMeta?: CallsBookingMediaMeta[] | null;
+      }) =>
+        createCallsBooking(payload, media, mediaMeta),
 
       onSuccess: () =>
         qc.invalidateQueries({

@@ -16,6 +16,20 @@ export interface CallsBookingPayload {
   ACTIVE?: string | null;
 }
 
+export interface CallsBookingMediaRecord {
+  id?: number;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
+  order?: number | null;
+  active?: boolean | null;
+}
+
+export interface CallsBookingMediaMeta {
+  mediaId?: number | null;
+  displayOrder: number;
+  active: boolean;
+}
+
 export interface CallsBookingRecord extends CallsBookingPayload {
   SNO: number;
   TKTID?: number | null;
@@ -30,6 +44,7 @@ export interface CallsBookingRecord extends CallsBookingPayload {
   CANCELUPTIME?: string | null;
   UPDATED?: string | null;
   UPTIME?: string | null;
+  media?: CallsBookingMediaRecord[] | null;
 }
 
 export interface UpdateStatusPayload {
@@ -40,4 +55,24 @@ export interface UpdateStatusPayload {
 
 export type CallsBookingRecord_Table =
   CallsBookingRecord &
+  Record<string, unknown>;
+
+// Thin shape returned by the paginated list endpoint (GET /callsbooking).
+// Use getCallsBookingById(SNO) to load the full CallsBookingRecord for
+// edit / detail views.
+export interface CallsBookingListItem {
+  SNO: number;
+  TKTID?: number | null;
+  TKTDATE?: string | null;
+  COMPANYNAME?: string | null;
+  CLIENTNAME?: string | null;
+  PROJECTNAME?: string | null;
+  MODULENAME?: string | null;
+  STAFFNAME?: string | null;
+  STATUS?: string | null;
+  ACTIVE?: string | null;
+}
+
+export type CallsBookingListItem_Table =
+  CallsBookingListItem &
   Record<string, unknown>;

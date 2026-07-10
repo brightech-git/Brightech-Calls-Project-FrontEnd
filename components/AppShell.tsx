@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
-import { Bell } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { useCurrentPageHeader } from "@/context/PageHeaderContext";
 import { COLORS, FONT } from "@/utils/theme";
 
-function Topbar() {
+function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { title, subtitle } = useCurrentPageHeader();
 
   return (
@@ -18,6 +19,21 @@ function Topbar() {
           display: flex; align-items: center;
           padding: 0 24px; gap: 10px;
           background: ${COLORS.shellBg};
+        }
+        .topbar-menu-btn {
+          display: none;
+          width: 32px; height: 32px;
+          border: 1px solid ${COLORS.shellBorder};
+          border-radius: 8px;
+          background: ${COLORS.topbarIconBg};
+          color: ${COLORS.topbarIconColor};
+          align-items: center; justify-content: center;
+          cursor: pointer; flex-shrink: 0;
+          transition: background 0.15s, color 0.15s;
+        }
+        .topbar-menu-btn:hover { background: ${COLORS.topbarIconHoverBg}; color: ${COLORS.topbarIconHoverColor}; }
+        @media (max-width: 768px) {
+          .topbar-menu-btn { display: flex; }
         }
         .topbar-title {
           font-size: 14px; font-weight: 700;
@@ -46,6 +62,9 @@ function Topbar() {
       `}</style>
 
       <header className="topbar-root">
+        <button className="topbar-menu-btn" title="Menu" onClick={onMenuClick}>
+          <Menu size={16} />
+        </button>
         <div style={{ display: "flex", alignItems: "center" }}>
           {title && <span className="topbar-title">{title}</span>}
           {subtitle && <span className="topbar-subtitle">{subtitle}</span>}
@@ -59,6 +78,20 @@ function Topbar() {
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("sidebarCollapsed") === "true";
+  });
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebarCollapsed", String(next));
+      return next;
+    });
+  };
+
   return (
     <>
       <style>{`
@@ -83,9 +116,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       `}</style>
 
       <div className="app-shell">
-        <Sidebar />
+        <Sidebar
+          isOpen={mobileNavOpen}
+          onClose={() => setMobileNavOpen(false)}
+          collapsed={collapsed}
+          onToggleCollapse={toggleCollapsed}
+        />
         <div className="app-main">
-          <Topbar />
+          <Topbar onMenuClick={() => setMobileNavOpen(true)} />
           <main className="app-content">{children}</main>
         </div>
       </div>

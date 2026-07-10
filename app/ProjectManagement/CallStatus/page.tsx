@@ -16,11 +16,12 @@ import { useToast } from "@/components/Toast";
 import { COLORS, RADIUS, FONT } from "@/utils/theme";
 
 import { useCallsBookingList } from "@/hooks/TaskAssignment/useTaskAssignment";
+import { getCallsBookingById } from "@/services/TaskAssignmentService";
 import { useCreateCallStatus, useGetCallStatusById } from "@/hooks/CallStatus/useCallStatus";
 
 import {
   CallsBookingRecord,
-  CallsBookingRecord_Table,
+  CallsBookingListItem_Table,
 } from "@/types/TaskAssignment/TaskAssignment";
 
 // ─── Schema (only user-entered fields) ───────────────────────────────────────
@@ -49,7 +50,7 @@ const DEFAULTS: FormValues = {
 
 // ─── Table columns (from booking list) ───────────────────────────────────────
 
-const COLUMNS: TableColumn<CallsBookingRecord_Table>[] = [
+const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
   { key: "TKTID",       header: "Ticket ID",  sortable: true, width: "90px" },
   // { key: "COMPANYNAME", header: "Company",    sortable: true },
   { key: "PROJECTNAME", header: "Project",    sortable: true },
@@ -69,17 +70,17 @@ const COLUMNS: TableColumn<CallsBookingRecord_Table>[] = [
       return <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: bg, color }}>{label}</span>;
     },
   },
-  {
-    key: "ACTIVE", header: "Active",
-    render: (row) => (
-      <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
-        background: row.ACTIVE === "Y" ? COLORS.successBg : COLORS.errorBg,
-        color:      row.ACTIVE === "Y" ? COLORS.success   : COLORS.error,
-      }}>
-        {row.ACTIVE === "Y" ? "Active" : "Inactive"}
-      </span>
-    ),
-  },
+  // {
+  //   key: "ACTIVE", header: "Active",
+  //   render: (row) => (
+  //     <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+  //       background: row.ACTIVE === "Y" ? COLORS.successBg : COLORS.errorBg,
+  //       color:      row.ACTIVE === "Y" ? COLORS.success   : COLORS.error,
+  //     }}>
+  //       {row.ACTIVE === "Y" ? "Active" : "Inactive"}
+  //     </span>
+  //   ),
+  // },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -93,36 +94,50 @@ export default function CallStatusPage() {
   const [formOpen,   setFormOpen]   = useState(false);
   const [activeRow,  setActiveRow]  = useState<CallsBookingRecord | null>(null);
   const [image,      setImage]      = useState<File | null>(null);
+  const [rowLoading, setRowLoading] = useState(false);
 
   // view section state
   const [viewId, setViewId] = useState<string | null>(null);
 
-  const { data: bookings = [], isLoading } = useCallsBookingList();
+  const { data: pagedBookings, isLoading } = useCallsBookingList();
+  const bookings = pagedBookings?.content ?? [];
   const createMutation = useCreateCallStatus();
   const { data: viewList, isLoading: viewLoading } = useGetCallStatusById(viewId ?? "");
+
+  console.log(viewList,'viewList')
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver:      zodResolver(schema) as Resolver<FormValues>,
     defaultValues: DEFAULTS,
   });
 
-  // Edit → open form pre-filling from booking row
-  const openEdit = (row: CallsBookingRecord_Table) => {
-    const r = row as CallsBookingRecord;
-    setActiveRow(r);
-    reset({
-      TKTDATE:     r.TKTDATE || "",
-      STATUS:      "OPEN",
-      DESCRIPTION: r.DESCRIPTION || "",
-      REMARK:      r.REMARK      || "",
-    });
-    setImage(null);
-    setFormOpen(true);
+  // Edit → fetch the full booking record, then open form pre-filled
+  const openEdit = async (row: CallsBookingListItem_Table) => {
+    if (rowLoading) return;
+
+    setRowLoading(true);
+    try {
+      const r = await getCallsBookingById(String(row.SNO));
+      setActiveRow(r);
+      reset({
+        TKTDATE:     r.TKTDATE || "",
+        STATUS:      "OPEN",
+        DESCRIPTION: r.DESCRIPTION || "",
+        REMARK:      r.REMARK      || "",
+      });
+      setImage(null);
+      setFormOpen(true);
+    } catch (err: any) {
+      toast.error("Error", err?.response?.data?.message || "Failed to load booking details.");
+    } finally {
+      setRowLoading(false);
+    }
   };
 
   // Eye → switch to detail view
-  const openView = (row: CallsBookingRecord_Table) => {
-    setViewId(String((row as CallsBookingRecord).TKTID ?? ""));
+  const openView = (row: CallsBookingListItem_Table) => {
+    console.log(row, 'row')
+    setViewId(String(row.SNO ?? ""));
   };
 
   const onSubmit = async (values: FormValues) => {
@@ -185,6 +200,11 @@ export default function CallStatusPage() {
             font-size: 11px; font-weight: 700; color: ${COLORS.textSecondary};
             letter-spacing: 0.05em; text-transform: uppercase; display: block; margin-bottom: 4px;
           }
+          .cs-media-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+          .cs-media-tile {
+            width: 120px; border: 1px solid ${COLORS.cardBorder}; border-radius: ${RADIUS.md};
+            overflow: hidden; background: ${COLORS.cardBg};
+          }
           .cs-back-btn {
             display: inline-flex; align-items: center; gap: 6px;
             padding: 0 14px; height: 32px; border-radius: ${RADIUS.md};
@@ -199,7 +219,7 @@ export default function CallStatusPage() {
           <div className="cs-head">
             <div>
               <div className="cs-title">Call Status Details</div>
-              <div className="cs-sub">Ticket ID: {viewId}</div>
+              <div className="cs-sub">Ticket ID: {viewList?.TKTID ?? viewId}</div>
             </div>
             <button className="cs-back-btn" onClick={() => setViewId(null)}>
               ← Back to List
@@ -209,50 +229,75 @@ export default function CallStatusPage() {
           <div className="cs-body">
             {viewLoading ? (
               <div style={{ padding: 48, textAlign: "center", color: COLORS.textMuted }}>Loading...</div>
-            ) : viewList && viewList.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {viewList.map((viewData, idx) => (
-                  <div key={viewData.SNO ?? idx} style={{
-                    border: `1px solid ${COLORS.cardBorder}`,
-                    borderRadius: RADIUS.md,
-                    padding: 14,
-                    background: COLORS.contentBg,
-                  }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted,
-                      textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
-                      Entry #{idx + 1}
+            ) : viewList ? (
+              <div style={{
+                border: `1px solid ${COLORS.cardBorder}`,
+                borderRadius: RADIUS.md,
+                padding: 14,
+                background: COLORS.contentBg,
+              }}>
+                <div className="cs-grid">
+                  {([
+                    ["Ticket ID",    viewList.TKTID],
+                    ["Ticket Date",  viewList.TKTDATE],
+                    ["Company",      viewList.COMPANYNAME],
+                    ["Client",       viewList.CLIENTNAME],
+                    ["Project",      viewList.PROJECTNAME],
+                    ["Module",       viewList.MODULENAME],
+                    ["Staff",        viewList.STAFFNAME || viewList.STAFFID],
+                    ["Status",       viewList.STATUS],
+                    ["Active",       viewList.ACTIVE],
+                    ["Description",  viewList.DESCRIPTION],
+                    ["Remark",       viewList.REMARK],
+                    ["Updated",      viewList.UPDATED],
+                  ] as [string, unknown][]).map(([label, val]) => (
+                    <div key={label} className="cs-view-row">
+                      <span className="cs-view-label">{label}</span>
+                      <span className="cs-view-val">{String(val ?? "—")}</span>
                     </div>
-                    <div className="cs-grid">
-                      {([
-                        ["Ticket ID",    viewData.TKTID],
-                        ["Ticket Date",  viewData.TKTDATE],
-                        ["Project",      viewData.PROJECTNAME],
-                        ["Module",       viewData.MODULENAME],
-                        ["Staff ID",     viewData.STAFFID],
-                        ["Status",       viewData.STATUS],
-                        ["Active",       viewData.ACTIVE],
-                        ["Description",  viewData.DESCRIPTION],
-                        ["Remark",       viewData.REMARK],
-                        ["Updated",      viewData.UPDATED],
-                      ] as [string, unknown][]).map(([label, val]) => (
-                        <div key={label} className="cs-view-row">
-                          <span className="cs-view-label">{label}</span>
-                          <span className="cs-view-val">{String(val ?? "—")}</span>
-                        </div>
-                      ))}
+                  ))}
+                </div>
+
+                {viewList.media && viewList.media.length > 0 && (
+                  <div style={{ marginTop: 14 }}>
+                    <span className="cs-file-label">Media</span>
+                    <div className="cs-media-grid" style={{ marginTop: 6 }}>
+                      {viewList.media.map((m, idx) => {
+                        const type = (m.mediaType ?? "").toUpperCase();
+                        return (
+                          <div key={m.id ?? idx} className="cs-media-tile">
+                            {type.startsWith("IMAGE") ? (
+                              <img
+                                src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
+                                alt={`media-${idx}`}
+                                onClick={() => window.open(`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`, "_blank")}
+                                style={{ width: "100%", height: 90, objectFit: "cover", cursor: "pointer" }}
+                              />
+                            ) : type.startsWith("VIDEO") ? (
+                              <video
+                                src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
+                                controls
+                                style={{ width: "100%", height: 90, objectFit: "cover" }}
+                              />
+                            ) : (
+                              <a
+                                href={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 90, fontSize: 11, color: COLORS.textSecondary }}
+                              >
+                                Open file
+                              </a>
+                            )}
+                            <div style={{ fontSize: 10, padding: 4, color: m.active === false ? COLORS.textMuted : COLORS.textSecondary, textAlign: "center" }}>
+                              {m.active === false ? "Inactive" : "Active"}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    {viewData.IMAGE && (
-                      <div style={{ marginTop: 10 }}>
-                        <span className="cs-file-label">Image</span>
-                        {console.log("[Image URL]:", `${process.env.NEXT_PUBLIC_IMAGE_URL}${viewData.IMAGE}`) as any}
-                        <img src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${viewData.IMAGE}`}
-                          alt="status"
-                          onClick={() => window.open(`${process.env.NEXT_PUBLIC_IMAGE_URL}${viewData.IMAGE}`, "_blank")}
-                          style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 8, marginTop: 4, cursor: "pointer" }} />
-                      </div>
-                    )}
                   </div>
-                ))}
+                )}
               </div>
             ) : (
               <div style={{ padding: 48, textAlign: "center", color: COLORS.textMuted }}>No status found for this ticket.</div>
@@ -345,7 +390,7 @@ export default function CallStatusPage() {
       <CustomTable
         title="Calls Booking"
         columns={COLUMNS}
-        data={bookings as CallsBookingRecord_Table[]}
+        data={bookings as CallsBookingListItem_Table[]}
         rowKey="SNO"
         isLoading={isLoading}
         onEdit={openEdit}

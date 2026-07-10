@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Eye } from "lucide-react";
 
 import { CustomTable, TableColumn } from "@/components/CustomTable";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { SelectCombobox } from "@/components/ui/SelectComboBox";
 import { TextareaField } from "@/components/ui/CapitalizesTextArea";
 import { SwitchInput } from "@/components/ui/SwitchInput";
+import { MediaManager, MediaItem, revokeMediaItems } from "@/components/ui/MediaManager";
 
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
@@ -22,7 +23,9 @@ import {
   useCreateCallsBooking,
   useUpdateCallsBooking,
   useDeleteCallsBooking,
+  useGetCallsBookingById,
 } from "@/hooks/TaskAssignment/useTaskAssignment";
+import { getCallsBookingById } from "@/services/TaskAssignmentService";
 import { useCompanyList } from "@/hooks/CompanyMaster/useCompanyMaster";
 import { useClientList }  from "@/hooks/ClientMaster/useClientMaster";
 import { useProjectList } from "@/hooks/ProjectMaster/useProjectMaster";
@@ -31,7 +34,7 @@ import { useStaffList }   from "@/hooks/StaffMaster/useStaffMaster";
 
 import {
   CallsBookingRecord,
-  CallsBookingRecord_Table,
+  CallsBookingListItem_Table,
 } from "@/types/TaskAssignment/TaskAssignment";
 
 // ─────────────────────────────────────────────
@@ -58,7 +61,7 @@ type CallsBookingForm = z.infer<typeof callsBookingSchema>;
 // Columns
 // ─────────────────────────────────────────────
 
-const COLUMNS: TableColumn<CallsBookingRecord_Table>[] = [
+const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
   { key: "TKTID",       header: "Ticket ID",   sortable: true, width: "90px" },
   { key: "COMPANYNAME", header: "Company",     sortable: true },
   { key: "CLIENTNAME",  header: "Client",      sortable: true, render: (row) => (row.CLIENTNAME as string) || "-" },
@@ -132,9 +135,18 @@ export default function CallsBookingPage() {
     );
 
   const [deleteRow, setDeleteRow] =
-    useState<CallsBookingRecord | null>(
+    useState<CallsBookingListItem_Table | null>(
       null
     );
+
+  const [media, setMedia] =
+    useState<MediaItem[]>([]);
+
+  const [editLoading, setEditLoading] =
+    useState(false);
+
+  const [viewId, setViewId] =
+    useState<string | null>(null);
 
   const { data: companies = [] } = useCompanyList();
   const { data: clients   = [] } = useClientList();
@@ -143,9 +155,16 @@ export default function CallsBookingPage() {
   const { data: staffList = [] } = useStaffList();
 
   const {
-    data: bookings = [],
+    data: pagedBookings,
     isLoading,
   } = useCallsBookingList();
+
+  const bookings = pagedBookings?.content ?? [];
+
+  const {
+    data: viewData,
+    isLoading: viewLoading,
+  } = useGetCallsBookingById(viewId ?? "");
 
   const createMutation =
     useCreateCallsBooking();
@@ -210,32 +229,63 @@ export default function CallsBookingPage() {
     setEditRow(null);
     const defaultCompId = companies.length === 1 ? companies[0].COMPID : 0;
     reset({ ...DEFAULTS, COMPID: defaultCompId });
+    setMedia((prev) => {
+      revokeMediaItems(prev);
+      return [];
+    });
     setOpen(true);
   };
 
-  const openEdit = (
-    row: CallsBookingRecord_Table
+  const openEdit = async (
+    row: CallsBookingListItem_Table
   ) => {
-    const r =
-      row as CallsBookingRecord;
+    if (editLoading) return;
 
-    setEditRow(r);
+    setEditLoading(true);
 
-    reset({
-      COMPID:      r.COMPID,
-      CLIENTID:    r.CLIENTID,
-      PROJECTID:   r.PROJECTID  || "",
-      PROJECTNAME: r.PROJECTNAME || "",
-      MODULEID:    r.MODULEID   || "",
-      MODULENAME:  r.MODULENAME  || "",
-      DESCRIPTION: r.DESCRIPTION || "",
-      REMARK:      r.REMARK      || "",
-      STAFFID:     r.STAFFID,
-      STATUS:      r.STATUS      || "O",
-      ACTIVE:      r.ACTIVE === "N" ? "N" : "Y",
-    });
+    try {
+      const r = await getCallsBookingById(
+        String(row.SNO)
+      );
 
-    setOpen(true);
+      setEditRow(r);
+
+      reset({
+        COMPID:      r.COMPID,
+        CLIENTID:    r.CLIENTID,
+        PROJECTID:   r.PROJECTID  || "",
+        PROJECTNAME: r.PROJECTNAME || "",
+        MODULEID:    r.MODULEID   || "",
+        MODULENAME:  r.MODULENAME  || "",
+        DESCRIPTION: r.DESCRIPTION || "",
+        REMARK:      r.REMARK      || "",
+        STAFFID:     r.STAFFID,
+        STATUS:      r.STATUS      || "O",
+        ACTIVE:      r.ACTIVE === "N" ? "N" : "Y",
+      });
+
+      setMedia((prev) => {
+        revokeMediaItems(prev);
+        return [];
+      });
+
+      setOpen(true);
+    } catch (err: any) {
+      toast.error(
+        "Error",
+        err?.response?.data?.message ||
+          "Failed to load booking details."
+      );
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Eye → open full detail page
+  const openView = (
+    row: CallsBookingListItem_Table
+  ) => {
+    setViewId(String(row.SNO));
   };
 
   // ─────────────────────────
@@ -258,9 +308,25 @@ export default function CallsBookingPage() {
           `"${res.TKTID}" updated successfully.`
         );
       } else {
+        const activeMedia = media.filter(
+          (m) => m.active
+        );
+
         const res =
           await createMutation.mutateAsync(
-            data
+            {
+              payload: data,
+              media: activeMedia.map(
+                (m) => m.file
+              ),
+              mediaMeta: activeMedia.map(
+                (m, idx) => ({
+                  mediaId: m.mediaId ?? null,
+                  displayOrder: idx,
+                  active: m.active,
+                })
+              ),
+            }
           );
 
         toast.success(
@@ -272,6 +338,10 @@ export default function CallsBookingPage() {
       setOpen(false);
 
       reset(DEFAULTS);
+      setMedia((prev) => {
+        revokeMediaItems(prev);
+        return [];
+      });
     } catch (err: any) {
       toast.error(
         editRow
@@ -318,6 +388,145 @@ export default function CallsBookingPage() {
       }
     );
   };
+
+  // ─────────────────────────
+
+  // ── Detail view (full page replace) ──
+  if (viewId !== null) {
+    const v = viewData;
+    return (
+      <>
+        <style>{`
+          .cb-detail-wrap {
+            background: ${COLORS.cardBg}; border: 1px solid ${COLORS.cardBorder};
+            border-radius: ${RADIUS.xl}; font-family: ${FONT.family};
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+          }
+          .cb-detail-head {
+            padding: 10px 14px; border-bottom: 1px solid ${COLORS.cardBorder};
+            display: flex; align-items: center; justify-content: space-between;
+            background: ${COLORS.gray50}; border-radius: ${RADIUS.xl} ${RADIUS.xl} 0 0;
+          }
+          .cb-detail-title { font-size: 13px; font-weight: 700; color: ${COLORS.textPrimary}; }
+          .cb-detail-sub   { font-size: 11px; color: ${COLORS.textMuted}; margin-top: 2px; }
+          .cb-detail-body  { padding: 16px; }
+          .cb-detail-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+          .cb-detail-row {
+            display: flex; gap: 8px; padding: 8px 0;
+            border-bottom: 1px solid ${COLORS.cardBorder}; font-size: 13px;
+          }
+          .cb-detail-row:last-child { border-bottom: none; }
+          .cb-detail-label { width: 140px; font-weight: 600; color: ${COLORS.textSecondary}; flex-shrink: 0; font-size: 12px; }
+          .cb-detail-val   { color: ${COLORS.textPrimary}; }
+          .cb-detail-section-label {
+            font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+            color: ${COLORS.textMuted}; padding-bottom: 4px; border-bottom: 1px solid ${COLORS.cardBorder};
+            margin: 16px 0 8px;
+          }
+          .cb-media-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+          .cb-media-tile {
+            width: 120px; border: 1px solid ${COLORS.cardBorder}; border-radius: ${RADIUS.md};
+            overflow: hidden; background: ${COLORS.cardBg};
+          }
+          .cb-back-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 0 14px; height: 32px; border-radius: ${RADIUS.md};
+            border: 1px solid ${COLORS.cardBorder}; background: ${COLORS.cardBg};
+            color: ${COLORS.textSecondary}; font-size: 12px; cursor: pointer;
+            font-family: ${FONT.family};
+          }
+          .cb-back-btn:hover { background: ${COLORS.gray50}; }
+        `}</style>
+
+        <div className="cb-detail-wrap">
+          <div className="cb-detail-head">
+            <div>
+              <div className="cb-detail-title">Booking Details</div>
+              <div className="cb-detail-sub">Ticket ID: {v?.TKTID ?? viewId}</div>
+            </div>
+            <button className="cb-back-btn" onClick={() => setViewId(null)}>
+              ← Back to List
+            </button>
+          </div>
+
+          <div className="cb-detail-body">
+            {viewLoading ? (
+              <div style={{ padding: 48, textAlign: "center", color: COLORS.textMuted }}>Loading...</div>
+            ) : v ? (
+              <>
+                <div className="cb-detail-grid">
+                  {([
+                    ["Ticket ID",   v.TKTID],
+                    ["Ticket Date", v.TKTDATE ? new Date(v.TKTDATE as string).toLocaleString() : "—"],
+                    ["Company",     v.COMPANYNAME],
+                    ["Client",      v.CLIENTNAME],
+                    ["Project",     v.PROJECTNAME],
+                    ["Module",      v.MODULENAME],
+                    ["Staff",       v.STAFFNAME || v.STAFFID],
+                    ["Status",      v.STATUS],
+                    ["Active",      v.ACTIVE === "Y" ? "Active" : "Inactive"],
+                    ["Description", v.DESCRIPTION],
+                    ["Remark",      v.REMARK],
+                    ["Cancelled",   v.CANCEL],
+                    ["Cancel By",   v.CANCELBY],
+                    ["Updated",     v.UPDATED],
+                  ] as [string, unknown][]).map(([label, val]) => (
+                    <div key={label} className="cb-detail-row">
+                      <span className="cb-detail-label">{label}</span>
+                      <span className="cb-detail-val">{String(val ?? "—")}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {v.media && v.media.length > 0 && (
+                  <>
+                    <div className="cb-detail-section-label">Media</div>
+                    <div className="cb-media-grid">
+                      {v.media.map((m, idx) => {
+                        const type = (m.mediaType ?? "").toUpperCase();
+                        return (
+                        <div key={m.id ?? idx} className="cb-media-tile">
+                          {type.startsWith("IMAGE") ? (
+                            <img
+                              src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
+                              alt={`media-${idx}`}
+                              onClick={() => window.open(`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`, "_blank")}
+                              style={{ width: "100%", height: 90, objectFit: "cover", cursor: "pointer" }}
+                            />
+                          ) : type.startsWith("VIDEO") ? (
+                            <video
+                              src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
+                              controls
+                              style={{ width: "100%", height: 90, objectFit: "cover" }}
+                            />
+                          ) : (
+                            <a
+                              href={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 90, fontSize: 11, color: COLORS.textSecondary }}
+                            >
+                              Open file
+                            </a>
+                          )}
+                          <div style={{ fontSize: 10, padding: 4, color: m.active === false ? COLORS.textMuted : COLORS.textSecondary, textAlign: "center" }}>
+                            {m.active === false ? "Inactive" : "Active"}
+                          </div>
+                        </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div style={{ padding: 48, textAlign: "center", color: COLORS.textMuted }}>Booking not found.</div>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   // ─────────────────────────
 
@@ -554,16 +763,21 @@ export default function CallsBookingPage() {
         title="All Calls Bookings"
         columns={COLUMNS}
         data={
-          bookings as CallsBookingRecord_Table[]
+          bookings as CallsBookingListItem_Table[]
         }
         rowKey="SNO"
         isLoading={isLoading}
         onEdit={openEdit}
         onDelete={(row) =>
-          setDeleteRow(
-            row as CallsBookingRecord
-          )
+          setDeleteRow(row)
         }
+        extraActions={[
+          {
+            label: "View Details",
+            icon: <Eye size={13} />,
+            onClick: openView,
+          },
+        ]}
         searchPlaceholder="Search ticket, project, module..."
         emptyMessage="No bookings found."
         toolbarRight={
@@ -807,6 +1021,25 @@ export default function CallsBookingPage() {
                     {errors.REMARK && <span className="cb-field-error">{errors.REMARK.message}</span>}
                   </div>
                 </div>
+
+                {!editRow && (
+                  <>
+                    <div className="cb-section-label">
+                      Media
+                    </div>
+
+                    <div className="cb-field-row">
+                      <label className="cb-field-label">Attachments</label>
+                      <MediaManager
+                        value={media}
+                        onChange={setMedia}
+                        accept="image/*,video/*,application/pdf,.doc,.docx"
+                        maxFiles={10}
+                        onError={(msg) => toast.error("Error", msg)}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="cb-modal-footer">
