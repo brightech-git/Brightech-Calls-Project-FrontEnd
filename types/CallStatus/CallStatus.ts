@@ -3,41 +3,39 @@
 // ─────────────────────────────────────────────
 
 export interface CallStatusPayload {
-  TKTID: number;
-  TKTDATE?: string | null;
-
-  COMPID: number;
-
-  PROJECTID?: string | null;
-  PROJECTNAME?: string | null;
-
-  MODULEID?: string | null;
-  MODULENAME?: string | null;
-
-  DESCRIPTION?: string | null;
-  REMARK?: string | null;
-
-  STAFFID?: string | null;
-
+  tktId: number;
+  staffId?: number | null;
+  remark?: string | null;
   STATUS?: string | null;
-
-  USERID: number;
-
-  ACTIVE?: string | null;
-
-  CANCEL?: string | null;
-  CANCELBY?: string | null;
-  CANCELDATE?: string | null;
-  CANCELUPTIME?: string | null;
 }
 
-export interface CallStatusRecord extends CallStatusPayload {
-  SNO: number;
-
+export interface CallStatusRecord {
+  sno: number;
+  tktId: number;
+  staffId?: number | null;
+  staffName?: string | null;
+  remark?: string | null;
+  STATUS?: string | null;
+  mediaId?: number | null;
   IMAGE?: string | null;
+  userId?: number | null;
+  userName?: string | null;
+  CREATEDBY?: number | null;
+  UPDATEDBY?: number | null;
+  CREATEDAT?: string | null;
+  UPDATEDAT?: string | null;
+  mediaDetail?: {
+    mediaId: number;
+    mediaUrl: string;
+    mediaType: string;
+    displayOrder: number;
+    active: boolean;
+  } | null;
+}
 
-  UPDATED?: string | null;
-  UPTIME?: string | null;
+export interface CallStatusTicketResponse {
+  callBooking?: any;
+  statuses: CallStatusRecord[];
 }
 
 export type CallStatusRecord_Table =

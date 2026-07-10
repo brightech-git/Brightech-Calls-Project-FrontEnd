@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Plus, Pencil } from "lucide-react";
 
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { SwitchInput } from "@/components/ui/SwitchInput";
 import { TextareaField } from "@/components/ui/CapitalizesTextArea";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
@@ -44,6 +45,24 @@ const clientSchema = z.object({
   LOCALTAXNO:   z.string().optional(),
   SHORTKEY:     z.string().optional(),
   ACTIVE:       z.enum(["Y", "N"]),
+  // CLIENT LOGIN (OPTIONAL - LEAVE BLANK IF THIS CLIENT SHOULDN'T LOG IN YET)
+  USERNAME:        z.string().min(0).optional().or(z.literal("")),
+  PASSWORD:        z.string().min(0).optional().or(z.literal("")),
+  CONFIRMPASSWORD: z.string().min(0).optional().or(z.literal("")),
+}).superRefine((data, ctx) => {
+  const username = (data.USERNAME || "").trim();
+  const password = data.PASSWORD || "";
+  const confirm = data.CONFIRMPASSWORD || "";
+
+  if (username && username.length < 3) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Username min 3 chars", path: ["USERNAME"] });
+  }
+  if (password && password.length < 5) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Password min 5 chars", path: ["PASSWORD"] });
+  }
+  if (password !== confirm) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Passwords do not match", path: ["CONFIRMPASSWORD"] });
+  }
 });
 
 type ClientForm = z.infer<typeof clientSchema>;
@@ -76,6 +95,7 @@ const DEFAULTS: ClientForm = {
   PHONE: "", MOBILE: "", EMAIL: "", ACTIVE: "Y",
   ADDRESS1: "", ADDRESS2: "", ADDRESS3: "", AREACODE: "", REMARKS: "",
   GSTNO: "", PANNO: "", TANNO: "", TDSNO: "", TINNO: "", CSTNO: "", LOCALTAXNO: "",
+  USERNAME: "", PASSWORD: "", CONFIRMPASSWORD: "",
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -128,6 +148,9 @@ export default function ClientMasterPage() {
       TINNO:       r.TINNO       ?? "",
       CSTNO:       r.CSTNO       ?? "",
       LOCALTAXNO:  r.LOCALTAXNO  ?? "",
+      USERNAME:        r.USERNAME ?? "",
+      PASSWORD:        "",
+      CONFIRMPASSWORD: "",
     });
     setOpen(true);
   };
@@ -135,12 +158,15 @@ export default function ClientMasterPage() {
   const onSubmit = async (data: ClientForm) => {
     try {
       const userId = Number(localStorage.getItem("userId") || 0);
+      const { PASSWORD, CONFIRMPASSWORD, ...rest } = data;
+      const payloadBase = { ...rest, PWD: PASSWORD || undefined };
+
       if (editRow) {
-        const payload = { ...data, CLIENTID: editRow.CLIENTID, USERID: userId };
+        const payload = { ...payloadBase, CLIENTID: editRow.CLIENTID, USERID: userId };
         const res = await updateMutation.mutateAsync({ id: String(editRow.CLIENTID), payload });
         toast.success("Client Updated", `"${res.CLIENTNAME}" updated successfully.`);
       } else {
-        const res = await createMutation.mutateAsync({ ...data, USERID: userId });
+        const res = await createMutation.mutateAsync({ ...payloadBase, USERID: userId });
         toast.success("Client Created", `"${res.CLIENTNAME}" created successfully.`);
       }
       setOpen(false);
@@ -443,6 +469,63 @@ export default function ClientMasterPage() {
                       )}
                     />
                     {errors.ACTIVE && <span className="cm-field-error">{errors.ACTIVE.message}</span>}
+                  </div>
+                </div>
+
+                <div className="cm-section-label">Login Access (Optional)</div>
+                <div className="cm-grid-2">
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Username</label>
+                    <Controller
+                      name="USERNAME"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value ?? ""}
+                          field="USERNAME"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Leave blank if no client login needed"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
+                    {errors.USERNAME && <span className="cm-field-error">{errors.USERNAME.message}</span>}
+                  </div>
+
+                  <div />
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">
+                      Password {editRow ? "(leave blank to keep)" : ""}
+                    </label>
+                    <Controller
+                      name="PASSWORD"
+                      control={control}
+                      render={({ field }) => (
+                        <PasswordInput
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          placeholder="Min 5 characters"
+                        />
+                      )}
+                    />
+                    {errors.PASSWORD && <span className="cm-field-error">{errors.PASSWORD.message}</span>}
+                  </div>
+
+                  <div className="cm-field-row">
+                    <label className="cm-field-label">Confirm Password</label>
+                    <Controller
+                      name="CONFIRMPASSWORD"
+                      control={control}
+                      render={({ field }) => (
+                        <PasswordInput
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          placeholder="Re-enter password"
+                        />
+                      )}
+                    />
+                    {errors.CONFIRMPASSWORD && <span className="cm-field-error">{errors.CONFIRMPASSWORD.message}</span>}
                   </div>
                 </div>
 

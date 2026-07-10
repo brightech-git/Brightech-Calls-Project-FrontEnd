@@ -11,6 +11,8 @@ import {
 import {
   createCallsBooking,
   getAllCallsBookings,
+  getMyBookings,
+  getDashboardBookings,
   getCallsBookingById,
   updateCallsBooking,
   deleteCallsBooking,
@@ -24,9 +26,7 @@ import {
   UpdateStatusPayload,
 } from "@/types/TaskAssignment/TaskAssignment";
 
-const CALLS_BOOKING_KEY = [
-  "calls-booking-list",
-];
+const CALLS_BOOKING_KEY = ["calls-booking-list"];
 
 // GET ALL
 export const useCallsBookingList = () =>
@@ -35,126 +35,113 @@ export const useCallsBookingList = () =>
     queryFn: getAllCallsBookings,
   });
 
+// GET ALL (ROLE-BASED)
+export const useMyBookings = () =>
+  useQuery({
+    queryKey: ["my-bookings"],
+    queryFn: getMyBookings,
+  });
+
+// GET DASHBOARD
+export const useDashboardBookings = () =>
+  useQuery({
+    queryKey: ["dashboard-bookings"],
+    queryFn: getDashboardBookings,
+  });
+
 // GET BY ID
-export const useGetCallsBookingById = (
-  id: string
-) =>
+export const useGetCallsBookingById = (id: string) =>
   useQuery({
     queryKey: ["calls-booking", id],
-    queryFn: () =>
-      getCallsBookingById(id),
+    queryFn: () => getCallsBookingById(id),
     enabled: !!id,
   });
 
 // GET MY TASKS
-export const useMyTasks = (
-  staffId: string
-) =>
+export const useMyTasks = (staffId: string) =>
   useQuery({
     queryKey: ["my-tasks", staffId],
-    queryFn: () =>
-      getMyTasks(staffId),
+    queryFn: () => getMyTasks(staffId),
     enabled: !!staffId,
   });
 
 // GET BY STATUS
-export const useCallsByStatus = (
-  status: string
-) =>
+export const useCallsByStatus = (status: string) =>
   useQuery({
     queryKey: ["calls-status", status],
-    queryFn: () =>
-      getCallsByStatus(status),
+    queryFn: () => getCallsByStatus(status),
     enabled: !!status,
   });
 
-// CREATE
-export const useCreateCallsBooking =
-  () => {
+// CREATE (with media files)
+export const useCreateCallsBooking = () => {
+  const qc = useQueryClient();
 
-    const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      payload,
+      mediaFiles,
+    }: {
+      payload: CallsBookingPayload;
+      mediaFiles?: File[];
+    }) => createCallsBooking(payload, mediaFiles),
 
-    return useMutation({
-      mutationFn: (
-        payload: CallsBookingPayload
-      ) =>
-        createCallsBooking(payload),
-
-      onSuccess: () =>
-        qc.invalidateQueries({
-          queryKey:
-            CALLS_BOOKING_KEY,
-        }),
-    });
-  };
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: CALLS_BOOKING_KEY });
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-bookings"] });
+    },
+  });
+};
 
 // UPDATE
-export const useUpdateCallsBooking =
-  () => {
+export const useUpdateCallsBooking = () => {
+  const qc = useQueryClient();
 
-    const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: CallsBookingPayload;
+    }) => updateCallsBooking(id, payload),
 
-    return useMutation({
-      mutationFn: ({
-        id,
-        payload,
-      }: {
-        id: string;
-        payload: CallsBookingPayload;
-      }) =>
-        updateCallsBooking(
-          id,
-          payload
-        ),
-
-      onSuccess: () =>
-        qc.invalidateQueries({
-          queryKey:
-            CALLS_BOOKING_KEY,
-        }),
-    });
-  };
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: CALLS_BOOKING_KEY });
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-bookings"] });
+    },
+  });
+};
 
 // UPDATE STATUS
-export const useUpdateCallsBookingStatus =
-  () => {
+export const useUpdateCallsBookingStatus = () => {
+  const qc = useQueryClient();
 
-    const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status, remark }: UpdateStatusPayload) =>
+      updateCallsBookingStatus(id, status, remark),
 
-    return useMutation({
-      mutationFn: ({
-        id,
-        status,
-        remark,
-      }: UpdateStatusPayload) =>
-        updateCallsBookingStatus(
-          id,
-          status,
-          remark
-        ),
-
-      onSuccess: () =>
-        qc.invalidateQueries({
-          queryKey:
-            CALLS_BOOKING_KEY,
-        }),
-    });
-  };
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: CALLS_BOOKING_KEY });
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-bookings"] });
+    },
+  });
+};
 
 // DELETE
-export const useDeleteCallsBooking =
-  () => {
+export const useDeleteCallsBooking = () => {
+  const qc = useQueryClient();
 
-    const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCallsBooking(id),
 
-    return useMutation({
-      mutationFn: (id: string) =>
-        deleteCallsBooking(id),
-
-      onSuccess: () =>
-        qc.invalidateQueries({
-          queryKey:
-            CALLS_BOOKING_KEY,
-        }),
-    });
-  };
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: CALLS_BOOKING_KEY });
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-bookings"] });
+    },
+  });
+};

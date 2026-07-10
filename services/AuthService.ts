@@ -9,15 +9,30 @@ import {
   UpdateUserPayload,
   AuthResponse,
   UserRecord,
+  ClientLoginPayload,
+  ClientAuthResponse,
+  ClientRegisterPayload,
+  ClientRegisterResponse,
 } from "@/types/Auth/Auth";
 
-// LOGIN
+// LOGIN (COMPANY - ADMIN/STAFF VIA USERMASTER)
 export const loginUser = async (payload: LoginPayload): Promise<AuthResponse> => {
   try {
     const response = await axiosInstance.post<AuthResponse>("/auth/login", payload);
     return response.data;
   } catch (err) {
     console.error("Login Error:", err);
+    throw err;
+  }
+};
+
+// CLIENT LOGIN (SEPARATE - VIA CLIENTMAST, NOT USERMASTER)
+export const loginClient = async (payload: ClientLoginPayload): Promise<ClientAuthResponse> => {
+  try {
+    const response = await axiosInstance.post<ClientAuthResponse>("/auth/client-login", payload);
+    return response.data;
+  } catch (err) {
+    console.error("Client Login Error:", err);
     throw err;
   }
 };
@@ -54,4 +69,15 @@ export const updateUser = async (id: string, payload: UpdateUserPayload): Promis
 // DELETE USER
 export const deleteUser = async (id: string): Promise<void> => {
   await axiosInstance.delete(`/auth/users/${id}`);
+};
+
+// REGISTER CLIENT (PUBLIC - NO TOKEN REQUIRED)
+export const registerClient = async (payload: ClientRegisterPayload): Promise<ClientRegisterResponse> => {
+  try {
+    const response = await axiosInstance.post<ClientRegisterResponse>("/client/register", payload);
+    return response.data;
+  } catch (err) {
+    console.error("Client Register Error:", err);
+    throw err;
+  }
 };

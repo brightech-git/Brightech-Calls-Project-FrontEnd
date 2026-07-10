@@ -27,6 +27,13 @@ export const getAllProjects = async (): Promise<ProjectRecord[]> => {
   return response.data;
 };
 
+// GET ALL (ROLE-BASED)
+export const getMyProjects = async (): Promise<ProjectRecord[]> => {
+  const response = await axiosInstance.get<ProjectRecord[]>("/project/my");
+
+  return response.data;
+};
+
 // GET BY ID
 export const getProjectById = async (
   id: string
@@ -35,6 +42,14 @@ export const getProjectById = async (
     `/project/${id}`
   );
 
+  return response.data;
+};
+
+// GET PROJECT STAFF (assigned staff/admin for a project)
+export const getProjectStaff = async (
+  projectId: number
+): Promise<{ userId: number; username: string; staffName: string; roleId: number }[]> => {
+  const response = await axiosInstance.get(`/project/${projectId}/staff`);
   return response.data;
 };
 

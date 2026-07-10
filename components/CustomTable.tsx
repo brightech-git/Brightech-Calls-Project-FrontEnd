@@ -113,6 +113,10 @@ export interface CustomTableProps<T extends Record<string, unknown>> {
   title?: string;
   /** Slot rendered in the top-right toolbar (e.g. an "Add" button) */
   toolbarRight?: React.ReactNode;
+  /** Optional per-row style override (e.g. highlight "my" rows) */
+  getRowStyle?: (row: T) => React.CSSProperties | undefined;
+  /** Optional slot rendered above the table body / below the toolbar (e.g. filter tabs) */
+  filterSlot?: React.ReactNode;
 }
 
 // ─── Status badge coloring ────────────────────────────────────────────────────
@@ -206,6 +210,8 @@ export function CustomTable<T extends Record<string, unknown>>({
   emptyMessage = "No records found",
   title,
   toolbarRight,
+  getRowStyle,
+  filterSlot,
 }: CustomTableProps<T>) {
   // ── State ──
   const [search, setSearch] = useState("");
@@ -426,6 +432,13 @@ export function CustomTable<T extends Record<string, unknown>>({
           </HStack>
         </HStack>
 
+        {/* ── Filter slot (e.g. status tabs) ── */}
+        {filterSlot && (
+          <Box px="16px" borderBottom="1px solid #e5e7eb">
+            {filterSlot}
+          </Box>
+        )}
+
         {/* ── Bulk selection banner ── */}
         {selected.size > 0 && !bulkActionSlot && (
           <HStack px="16px" py="8px" bg="#eff6ff" borderBottom="1px solid #dbeafe" gap="8px">
@@ -519,12 +532,14 @@ export function CustomTable<T extends Record<string, unknown>>({
               ) : (
                 paged.map((row, rowIdx) => {
                   const isSelected = selected.has(row[rowKey]);
+                  const rowStyle = getRowStyle?.(row);
                   return (
                     <Box
                       as="tr"
                       key={String(row[rowKey] ?? rowIdx)}
                       className="ct-tr"
                       bg={isSelected ? "#eff6ff" : "transparent"}
+                      style={rowStyle}
                     >
                       {selectable && (
                         <Box as="td" className="ct-td" textAlign="center">

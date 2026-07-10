@@ -1,45 +1,44 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard, Database,
   Settings, Bolt, ChevronDown, LogOut, Users, UserCheck,
-  Briefcase, FileBarChart
+  Briefcase, FileBarChart, Phone, MessageSquare
 } from "lucide-react";
 import { COLORS, FONT, RADIUS } from "@/utils/theme";
+import { getRoleTranByRoleId, RoleTranRecord } from "@/services/RoleTranService";
 
-interface NavChild { label: string; href: string; icon?: React.ReactNode; }
+interface NavChild { label: string; href: string; icon?: React.ReactNode; contentName?: string; }
 interface NavGroup { label: string; icon: React.ReactNode; children: NavChild[]; }
-interface NavLink { label: string; href: string; icon: React.ReactNode; }
+interface NavLink { label: string; href: string; icon: React.ReactNode; contentName?: string; }
 type NavItem = NavGroup | NavLink;
 function isNavGroup(item: NavItem): item is NavGroup { return "children" in item; }
 
-const menuItems: NavItem[] = [
-  { label: "Home", href: "/Home", icon: <LayoutDashboard size={16} /> },
+// CONTENT NAME MAPS TO ROLETRAN CONTENTNAME
+const allMenuItems: NavItem[] = [
+  { label: "Home", href: "/Home", icon: <LayoutDashboard size={16} />, contentName: "Home" },
   {
     label: "Master", icon: <Database size={16} />,
     children: [
-      { label: "User Master", href: "/Master/UserMaster", icon: <UserCheck size={13} /> },
-      { label: "Staff Master", href: "/Master/StaffMaster", icon: <Users size={13} /> },
-      { label: "Company Master", href: "/Master/CompanyMaster", icon: <Users size={13} /> },
-      { label: "Client Master", href: "/Master/ClientMaster", icon: <Briefcase size={13} /> },
-
+      { label: "User Master", href: "/Master/UserMaster", icon: <UserCheck size={13} />, contentName: "User Master" },
+      { label: "Company Master", href: "/Master/CompanyMaster", icon: <Users size={13} />, contentName: "Company Master" },
+      { label: "Client Master", href: "/Master/ClientMaster", icon: <Briefcase size={13} />, contentName: "Client Master" },
     ],
   },
   {
     label: "Project Management", icon: <FileBarChart size={16} />,
     children: [
-      { label: "Project Master", href: "/ProjectManagement/ProjectMaster", icon: <Briefcase size={13} /> },
-      { label: "Project Type Master", href: "/ProjectManagement/ProjectTypeMaster", icon: <Briefcase size={13} /> },
-      { label: "Module Master", href: "/ProjectManagement/ModuleMaster", icon: <Briefcase size={13} /> },
-      { label: "Task Assignment", href: "/ProjectManagement/TaskAssignment", icon: <Briefcase size={13} /> },
-      { label: "Call Status", href: "/ProjectManagement/CallStatus", icon: <Briefcase size={13} /> },
-      { label: "Project Links", href: "/ProjectManagement/ProjectLink", icon: <Briefcase size={13} /> },
+      { label: "Project Master", href: "/ProjectManagement/ProjectMaster", icon: <Briefcase size={13} />, contentName: "Project Master" },
+      { label: "Project Type Master", href: "/ProjectManagement/ProjectTypeMaster", icon: <Briefcase size={13} />, contentName: "Project Type Master" },
+      { label: "Module Master", href: "/ProjectManagement/ModuleMaster", icon: <Briefcase size={13} />, contentName: "Module Master" },
+      { label: "Call Booking", href: "/ProjectManagement/TaskAssignment", icon: <Phone size={13} />, contentName: "Call Booking" },
+      { label: "Call Status", href: "/ProjectManagement/CallStatus", icon: <MessageSquare size={13} />, contentName: "Call Status" },
+      { label: "Project Links", href: "/ProjectManagement/ProjectLink", icon: <Briefcase size={13} />, contentName: "Project Links" },
     ],
   },
-  // { label: "Settings", href: "/settings", icon: <Settings size={16} /> },
 ];
 
 function getInitials(name: string) {
@@ -81,23 +80,107 @@ function NavLinkItem({ item, pathname }: { item: NavLink; pathname: string }) {
 }
 
 function getLoggedUser() {
-  if (typeof window === "undefined") return { name: "User", role: "" };
+  if (typeof window === "undefined") return { name: "User", role: "", roleId: 0, isClient: false };
   try {
     const stored = localStorage.getItem("user");
-    if (!stored) return { name: "User", role: "" };
+    const sessionType = localStorage.getItem("sessionType");
+    if (!stored) return { name: "User", role: "", roleId: 0, isClient: false };
     const data = JSON.parse(stored);
     return {
       name: data.staffName || data.username || "User",
-      role: data.role || "",
+      role: data.roleName || "",
+      roleId: data.roleId || 0,
+      isClient: sessionType === "CLIENT" || data.sessionType === "CLIENT",
     };
   } catch {
-    return { name: "User", role: "" };
+    return { name: "User", role: "", roleId: 0, isClient: false };
   }
+}
+
+// MINIMAL MENU FOR CLIENT SESSIONS (NO RoleTran WIRING - CLIENTS ONLY EVER
+// SEE THEIR OWN DATA, SCOPED SERVER-SIDE BY CLIENTID)
+const clientMenuItems: NavItem[] = [
+  { label: "Home", href: "/Home", icon: <LayoutDashboard size={16} />, contentName: "Home" },
+  {
+    label: "Calls", icon: <Phone size={16} />,
+    children: [
+      { label: "Call Booking", href: "/ProjectManagement/TaskAssignment", icon: <Phone size={13} />, contentName: "Call Booking" },
+      { label: "Call Status", href: "/ProjectManagement/CallStatus", icon: <MessageSquare size={13} />, contentName: "Call Status" },
+    ],
+  },
+];
+
+// FILTER MENU BASED ON ROLE PERMISSIONS
+function filterMenuByPermissions(items: NavItem[], allowedContentNames: Set<string>, isAdmin: boolean): NavItem[] {
+  if (isAdmin) return items; // Admin sees everything
+
+  return items
+    .map((item) => {
+      if (isNavGroup(item)) {
+        const filteredChildren = item.children.filter(
+          (child) => !child.contentName || allowedContentNames.has(child.contentName)
+        );
+        if (filteredChildren.length === 0) return null;
+        return { ...item, children: filteredChildren };
+      } else {
+        if (!item.contentName || allowedContentNames.has(item.contentName)) return item;
+        return null;
+      }
+    })
+    .filter(Boolean) as NavItem[];
 }
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const user = getLoggedUser();
+
+  const [menuItems, setMenuItems] = useState<NavItem[]>(
+    user.isClient ? clientMenuItems : allMenuItems
+  );
+  const [loaded, setLoaded] = useState(false);
+
+  const isAdmin = user.roleId === 2 && !user.isClient;
+
+  // LOAD ROLE PERMISSIONS
+  useEffect(() => {
+    // CLIENT SESSIONS DON'T GO THROUGH ROLEMASTER/ROLETRAN - FIXED MENU
+    if (user.isClient) {
+      setMenuItems(clientMenuItems);
+      setLoaded(true);
+      return;
+    }
+
+    if (isAdmin) {
+      setMenuItems(allMenuItems);
+      setLoaded(true);
+      return;
+    }
+
+    if (user.roleId > 0) {
+      getRoleTranByRoleId(user.roleId)
+        .then((permissions: RoleTranRecord[]) => {
+          const allowedNames = new Set(
+            permissions
+              .filter((p) => p.ACTIVE)
+              .map((p) => p.CONTENTNAME)
+          );
+          // Always allow Home
+          allowedNames.add("Home");
+          const filtered = filterMenuByPermissions(allMenuItems, allowedNames, false);
+          setMenuItems(filtered);
+          setLoaded(true);
+        })
+        .catch(() => {
+          // On error, show only Home
+          setMenuItems([allMenuItems[0]]);
+          setLoaded(true);
+        });
+    } else {
+      setMenuItems([allMenuItems[0]]);
+      setLoaded(true);
+    }
+  }, [user.roleId, isAdmin]);
 
   const groups = menuItems.filter(isNavGroup) as NavGroup[];
   const defaultOpen = groups.find((g) => g.children.some((c) => pathname === c.href))?.label ?? null;
@@ -105,6 +188,21 @@ export default function Sidebar() {
 
   const handleToggle = (label: string) =>
     setOpenLabel((prev) => (prev === label ? null : label));
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("sessionType");
+    localStorage.removeItem("calls_token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("username");
+    localStorage.removeItem("staffName");
+    localStorage.removeItem("roleId");
+    localStorage.removeItem("roleName");
+    localStorage.removeItem("mobileNo");
+    localStorage.removeItem("active");
+    localStorage.removeItem("user");
+    window.location.href = "/Login";
+  };
 
   return (
     <>
@@ -239,14 +337,16 @@ export default function Sidebar() {
               !isNavGroup(item) ? <NavLinkItem key={item.href} item={item} pathname={pathname} /> : null
             )}
           </div>
-          <div className="sidebar-section">
-            <div className="sidebar-section-label">Management</div>
-            {menuItems.slice(1).map((item) =>
-              isNavGroup(item)
-                ? <NavGroupItem key={item.label} item={item} pathname={pathname} isOpen={openLabel === item.label} onToggle={() => handleToggle(item.label)} />
-                : <NavLinkItem key={item.href} item={item} pathname={pathname} />
-            )}
-          </div>
+          {menuItems.length > 1 && (
+            <div className="sidebar-section">
+              <div className="sidebar-section-label">Management</div>
+              {menuItems.slice(1).map((item) =>
+                isNavGroup(item)
+                  ? <NavGroupItem key={item.label} item={item} pathname={pathname} isOpen={openLabel === item.label} onToggle={() => handleToggle(item.label)} />
+                  : <NavLinkItem key={item.href} item={item} pathname={pathname} />
+              )}
+            </div>
+          )}
         </nav>
 
         <div className="sidebar-footer">
@@ -256,8 +356,7 @@ export default function Sidebar() {
               <div className="sidebar-user-name">{user.name}</div>
               <div className="sidebar-user-role">{user.role}</div>
             </div>
-            <button className="sidebar-logout-btn" title="Logout"
-              onClick={() => { localStorage.removeItem("isLoggedIn"); window.location.href = "/Login"; }}>
+            <button className="sidebar-logout-btn" title="Logout" onClick={handleLogout}>
               <LogOut size={13} />
             </button>
           </div>

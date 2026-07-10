@@ -12,7 +12,7 @@ import {
   createCallStatus,
   deleteCallStatus,
   getAllCallStatus,
-  getCallStatusById,
+  getCallStatusByTicketId,
 } from "@/services/CallStatusService";
 
 import {
@@ -28,17 +28,16 @@ export const useCallStatusList = () =>
     queryFn: getAllCallStatus,
   });
 
-// GET BY TICKET ID
-export const useGetCallStatusById = (id: string) =>
+// GET BY TICKET ID (booking + statuses)
+export const useCallStatusByTicketId = (tktId: number | null) =>
   useQuery({
-    queryKey: ["callstatus", id],
-    queryFn: () => getCallStatusById(id),
-    enabled: !!id,
+    queryKey: ["callstatus-ticket", tktId],
+    queryFn: () => getCallStatusByTicketId(String(tktId)),
+    enabled: !!tktId && tktId > 0,
   });
 
 // CREATE
 export const useCreateCallStatus = () => {
-
   const qc = useQueryClient();
 
   return useMutation({
@@ -48,30 +47,28 @@ export const useCreateCallStatus = () => {
     }: {
       payload: CallStatusPayload;
       image?: File | null;
-    }) =>
-      createCallStatus(payload, image),
+    }) => createCallStatus(payload, image),
 
-    onSuccess: () => {
-      qc.invalidateQueries({
-        queryKey: CALLSTATUS_KEY,
-      });
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: CALLSTATUS_KEY });
+      qc.invalidateQueries({ queryKey: ["callstatus-ticket", variables.payload.tktId] });
+      // Also refresh bookings since status auto-updates
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-bookings"] });
+      qc.invalidateQueries({ queryKey: ["calls-booking-list"] });
     },
   });
 };
 
 // DELETE
 export const useDeleteCallStatus = () => {
-
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      deleteCallStatus(id),
+    mutationFn: (id: string) => deleteCallStatus(id),
 
     onSuccess: () => {
-      qc.invalidateQueries({
-        queryKey: CALLSTATUS_KEY,
-      });
+      qc.invalidateQueries({ queryKey: CALLSTATUS_KEY });
     },
   });
 };

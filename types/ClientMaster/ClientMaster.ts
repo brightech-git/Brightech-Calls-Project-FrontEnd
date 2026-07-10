@@ -23,6 +23,11 @@ export interface ClientPayload {
   ACTIVE?:       string | null;
   STATEID?:      number | null;
   USERID?:       number | null;
+
+  // CLIENT LOGIN (SEPARATE FROM COMPANY/USERMASTER LOGIN)
+  USERNAME?:     string | null;
+  PWD?:          string | null;
+  ROLEID?:       number | null;
 }
 
 export interface ClientRecord extends ClientPayload {
