@@ -28,6 +28,8 @@ export interface AuthResponse {
   token: string;
   active: string;
   message: string;
+  /** Ids of the sidebar menu entries (config/menu/menuConfig.ts `id` field) this user may see. Absent/undefined until the backend sends it — treated as "show everything". */
+  menuIds?: string[];
 }
 
 export interface UserRecord {

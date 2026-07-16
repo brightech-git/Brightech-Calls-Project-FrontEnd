@@ -151,7 +151,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
             {label && <Field.Label fontSize={fontSize} >{label}</Field.Label>}
 
             <Combobox.Root
-                key={`${editId ?? "null"}-${value ?? ""}`}
+                key={editId ?? "null"}
                 collection={collection}
                 value={value ? [value] : []}
                 inputValue={typedInput}

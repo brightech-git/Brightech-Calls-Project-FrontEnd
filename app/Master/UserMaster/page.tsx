@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState ,useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,6 +16,8 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
 import { COLORS, FONT } from "@/utils/theme";
+import { useRole } from "@/hooks/ApiHooks/RoleMaster/useRoleMaster";
+import { SelectCombobox } from "@/components/ui/SelectComboBox";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -23,6 +25,7 @@ const userSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(5, "Password must be at least 5 characters"),
   confirmPassword: z.string(),
+  roleId : z.string().min(1, "Role is required"),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -32,6 +35,7 @@ const editSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(5, "Password must be at least 5 characters").or(z.literal("")),
   confirmPassword: z.string(),
+  roleId : z.string().min(1, "Role is required"),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -44,6 +48,7 @@ type UserForm = z.infer<typeof userSchema>;
 const COLUMNS: TableColumn<UserRecord & Record<string, unknown>>[] = [
   { key: "USERID",   header: "#",        align: "center", width: "50px" },
   { key: "USERNAME", header: "Username", sortable: true },
+  {key:"ROLEID" ,header : "Role"},
   { key: "ACTIVE",   header: "Status",   sortable: true,
     render: (row) => (
       <span style={{
@@ -84,6 +89,17 @@ export default function UserMasterPage() {
   const [editId, setEditId]          = useState<string | null>(null);
   const [editRow, setEditRow]        = useState<UserRecord | null>(null);
   const [deleteRow, setDeleteRow]    = useState<UserRecord | null>(null);
+
+
+  const { roles } = useRole();
+  console.log(roles,'roles')
+
+  const roleItems = useMemo(()=>{
+    return roles.map((r) => ({ label: r.ROLENAME, value: String(r.ROLEID) })) 
+  },[roles]) 
+
+  console.log(roleItems,'roleItems')
+
 
   const { mutate: register, isPending: isRegistering } = useRegister();
   const { mutate: updateUser, isPending: isUpdating }  = useUpdateUser();
@@ -144,6 +160,7 @@ export default function UserMasterPage() {
         username: payload.username,
         password: payload.password || editRow?.PWD || "",
         active:   editRow?.ACTIVE ?? "Y",
+     
       };
       console.log("[UserMaster] UPDATE payload:", updatePayload);
       updateUser({ id: editId!, payload: updatePayload }, {
@@ -240,7 +257,7 @@ export default function UserMasterPage() {
           height: 38px;
           border-radius: 8px;
           border: none;
-          background: ${COLORS.primary};
+          background: ${COLORS.btnPrimaryBg};
           color: #fff;
           font-size: 13px;
           font-weight: 600;
@@ -251,7 +268,7 @@ export default function UserMasterPage() {
           justify-content: center;
           box-shadow: 0 1px 4px rgba(0,0,0,0.15);
         }
-        .btn-primary:hover { background: ${COLORS.primaryHover}; }
+        .btn-primary:hover { background: ${COLORS.btnPrimaryHover}; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-secondary {
@@ -377,6 +394,30 @@ export default function UserMasterPage() {
                       )}
                     />
                     {errors.confirmPassword && <span className="um-field-error">{errors.confirmPassword.message}</span>}
+                  </div>
+
+                  <div className="um-field-row">
+                    <label className="um-field-label">
+                        Role *
+                    </label>
+                    <Controller 
+                       name="roleId"
+                       control={control}
+                       render={ ({field})=>(
+                            <SelectCombobox 
+                                value={field.value}
+                                onChange={(val)=>field.onChange(val)}
+                                items={roleItems}
+                                placeholder="Select Role"
+                             
+                            />
+                       )
+
+                       }
+                      
+                    />
+                    
+               
                   </div>
 
                   <HStack w="full" gap="8px">

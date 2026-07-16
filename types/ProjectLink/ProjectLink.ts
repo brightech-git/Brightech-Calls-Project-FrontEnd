@@ -17,7 +17,7 @@ export interface ProjectLinkRecord {
   linkId: number;
   client: { CLIENTID: number; CLIENTNAME?: string | null } | null;
   projectType: { projectTypeId: number; projectTypeName?: string | null } | null;
-  url?: string | null;
+  url?: string ;
   userName?: string | null;
   password?: string | null;
   status?: string | null;

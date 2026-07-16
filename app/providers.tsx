@@ -6,6 +6,8 @@ import { useState } from "react";
 import { PageHeaderProvider } from "@/context/PageHeaderContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/components/Toast";
+import { SidebarProvider } from "@/context/layout/SideBarContext";
+import { Toaster } from "@/components/ui/toaster";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -16,7 +18,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <ThemeProvider>
           <PageHeaderProvider>
             <ToastProvider>
-              {children}
+              <SidebarProvider>
+                <Toaster />
+                {children}
+              </SidebarProvider>
             </ToastProvider>
           </PageHeaderProvider>
         </ThemeProvider>

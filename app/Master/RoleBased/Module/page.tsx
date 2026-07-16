@@ -15,8 +15,14 @@ import {
   useCreateContent, useUpdateContent, useDeleteContent,
 } from "@/hooks/ApiHooks/RoleTran/useRoleTran";
 import { useSidebar, type DirectMenuItem, type SectionDirectItem, type MenuGroup } from "@/context/layout/SideBarContext";
+import { menuConfig } from "@/config/menu/menuConfig";
 // import { useTheme } from "@/context/theme/themeContext";
 import { toastError } from "@/components/toast/toast";
+
+// Module options come straight from the static sidebar config — the value
+// stored (and sent to the API as `name`) is always the stable `id` slug,
+// never the display label.
+const moduleOptions = menuConfig.map((m) => ({ label: m.label, value: m.id }));
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -128,6 +134,10 @@ export default function RoleTranPage() {
   const [editingContentId, setEditingContentId] = useState<number | null>(null);
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set());
   const [expandedSubModules, setExpandedSubModules] = useState<Set<number>>(new Set());
+  // Tracks which sidebar items are checked in the Content picker, by their
+  // stable menuConfig `id` — not by label, so items with the same name in
+  // different modules/submodules never collide.
+  const [selectedContentItemIds, setSelectedContentItemIds] = useState<Set<string>>(new Set());
 
   const [isDirectItem ,setIsDirectItem] = useState<boolean>(false);
 
@@ -140,11 +150,14 @@ export default function RoleTranPage() {
   // ── API ──────────────────────────────────────────────────────────────────
 
   const { data: menu = [] } = useMenu();
+
+
+  console.log(menu,'menudetails')
+
   const { data: modules = [] } = useModules();
   const { data: subModules = [] } = useSubModules(selectedModuleId);
-  const { data: contents = [] } = useContents(selectedSubModuleId ? selectedSubModuleId : selectedModuleId, selectedSubModuleId ? false : true);
+  const { data: contents = [] } = useContents(selectedModuleId, selectedSubModuleId);
 
-  console.log(subModules,'subModules');
   const { mutate: createModule } = useCreateModule();
   const { mutate: updateModule } = useUpdateModule();
   const { mutate: deleteModule } = useDeleteModule();
@@ -158,57 +171,67 @@ export default function RoleTranPage() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
+  // moduleName holds a menuConfig `id` (e.g. "master"), not the display label —
+  // that id is what gets stored via the API, matching moduleOptions above.
   const handleSaveModule = () => {
-    if (!moduleName.trim()) return;
-    if (modules.some((m)=>m.NAME.toLowerCase() === moduleName.toLowerCase())){
-      return toastError("Already Added Module")
+    if (!moduleName) return;
+
+    if (
+      modules.some(
+        (m) => m.name === moduleName && m.id !== editingModuleId
+      )
+    ) {
+      return toastError("Already Added Module");
     }
     if (editingModuleId) {
-      updateModule({ id: editingModuleId, body: { NAME: moduleName, DISPLAYORDER: 1, ACTIVE: true } });
+      updateModule({ id: editingModuleId, body: { name: moduleName, displayOrder: 1, active: true } });
       setEditingModuleId(null);
     } else {
-      createModule({ NAME: moduleName, DISPLAYORDER: 1 });
+      createModule({ name: moduleName, displayOrder: 1 });
     }
     setModuleName("");
   };
 
   const handleSaveSubModule = () => {
     if (!subModuleName.trim() || !selectedModuleId) return;
-    if (subModules.some((m) => m.NAME.toLowerCase() === subModuleName.toLowerCase() && m.NAVHEADER.ID === Number(selectedModuleId))) {
+    if (subModules.some((m) => m.name.toLowerCase() === subModuleName.toLowerCase() && m.moduleId === Number(selectedModuleId))) {
       return toastError("Already Added Sub Module")
     }
     if (editingSubModuleId) {
-      updateSubModule({ id: editingSubModuleId, body: { NAME: subModuleName, DISPLAYORDER: 1, ACTIVE: true } });
+      updateSubModule({ id: editingSubModuleId, body: { name: subModuleName, displayOrder: 1, active: true } });
       setEditingSubModuleId(null);
     } else {
-      createSubModule({ moduleId: selectedModuleId, body: { NAME: subModuleName, DISPLAYORDER: 1 } });
+      createSubModule({ moduleId: selectedModuleId, body: { name: subModuleName, displayOrder: 1 } });
     }
     setSubModuleName("");
   };
 
   const handleSaveContent = () => {
-    if (!contentName.trim() || !selectedModuleId) return;
-    const names = contentName.split(",").filter(Boolean);
-    console.log(names ,'namesforsavig');
+    if (!selectedModuleId) return;
 
     if (editingContentId) {
+      if (!contentName.trim()) return;
       updateContent({
-        id: editingContentId, body: {
-          NAME: names[0], NAVHEADER: selectedModuleId, ...(selectedSubModuleId && {
-            NAVSUBHEADER: selectedSubModuleId,
-          }), DISPLAYORDER: 1, ACTIVE: true } });
+        id: editingContentId,
+        body: { name: contentName.trim(), displayOrder: 1, active: true },
+      });
       setEditingContentId(null);
-    } else {
-      names.forEach((name, i) => createContent({
-        body: {
-          NAME: name, 
-          NAVHEADER: selectedModuleId, 
-          ...(selectedSubModuleId > 0  && {
-            NAVSUBHEADER: selectedSubModuleId,
-          }),  
-          DISPLAYORDER: i + 1 } }));
+      setContentName("");
+      return;
     }
-    setContentName("");
+
+    // Creating: names come from whichever sidebar items are checked, looked
+    // up by id — not typed in, and not matched by label.
+    const items = getSidebarItems(selectedModuleId, selectedSubModuleId);
+    const selectedItems = items.filter((i) => selectedContentItemIds.has(i.id));
+    if (!selectedItems.length) return;
+
+    selectedItems.forEach((item, i) => createContent({
+      moduleId: selectedModuleId,
+      subModuleId: selectedSubModuleId > 0 ? selectedSubModuleId : undefined,
+      body: { name: item.id, displayOrder: i + 1 },
+    }));
+    setSelectedContentItemIds(new Set());
   };
 
   const resetModuleEdit = () => { setEditingModuleId(null); setModuleName(""); };
@@ -217,12 +240,19 @@ export default function RoleTranPage() {
 
   // ── Sidebar helpers ───────────────────────────────────────────────────────
 
-  // ── Sidebar helpers ───────────────────────────────────────────────────────
+  // Module.name stores a menuConfig `id` (e.g. "master"), but menuData is
+  // still keyed by the config entry's display label — resolve id -> label
+  // before indexing into it.
+  const getMenuSection = (moduleConfigId: string) => {
+    const entry = menuConfig.find((m) => m.id === moduleConfigId);
+    if (!entry) return null;
+    return menuData[entry.label] ?? null;
+  };
 
   const getSidebarSubModules = (moduleId: number): string[] => {
-    const apiModule = modules.find((m) => m.ID === moduleId);
+    const apiModule = modules.find((m) => m.id === moduleId);
     if (!apiModule) return [];
-    const section = menuData[apiModule.NAME];
+    const section = getMenuSection(apiModule.name);
     if (!section) return [];
 
     // Return only group names (keys where the value is a MenuGroup, not a direct item)
@@ -235,12 +265,12 @@ export default function RoleTranPage() {
     moduleId: number,
     subModuleId: number
   ): DirectMenuItem[] => {
-    const apiModule = modules.find((m) => m.ID === moduleId);
-    const apiSubModule = subModules.find((s) => s.ID === subModuleId);
+    const apiModule = modules.find((m) => m.id === moduleId);
+    const apiSubModule = subModules.find((s) => s.id === subModuleId);
 
     if (!apiModule) return [];
 
-    const section = menuData[apiModule.NAME];
+    const section = getMenuSection(apiModule.name);
     if (!section) return [];
 
     const values = Object.values(section);
@@ -256,7 +286,7 @@ export default function RoleTranPage() {
 
     // CASE 2: submodule selected → show group items
     if (apiSubModule) {
-      const group = section[apiSubModule.NAME];
+      const group = section[apiSubModule.name];
 
       if (group && Array.isArray((group as any).items)) {
         return (group as MenuGroup).items.filter(
@@ -268,10 +298,12 @@ export default function RoleTranPage() {
     return [];
   };
 
-  const toggleContentItem = (label: string) => {
-    const current = contentName ? contentName.split(",") : [];
-    const updated = current.includes(label) ? current.filter((i) => i !== label) : [...current, label];
-    setContentName(updated.join(","));
+  const toggleContentItem = (id: string) => {
+    setSelectedContentItemIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   };
 
   const activeConfig = TABS.find((t) => t.key === activeTab)!;
@@ -358,8 +390,8 @@ export default function RoleTranPage() {
                   <FieldLabel>Select Module</FieldLabel>
                   <select value={moduleName} onChange={(e) => setModuleName(e.target.value)} style={SELECT_STYLE}>
                     <option value="">Choose from Sidebar</option>
-                    {Object.keys(menuData).map((key) => (
-                      <option key={key} value={key}>{key}</option>
+                    {moduleOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                 </Box>
@@ -368,7 +400,7 @@ export default function RoleTranPage() {
                   height="38px" borderRadius="8px" fontWeight="600" fontSize="13px" w="full"
                   colorScheme={editingModuleId ? "orange" : "blue"}
                   onClick={handleSaveModule}
-                  disabled={!moduleName.trim()}
+                  // disabled={!moduleName.trim()}
                 >
                   <HStack gap={1.5}>
                     {editingModuleId ? <RefreshCw size={13} /> : <Plus size={13} />}
@@ -388,20 +420,20 @@ export default function RoleTranPage() {
               </HStack>
               <StyledTable headers={["#", "Module Name", "Status", "Actions"]} empty={modules.length === 0}>
                 {modules.map((item, idx) => (
-                  <Table.Row key={item.ID} _hover={{ bg: "gray.50" }} transition="background 0.15s">
+                  <Table.Row key={item.id} _hover={{ bg: "gray.50" }} transition="background 0.15s">
                     <Table.Cell color="gray.400" fontSize="12px" w="40px">{idx + 1}</Table.Cell>
-                    <Table.Cell fontWeight="600" fontSize="13.5px">{item.NAME}</Table.Cell>
+                    <Table.Cell fontWeight="600" fontSize="13.5px">{item.name}</Table.Cell>
                     <Table.Cell>
-                      <Badge colorPalette={item.ACTIVE ? "green" : "red"} px={2.5} py={0.5} borderRadius="full" fontSize="11px">
-                        {item.ACTIVE ? "Active" : "Inactive"}
+                      <Badge colorPalette={item.active ? "green" : "red"} px={2.5} py={0.5} borderRadius="full" fontSize="11px">
+                        {item.active ? "Active" : "Inactive"}
                       </Badge>
                     </Table.Cell>
                     <Table.Cell>
                       <HStack gap={1.5}>
-                        <ActionButton color="#2563EB" onClick={() => { setEditingModuleId(item.ID); setModuleName(item.NAME); }}>
+                        <ActionButton color="#2563EB" onClick={() => { setEditingModuleId(item.id); setModuleName(item.name); }}>
                           <Pencil size={12} />
                         </ActionButton>
-                        <ActionButton color="#DC2626" onClick={() => deleteModule(item.ID)}>
+                        <ActionButton color="#DC2626" onClick={() => deleteModule(item.id)}>
                           <Trash2 size={12} />
                         </ActionButton>
                       </HStack>
@@ -438,8 +470,8 @@ export default function RoleTranPage() {
                     style={SELECT_STYLE}
                   >
                     <option value="0">Select Module</option>
-                    {modules.map((item) => (
-                      <option key={item.ID} value={item.ID}>{item.NAME}</option>
+                    {modules?.map((item) => (
+                      <option key={item.id} value={item.id}>{item.name}</option>
                     ))}
                   </select>
                 </Box>
@@ -475,25 +507,25 @@ export default function RoleTranPage() {
               <HStack px={5} py={3.5} borderBottom="1px solid #F1F5F9" justify="space-between">
                 <Text fontWeight="700" fontSize="13px" color="gray.600">All Sub Modules</Text>
                 <Badge colorPalette="green" px={2.5} py={0.5} borderRadius="full" fontSize="11px">
-                  {subModules.length} records
+                  {subModules?.length} records
                 </Badge>
               </HStack>
               <StyledTable headers={["#", "Sub Module", "Module", "Actions"]} empty={subModules.length === 0}>
-                {subModules.map((item, idx) => (
-                  <Table.Row key={item.ID} _hover={{ bg: "gray.50" }} transition="background 0.15s">
+                {subModules?.map((item, idx) => (
+                  <Table.Row key={item.id} _hover={{ bg: "gray.50" }} transition="background 0.15s">
                     <Table.Cell color="gray.400" fontSize="12px" w="40px">{idx + 1}</Table.Cell>
-                    <Table.Cell fontWeight="600" fontSize="13.5px">{item.NAME}</Table.Cell>
+                    <Table.Cell fontWeight="600" fontSize="13.5px">{item.name}</Table.Cell>
                     <Table.Cell>
                       <Badge colorPalette="blue" px={2.5} py={0.5} borderRadius="full" fontSize="11px">
-                        {item.NAVHEADER?.NAME}
+                        {modules.find((m) => m.id === item.moduleId)?.name}
                       </Badge>
                     </Table.Cell>
                     <Table.Cell>
                       <HStack gap={1.5}>
-                        <ActionButton color="#2563EB" onClick={() => { setEditingSubModuleId(item.ID); setSubModuleName(item.NAME); }}>
+                        <ActionButton color="#2563EB" onClick={() => { setEditingSubModuleId(item.id); setSubModuleName(item.name); }}>
                           <Pencil size={12} />
                         </ActionButton>
-                        <ActionButton color="#DC2626" onClick={() => deleteSubModule(item.ID)}>
+                        <ActionButton color="#DC2626" onClick={() => deleteSubModule(item.id)}>
                           <Trash2 size={12} />
                         </ActionButton>
                       </HStack>
@@ -526,12 +558,12 @@ export default function RoleTranPage() {
                   <FieldLabel>Module</FieldLabel>
                   <select
                     value={selectedModuleId}
-                    onChange={(e) => { setSelectedModuleId(Number(e.target.value)); setSelectedSubModuleId(0); setContentName(""); }}
+                    onChange={(e) => { setSelectedModuleId(Number(e.target.value)); setSelectedSubModuleId(0); setContentName(""); setSelectedContentItemIds(new Set()); }}
                     style={SELECT_STYLE}
                   >
                     <option value="0">Select Module</option>
-                    {modules.map((item) => (
-                      <option key={item.ID} value={item.ID}>{item.NAME}</option>
+                    {modules?.map((item) => (
+                      <option key={item.id} value={item.id}>{item.name}</option>
                     ))}
                   </select>
                 </Box>
@@ -541,12 +573,12 @@ export default function RoleTranPage() {
                     <FieldLabel>Sub Module <span style={{ color: "#9CA3AF", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></FieldLabel>
                     <select
                       value={selectedSubModuleId}
-                      onChange={(e) => { setSelectedSubModuleId(Number(e.target.value)); setContentName(""); }}
+                      onChange={(e) => { setSelectedSubModuleId(Number(e.target.value)); setContentName(""); setSelectedContentItemIds(new Set()); }}
                       style={SELECT_STYLE}
                     >
                       <option value="0">None</option>
                       {subModules.map((item) => (
-                        <option key={item.ID} value={item.ID}>{item.NAME}</option>
+                        <option key={item.id} value={item.id}>{item.name}</option>
                       ))}
                     </select>
                   </Box>
@@ -554,8 +586,8 @@ export default function RoleTranPage() {
 
                 {/* Checkbox picker */}
                 {selectedModuleId > 0 && (() => {
-                  const mod = modules.find((m) => m.ID === selectedModuleId);
-                  const section = mod ? menuData[mod.NAME] : null;
+                  const mod = modules.find((m) => m.id === selectedModuleId);
+                  const section = mod ? getMenuSection(mod.name) : null;
 
                   const directItems = Object.values(section ?? {}).filter(
                     (v): v is DirectMenuItem => "type" in v && v?.type === "direct"
@@ -572,15 +604,15 @@ export default function RoleTranPage() {
                   if (!showPicker) return null;
 
                   const items = getSidebarItems(selectedModuleId, selectedSubModuleId);
-                  const selectedNames = contentName ? contentName.split(",") : [];
+                  const selectedCount = items.filter((i) => selectedContentItemIds.has(i.id)).length;
 
                   return (
                     <Box>
                       <FieldLabel>
                         Select Items
-                        {selectedNames.length > 0 && (
+                        {selectedCount > 0 && (
                           <span style={{ marginLeft: 6, background: "#7C3AED", color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 10 }}>
-                            {selectedNames.length}
+                            {selectedCount}
                           </span>
                         )}
                       </FieldLabel>
@@ -591,10 +623,10 @@ export default function RoleTranPage() {
                         {items.length > 0 ? (
                           <VStack align="stretch" gap={0} p={2}>
                             {items.map((item) => {
-                              const checked = selectedNames.includes(item.label);
+                              const checked = selectedContentItemIds.has(item.id);
                               return (
                                 <label
-                                  key={item.route}
+                                  key={item.id}
                                   style={{
                                     display: "flex", alignItems: "center", gap: 8,
                                     cursor: "pointer", padding: "5px 8px",
@@ -608,7 +640,7 @@ export default function RoleTranPage() {
                                 >
                                   <input
                                     type="checkbox" checked={checked}
-                                    onChange={() => toggleContentItem(item.label)}
+                                    onChange={() => toggleContentItem(item.id)}
                                     style={{ accentColor: "#8B5CF6", width: 13, height: 13 }}
                                   />
                                   {item.label}
@@ -630,7 +662,7 @@ export default function RoleTranPage() {
                   height="38px" borderRadius="8px" fontWeight="600" fontSize="13px" w="full"
                   colorScheme={editingContentId ? "orange" : "purple"}
                   onClick={handleSaveContent}
-                  disabled={!contentName.trim() || !selectedModuleId}
+                  disabled={!selectedModuleId || (editingContentId ? !contentName.trim() : selectedContentItemIds.size === 0)}
                 >
                   <HStack gap={1.5}>
                     {editingContentId ? <RefreshCw size={13} /> : <Plus size={13} />}
@@ -649,28 +681,33 @@ export default function RoleTranPage() {
                 </Badge>
               </HStack>
               <StyledTable headers={["#", "Content Name", "Sub Module", "Actions"]} empty={contents.length === 0}>
-                {contents.map((item, idx) => (
-                  <Table.Row key={item.ID} _hover={{ bg: "gray.50" }} transition="background 0.15s">
-                    <Table.Cell color="gray.400" fontSize="12px" w="40px">{idx + 1}</Table.Cell>
-                    <Table.Cell fontWeight="600" fontSize="13.5px">{item.NAME}</Table.Cell>
-                    <Table.Cell>
-                      {item.SUBMODULE?.NAME
-                        ? <Badge colorPalette="purple" px={2.5} py={0.5} borderRadius="full" fontSize="11px">{item.SUBMODULE.NAME}</Badge>
-                        : <Text fontSize="12px" color="gray.400">—</Text>
-                      }
-                    </Table.Cell>
-                    <Table.Cell>
-                      <HStack gap={1.5}>
-                        <ActionButton color="#2563EB" onClick={() => { setEditingContentId(item.ID); setContentName(item.NAME); }}>
-                          <Pencil size={12} />
-                        </ActionButton>
-                        <ActionButton color="#DC2626" onClick={() => deleteContent(item.ID)}>
-                          <Trash2 size={12} />
-                        </ActionButton>
-                      </HStack>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
+                {contents.map((item, idx) => {
+                  const subModuleName = item.subModuleId
+                    ? subModules.find((s) => s.id === item.subModuleId)?.name
+                    : null;
+                  return (
+                    <Table.Row key={item.id} _hover={{ bg: "gray.50" }} transition="background 0.15s">
+                      <Table.Cell color="gray.400" fontSize="12px" w="40px">{idx + 1}</Table.Cell>
+                      <Table.Cell fontWeight="600" fontSize="13.5px">{item.name}</Table.Cell>
+                      <Table.Cell>
+                        {subModuleName
+                          ? <Badge colorPalette="purple" px={2.5} py={0.5} borderRadius="full" fontSize="11px">{subModuleName}</Badge>
+                          : <Text fontSize="12px" color="gray.400">—</Text>
+                        }
+                      </Table.Cell>
+                      <Table.Cell>
+                        <HStack gap={1.5}>
+                          <ActionButton color="#2563EB" onClick={() => { setEditingContentId(item.id); setContentName(item.name); }}>
+                            <Pencil size={12} />
+                          </ActionButton>
+                          <ActionButton color="#DC2626" onClick={() => deleteContent(item.id)}>
+                            <Trash2 size={12} />
+                          </ActionButton>
+                        </HStack>
+                      </Table.Cell>
+                    </Table.Row>
+                  );
+                })}
               </StyledTable>
             </DataPanel>
           </HStack>
@@ -727,11 +764,11 @@ export default function RoleTranPage() {
                 )}
 
                 {menu.map((mod) => {
-                  const modExpanded = expandedModules.has(mod.ID);
+                  const modExpanded = expandedModules.has(mod.id);
 
                   return (
                     <Box
-                      key={mod.ID}
+                      key={mod.id}
                       borderWidth="1px"
                       borderColor={modExpanded ? "#BFDBFE" : "gray.100"}
                       rounded="xl"
@@ -759,7 +796,7 @@ export default function RoleTranPage() {
                           bg: "#F8FAFC",
                         }}
                         onClick={() =>
-                          setExpandedModules(toggle(expandedModules, mod.ID))
+                          setExpandedModules(toggle(expandedModules, mod.id))
                         }
                       >
                         <HStack align="start" gap={3}>
@@ -780,7 +817,7 @@ export default function RoleTranPage() {
                                 fontSize="14px"
                                 color="gray.800"
                               >
-                                {mod.NAME}
+                                {mod.name}
                               </Text>
 
                               <Badge
@@ -789,7 +826,7 @@ export default function RoleTranPage() {
                                 fontSize="10px"
                                 px={2}
                               >
-                                {mod.SUBMODULES.length} Sub
+                                {mod.subModulel.length} Sub
                               </Badge>
 
                               <Badge
@@ -798,9 +835,9 @@ export default function RoleTranPage() {
                                 fontSize="10px"
                                 px={2}
                               >
-                                {mod.CONTENTS.length +
-                                  mod.SUBMODULES.reduce(
-                                    (acc, s) => acc + s.CONTENTS.length,
+                                {mod.moduleContent.length +
+                                  mod.subModulel.reduce(
+                                    (acc, s) => acc + s.moduleContent.length,
                                     0
                                   )}{" "}
                                 Contents
@@ -833,7 +870,7 @@ export default function RoleTranPage() {
                           borderTop="1px solid #EEF2F7"
                         >
                           {/* DIRECT CONTENTS */}
-                          {mod.CONTENTS.length > 0 && (
+                          {mod.moduleContent.length > 0 && (
                             <Box mb={4} mt={4}>
                               <Text
                                 fontSize="10px"
@@ -847,9 +884,9 @@ export default function RoleTranPage() {
                               </Text>
 
                               <HStack wrap="wrap" gap={2}>
-                                {mod.CONTENTS.map((c) => (
+                                {mod.moduleContent.map((c) => (
                                   <Badge
-                                    key={c.ID}
+                                    key={c.id}
                                     px={3}
                                     py={1}
                                     borderRadius="full"
@@ -858,7 +895,7 @@ export default function RoleTranPage() {
                                     fontSize="11px"
                                     fontWeight="600"
                                   >
-                                    {c.NAME}
+                                    {c.name}
                                   </Badge>
                                 ))}
                               </HStack>
@@ -867,12 +904,12 @@ export default function RoleTranPage() {
 
                           {/* SUB MODULES */}
                           <VStack align="stretch" gap={3}>
-                            {mod.SUBMODULES.map((sub) => {
-                              const subExpanded = expandedSubModules.has(sub.ID);
+                            {mod.subModulel.map((sub) => {
+                              const subExpanded = expandedSubModules.has(sub.id);
 
                               return (
                                 <Box
-                                  key={sub.ID}
+                                  key={sub.id}
                                   borderWidth="1px"
                                   borderColor={
                                     subExpanded ? "#A7F3D0" : "#E5E7EB"
@@ -894,7 +931,7 @@ export default function RoleTranPage() {
                                     }}
                                     onClick={() =>
                                       setExpandedSubModules(
-                                        toggle(expandedSubModules, sub.ID)
+                                        toggle(expandedSubModules, sub.id)
                                       )
                                     }
                                   >
@@ -914,14 +951,14 @@ export default function RoleTranPage() {
                                           fontWeight="700"
                                           color="gray.700"
                                         >
-                                          {sub.NAME}
+                                          {sub.name}
                                         </Text>
 
                                         <Text
                                           fontSize="10px"
                                           color="gray.400"
                                         >
-                                          {sub.CONTENTS.length} contents
+                                          {sub.moduleContent.length} contents
                                         </Text>
                                       </Box>
                                     </HStack>
@@ -933,7 +970,7 @@ export default function RoleTranPage() {
                                         px={2}
                                         fontSize="10px"
                                       >
-                                        {sub.CONTENTS.length}
+                                        {sub.moduleContent.length}
                                       </Badge>
 
                                       <Box
@@ -958,7 +995,7 @@ export default function RoleTranPage() {
                                       borderTop="1px solid #F3F4F6"
                                       bg="#FAFAFA"
                                     >
-                                      {sub.CONTENTS.length > 0 ? (
+                                      {sub.moduleContent.length > 0 ? (
                                         <Grid
                                           templateColumns={{
                                             base: "repeat(1,1fr)",
@@ -967,9 +1004,9 @@ export default function RoleTranPage() {
                                           }}
                                           gap={2}
                                         >
-                                          {sub.CONTENTS.map((c) => (
+                                          {sub.moduleContent.map((c) => (
                                             <HStack
-                                              key={c.ID}
+                                              key={c.id}
                                               px={3}
                                               py={2}
                                               bg="white"
@@ -990,7 +1027,7 @@ export default function RoleTranPage() {
                                                   fontWeight="500"
                                                   color="gray.700"
                                                 >
-                                                  {c.NAME}
+                                                  {c.name}
                                                 </Text>
                                               </HStack>
 

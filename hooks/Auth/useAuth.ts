@@ -44,6 +44,11 @@ export const useLogin = () => {
       localStorage.setItem("mobileNo",    data.mobileNo ?? "");
       localStorage.setItem("active",      data.active ?? "");
       localStorage.setItem("user",        JSON.stringify(data));
+      if (data.menuIds) {
+        localStorage.setItem("menuIds", JSON.stringify(data.menuIds));
+      } else {
+        localStorage.removeItem("menuIds");
+      }
 
       queryClient.invalidateQueries({ queryKey: ["auth-login"] });
     },

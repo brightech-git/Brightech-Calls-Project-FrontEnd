@@ -9,6 +9,7 @@ import { Plus, Pencil, Eye } from "lucide-react";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { SelectCombobox } from "@/components/ui/SelectComboBox";
+import { MultiSelectCombobox } from "@/components/ui/MultiSelectCombobox";
 import { TextareaField } from "@/components/ui/CapitalizesTextArea";
 import { SwitchInput } from "@/components/ui/SwitchInput";
 import { MediaManager, MediaItem, revokeMediaItems } from "@/components/ui/MediaManager";
@@ -30,7 +31,7 @@ import { useCompanyList } from "@/hooks/CompanyMaster/useCompanyMaster";
 import { useClientList }  from "@/hooks/ClientMaster/useClientMaster";
 import { useProjectList } from "@/hooks/ProjectMaster/useProjectMaster";
 import { useModuleList }  from "@/hooks/ModuleMaster/useModuleMaster";
-import { useStaffList }   from "@/hooks/StaffMaster/useStaffMaster";
+import { useGetAllUsers } from "@/hooks/Auth/useAuth";
 
 import {
   CallsBookingRecord,
@@ -50,7 +51,7 @@ const callsBookingSchema = z.object({
   MODULENAME:  z.string().optional(),
   DESCRIPTION: z.string().optional(),
   REMARK:      z.string().optional(),
-  STAFFID:     z.string().min(1, "Staff is required"),
+  STAFFIDS:     z.string().min(1, "Staff is required"),
   STATUS:      z.string().optional(),
   ACTIVE:      z.enum(["Y", "N"]),
 });
@@ -108,7 +109,7 @@ const DEFAULTS: CallsBookingForm = {
   MODULENAME:  "",
   DESCRIPTION: "",
   REMARK:      "",
-  STAFFID:     "",
+  STAFFIDS:    "",
   STATUS:      "O",
   ACTIVE:      "Y",
 };
@@ -152,7 +153,7 @@ export default function CallsBookingPage() {
   const { data: clients   = [] } = useClientList();
   const { data: projects  = [] } = useProjectList();
   const { data: modules   = [] } = useModuleList();
-  const { data: staffList = [] } = useStaffList();
+  const { data: staffList = [] } = useGetAllUsers();
 
   const {
     data: pagedBookings,
@@ -214,7 +215,7 @@ export default function CallsBookingPage() {
   const clientItems  = clients.map((c) => ({ label: c.CLIENTNAME, value: String(c.CLIENTID) }));
   const projectItems = projects.map((p) => ({ label: p.projectName, value: String(p.projectId) }));
   const moduleItems  = modules.map((m) => ({ label: m.moduleName, value: String(m.moduleId) }));
-  const staffItems   = staffList.map((s) => ({ label: s.STAFFNAME ?? "", value: String(s.STAFFID) }));
+  const staffItems = staffList.map((s) => ({ label: s.USERNAME ?? "", value: String(s.USERID) }));
 
   const statusItems = [
     { label: "Open",        value: "O" },
@@ -259,7 +260,7 @@ export default function CallsBookingPage() {
         MODULENAME:  r.MODULENAME  || "",
         DESCRIPTION: r.DESCRIPTION || "",
         REMARK:      r.REMARK      || "",
-        STAFFID:     r.STAFFID,
+        STAFFIDS:    r.STAFFIDS    || "",
         STATUS:      r.STATUS      || "O",
         ACTIVE:      r.ACTIVE === "N" ? "N" : "Y",
       });
@@ -292,7 +293,9 @@ export default function CallsBookingPage() {
 
   const onSubmit = async (
     data: CallsBookingForm
-  ) => {
+  )  => {
+
+    console.log(data,'payload')
     try {
       if (editRow) {
         const res =
@@ -462,7 +465,7 @@ export default function CallsBookingPage() {
                     ["Client",      v.CLIENTNAME],
                     ["Project",     v.PROJECTNAME],
                     ["Module",      v.MODULENAME],
-                    ["Staff",       v.STAFFNAME || v.STAFFID],
+                    ["Staff",       v.STAFFNAME || v.STAFFIDS],
                     ["Status",      v.STATUS],
                     ["Active",      v.ACTIVE === "Y" ? "Active" : "Inactive"],
                     ["Description", v.DESCRIPTION],
@@ -925,12 +928,12 @@ export default function CallsBookingPage() {
                   <div className="cb-field-row">
                     <label className="cb-field-label">Staff *</label>
                     <Controller
-                      name="STAFFID"
+                      name="STAFFIDS"
                       control={control}
                       render={({ field }) => (
-                        <SelectCombobox
-                          value={field.value || undefined}
-                          onChange={(val) => field.onChange(val)}
+                        <MultiSelectCombobox
+                          value={field.value ? field.value.split(",").filter(Boolean) : []}
+                          onChange={(vals) => field.onChange(vals.join(","))}
                           editId={editRow?.SNO ?? null}
                           items={staffItems}
                           placeholder="Select staff"
@@ -938,7 +941,7 @@ export default function CallsBookingPage() {
                         />
                       )}
                     />
-                    {errors.STAFFID && <span className="cb-field-error">{errors.STAFFID.message}</span>}
+                    {errors.STAFFIDS && <span className="cb-field-error">{errors.STAFFIDS.message}</span>}
                   </div>
 
                   <div className="cb-field-row">

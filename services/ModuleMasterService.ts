@@ -9,12 +9,14 @@ import {
   ModuleRecord,
 } from "@/types/ModuleMaster/ModuleMaster";
 
+const baseUrl = "/project/module"
+
 // CREATE
 export const createModule = async (
   payload: ModulePayload
 ): Promise<ModuleRecord> => {
   const response = await axiosInstance.post<ModuleRecord>(
-    "/module",
+    `${baseUrl}`,
     payload
   );
 
@@ -24,7 +26,7 @@ export const createModule = async (
 // GET ALL
 export const getAllModules = async (): Promise<ModuleRecord[]> => {
   const response = await axiosInstance.get<ModuleRecord[]>(
-    "/module"
+    `${baseUrl}`
   );
 
   return response.data;
@@ -35,7 +37,7 @@ export const getModuleById = async (
   id: string
 ): Promise<ModuleRecord> => {
   const response = await axiosInstance.get<ModuleRecord>(
-    `/module/${id}`
+    `${baseUrl}/${id}`
   );
 
   return response.data;
@@ -47,7 +49,7 @@ export const updateModule = async (
   payload: ModulePayload
 ): Promise<ModuleRecord> => {
   const response = await axiosInstance.put<ModuleRecord>(
-    `/module/${id}`,
+    `${baseUrl}/${id}`,
     payload
   );
 
@@ -58,5 +60,5 @@ export const updateModule = async (
 export const deleteModule = async (
   id: string
 ): Promise<void> => {
-  await axiosInstance.delete(`/module/${id}`);
+  await axiosInstance.delete(`${baseUrl}/${id}`);
 };

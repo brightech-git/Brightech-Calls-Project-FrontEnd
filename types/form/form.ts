@@ -1,5 +1,5 @@
 // types/form/form.ts
-import { SelectItem } from "@/components/ui/selectComboBox";
+import { SelectItem } from "@/components/ui/SelectComboBox";
 import { InputModeType } from "@/components/ui/CapitalizedInput";
 
 export interface FormField {

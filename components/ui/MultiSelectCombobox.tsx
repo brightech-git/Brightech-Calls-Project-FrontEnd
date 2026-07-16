@@ -116,7 +116,7 @@ export const MultiSelectCombobox = forwardRef<
 
                 <Combobox.Root
                     multiple
-                    key={`${editId ?? "null"}-${value.join(",")}`}
+                    key={editId ?? "null"}
                     collection={collection}
                     value={value}
                     inputValue={typedInput}

@@ -34,7 +34,7 @@ export const COLORS = {
   sidebarSectionLabel:    TEXT_WHITE,
   sidebarNavText:         TEXT_INVERSE,
   sidebarNavHoverBg:      TEXT_WHITE,
-  sidebarNavHoverText:    TEXT_PRIMARY,
+  sidebarNavHoverText:    TEXT_WHITE,
   sidebarNavActiveBg:     TEXT_WHITE,
   sidebarNavActiveText:   TEXT_PRIMARY,
   sidebarChevron:         TEXT_MUTED,

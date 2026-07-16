@@ -11,7 +11,8 @@ export interface CallsBookingPayload {
   MODULENAME?: string | null;
   DESCRIPTION?: string | null;
   REMARK?: string | null;
-  STAFFID: string;
+  /** Comma-separated Staff Master STAFFIDs, e.g. "1,2,3" */
+  STAFFIDS: string;
   STATUS?: string | null;
   ACTIVE?: string | null;
 }
@@ -37,6 +38,7 @@ export interface CallsBookingRecord extends CallsBookingPayload {
   COMPANYNAME?: string | null;
   CLIENTNAME?: string | null;
   STAFFNAME?: string | null;
+  /** Creator's login user id — set server-side from the auth token, not client-editable */
   USERID?: string | null;
   CANCEL?: string | null;
   CANCELBY?: string | null;

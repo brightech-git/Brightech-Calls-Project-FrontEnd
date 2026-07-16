@@ -4,11 +4,13 @@
 import { axiosInstance } from "@/api/axiosInstance";
 
 import {
+  ApiResponse,
   Module,
   SubModule,
   Content,
   MenuModule,
   RoleTran,
+  RoleTranInput,
 } from "@/types/RoleTran/RoleTran";
 
 // =====================================================
@@ -17,31 +19,31 @@ import {
 
 // CREATE MODULE
 export const createModule = async (body: {
-  NAME: string;
-  DISPLAYORDER: number;
+  name: string;
+  displayOrder: number;
 }) => {
-  console.log(body,'createModulePayload');
-  const { data } = await axiosInstance.post<Module>(
+  const { data } = await axiosInstance.post<ApiResponse<Module>>(
     `/module`,
     body
   );
 
-  return data;
+  return data.data;
 };
 
 // GET MODULES
 export const getModules = async () => {
-  const { data } = await axiosInstance.get<Module[]>(
+  const { data } = await axiosInstance.get<ApiResponse<Module[]>>(
     `/module`
   );
 
-  return data;
+  return data.data;
 };
 
-// GET MENU (full tree)
+// GET MENU (full tree) — wrapped in the same ApiResponse envelope as the rest
+// of the module endpoints; useMenu()'s `select` unwraps `.data`.
 export const getMenu = async () => {
-  const { data } = await axiosInstance.get<MenuModule[]>(
-    `/menu`
+  const { data } = await axiosInstance.get<ApiResponse<MenuModule[]>>(
+    `/module/list`
   );
 
   return data;
@@ -54,22 +56,22 @@ export const updateModule = async ({
 }: {
   id: number;
   body: {
-    NAME: string;
-    DISPLAYORDER: number;
-    ACTIVE: boolean;
+    name: string;
+    displayOrder: number;
+    active: boolean;
   };
 }) => {
-  const { data } = await axiosInstance.put<Module>(
+  const { data } = await axiosInstance.put<ApiResponse<Module>>(
     `/module/${id}`,
     body
   );
 
-  return data;
+  return data.data;
 };
 
 // DELETE MODULE
 export const deleteModule = async (id: number) => {
-  const { data } = await axiosInstance.delete(
+  const { data } = await axiosInstance.delete<string>(
     `/module/${id}`
   );
 
@@ -84,39 +86,39 @@ export const deleteModule = async (id: number) => {
 export const createSubModule = async (
   moduleId: number,
   body: {
-    NAME: string;
-    DISPLAYORDER: number;
+    name: string;
+    displayOrder: number;
   }
 ) => {
-  const { data } = await axiosInstance.post<SubModule>(
+  const { data } = await axiosInstance.post<ApiResponse<SubModule>>(
     `/submodule/${moduleId}`,
     body
   );
 
-  return data;
+  return data.data;
 };
 
-// GET SUB MODULES
+// GET SUB MODULES (by module)
 export const getSubModules = async (
   moduleId: number
 ) => {
-  const { data } = await axiosInstance.get<SubModule[]>(
-    `/submodule/module/${moduleId}`
+  const { data } = await axiosInstance.get<ApiResponse<SubModule[]>>(
+    `/submodule/${moduleId}`
   );
 
-  return data;
+  return data.data;
 };
 
-// UPDATE SUB MODULE
+// UPDATE SUB MODULE — SubModuleController#update returns the SubModule directly, not wrapped
 export const updateSubModule = async ({
   id,
   body,
 }: {
   id: number;
   body: {
-    NAME: string;
-    DISPLAYORDER: number;
-    ACTIVE: boolean;
+    name: string;
+    displayOrder: number;
+    active: boolean;
   };
 }) => {
   const { data } = await axiosInstance.put<SubModule>(
@@ -129,7 +131,7 @@ export const updateSubModule = async ({
 
 // DELETE SUB MODULE
 export const deleteSubModule = async (id: number) => {
-  const { data } = await axiosInstance.delete(
+  const { data } = await axiosInstance.delete<string>(
     `/submodule/${id}`
   );
 
@@ -139,49 +141,51 @@ export const deleteSubModule = async (id: number) => {
 // =====================================================
 // CONTENT
 // =====================================================
+// ModuleContentController exposes two parallel paths depending on whether
+// the content sits directly under a module or under one of its submodules.
 
-// CREATE CONTENT (by submodule)
-export const createContent = async (
-  body: {
-    NAME: string;
-    DISPLAYORDER: number;
-    NAVHEADER :number ;
-    NAVSUBHEADER?:number;
-  }
+// CREATE CONTENT under a module (no submodule)
+export const createContentUnderModule = async (
+  moduleId: number,
+  body: { name: string; displayOrder: number }
 ) => {
-  console.log(body ,'payload to create content');
-  // return;
-  const { data } = await axiosInstance.post<Content>(
-    `/content`,
+  const { data } = await axiosInstance.post<ApiResponse<Content>>(
+    `/content/module/${moduleId}`,
     body
   );
 
-  return data;
+  return data.data;
 };
 
-
-// GET CONTENTS (by submodule)
-export const getContents = async ({
-  id,
-  ISHEADER,
-}: {
-  id: number;
-  ISHEADER: boolean;
-}) => {
-  console.log(id, ISHEADER, "contentgetting");
-
-  const res = await axiosInstance.get<Content[]>(
-    `/content/${id}`,
-    {
-      params: {
-        ISHEADER,
-      },
-    }
+// CREATE CONTENT under a submodule
+export const createContentUnderSubModule = async (
+  subModuleId: number,
+  body: { name: string; displayOrder: number }
+) => {
+  const { data } = await axiosInstance.post<ApiResponse<Content>>(
+    `/content/submodule/${subModuleId}`,
+    body
   );
 
-  console.log("getContents", res);
+  return data.data;
+};
 
-  return res.data;
+// GET CONTENTS under a module (no submodule)
+export const getContentsByModule = async (moduleId: number) => {
+  const { data } = await axiosInstance.get<ApiResponse<Content[]>>(
+    `/content/module/${moduleId}`
+  );
+
+  return data.data;
+};
+
+// GET CONTENTS under a submodule
+export const getContentsBySubModule = async (subModuleId: number) => {
+  const { data } = await axiosInstance.get<ApiResponse<Content[]>>(
+    `/content/submodule/${subModuleId}`
+  );
+
+  return data.data;
 };
 
 // UPDATE CONTENT
@@ -191,24 +195,22 @@ export const updateContent = async ({
 }: {
   id: number;
   body: {
-    NAME: string;
-    DISPLAYORDER: number;
-    ACTIVE: boolean;
-    NAVHEADER: number;
-    NAVSUBHEADER?: number;
+    name: string;
+    displayOrder: number;
+    active: boolean;
   };
 }) => {
-  const { data } = await axiosInstance.put<Content>(
+  const { data } = await axiosInstance.put<ApiResponse<Content>>(
     `/content/${id}`,
     body
   );
 
-  return data;
+  return data.data;
 };
 
 // DELETE CONTENT
 export const deleteContent = async (id: number) => {
-  const { data } = await axiosInstance.delete(
+  const { data } = await axiosInstance.delete<ApiResponse<null>>(
     `/content/${id}`
   );
 
@@ -222,26 +224,26 @@ export const deleteContent = async (id: number) => {
 // GET ROLE TRANSACTIONS
 export const getRoleTransactions = async () => {
   const { data } = await axiosInstance.get<RoleTran[]>(
-    `/role-tran`
+    `/roletran`
   );
 
   return data;
 };
 
-// INSERT ROLE TRANSACTION
-export const insertRoleTransaction = async (body: RoleTran[]) => {
+// INSERT ROLE TRANSACTION — ids only, no name fields sent
+export const insertRoleTransaction = async (body: RoleTranInput[]) => {
   const { data } = await axiosInstance.post<RoleTran[]>(
-    `/role-tran/insert`,
+    `/roletran/insert`,
     body
   );
 
   return data;
 };
 
-// SAVE SINGLE ROLE TRANSACTION
-export const saveRoleTransaction = async (body: RoleTran) => {
+// SAVE SINGLE ROLE TRANSACTION — ids only, no name fields sent
+export const saveRoleTransaction = async (body: RoleTranInput) => {
   const { data } = await axiosInstance.post<RoleTran>(
-    `/role-tran`,
+    `/roletran`,
     body
   );
 
@@ -251,7 +253,7 @@ export const saveRoleTransaction = async (body: RoleTran) => {
 // GET ROLE TRANSACTIONS BY ROLE ID
 export const getRoleTransactionsByRoleId = async (roleId: number) => {
   const { data } = await axiosInstance.get<RoleTran[]>(
-    `/role-tran/role/${roleId}`
+    `/roletran/role/${roleId}`
   );
 
   return data;
@@ -260,7 +262,7 @@ export const getRoleTransactionsByRoleId = async (roleId: number) => {
 // GET ACTIVE ROLE TRANSACTIONS
 export const getActiveRoleTransactions = async () => {
   const { data } = await axiosInstance.get<RoleTran[]>(
-    `/role-tran/active`
+    `/roletran/active`
   );
 
   return data;
@@ -269,7 +271,7 @@ export const getActiveRoleTransactions = async () => {
 // GET ACTIVE ROLE TRANSACTIONS BY ROLE ID
 export const getActiveRoleTransactionsByRoleId = async (roleId: number) => {
   const { data } = await axiosInstance.get<RoleTran[]>(
-    `/role-tran/role/${roleId}/active`
+    `/roletran/role/${roleId}/active`
   );
 
   return data;
@@ -278,7 +280,7 @@ export const getActiveRoleTransactionsByRoleId = async (roleId: number) => {
 // DELETE ROLE TRANSACTION
 export const deleteRoleTransaction = async (sno: number) => {
   const { data } = await axiosInstance.delete<string>(
-    `/role-tran/${sno}`
+    `/roletran/${sno}`
   );
 
   return data;
@@ -287,7 +289,7 @@ export const deleteRoleTransaction = async (sno: number) => {
 // TOGGLE ACTIVE STATUS
 export const toggleRoleTransactionActive = async (sno: number) => {
   const { data } = await axiosInstance.put<RoleTran>(
-    `/role-tran/${sno}/toggle`
+    `/roletran/${sno}/toggle`
   );
 
   return data;

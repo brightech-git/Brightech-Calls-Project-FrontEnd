@@ -29,11 +29,15 @@ export const createCallsBooking = async (
     formData.append("media", file)
   );
 
-  if (mediaMeta && mediaMeta.length) {
-    formData.append(
-      "mediaMeta",
-      JSON.stringify(mediaMeta)
-    );
+  // if (mediaMeta && mediaMeta.length) {
+  //   formData.append(
+  //     "mediaMeta",
+  //     JSON.stringify(mediaMeta)
+  //   );
+  // }
+
+  for(const [key,value] of formData.entries()){
+    console.log(key, value);
   }
 
   const response =

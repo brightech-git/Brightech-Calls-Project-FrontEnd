@@ -19,8 +19,10 @@ import {
   updateSubModule,
   deleteSubModule,
 
-  createContent,
-  getContents,
+  createContentUnderModule,
+  createContentUnderSubModule,
+  getContentsByModule,
+  getContentsBySubModule,
   updateContent,
   deleteContent,
 
@@ -56,6 +58,7 @@ export const useMenu = () => {
   return useQuery({
     queryKey: ["menu"],
     queryFn: getMenu,
+    select : (res)=>res.data
   });
 };
 
@@ -148,8 +151,8 @@ export const useCreateSubModule = () => {
     }: {
       moduleId: number;
       body: {
-        NAME: string;
-        DISPLAYORDER: number;
+        name: string;
+        displayOrder: number;
       };
     }) => createSubModule(moduleId, body),
 
@@ -213,16 +216,18 @@ export const useDeleteSubModule = () => {
 // CONTENT
 // =====================================================
 
-// GET CONTENTS
+// GET CONTENTS — a submodule id (when selected) takes precedence over the module id
 export const useContents = (
-  id: number,
-  isHeader :boolean
+  moduleId: number,
+  subModuleId: number
 ) => {
-  console.log(id, isHeader, 'isHeader :boolean' )
   return useQuery({
-    queryKey: ["contents", id , isHeader],
-    queryFn: () => getContents({id, ISHEADER:isHeader}),
-
+    queryKey: ["contents", moduleId, subModuleId],
+    queryFn: () =>
+      subModuleId
+        ? getContentsBySubModule(subModuleId)
+        : getContentsByModule(moduleId),
+    enabled: !!moduleId,
   });
 };
 
@@ -233,16 +238,20 @@ export const useCreateContent = () => {
 
   return useMutation({
     mutationFn: ({
+      moduleId,
+      subModuleId,
       body,
     }: {
-    
+      moduleId: number;
+      subModuleId?: number;
       body: {
-        NAME: string;
-        DISPLAYORDER: number;
-        NAVHEADER : number;
-        NAVSUBHEADER?:number
+        name: string;
+        displayOrder: number;
       };
-    }) => createContent(body),
+    }) =>
+      subModuleId
+        ? createContentUnderSubModule(subModuleId, body)
+        : createContentUnderModule(moduleId, body),
 
     onSuccess: () => {
       toastCreated("Content Created Successfully");

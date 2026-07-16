@@ -93,7 +93,16 @@ const COLUMNS: TableColumn<ProjectLinkRecord_Table>[] = [
     key: "projectType", header: "Project Type", 
     render: (row) => row.projectType?.projectTypeName ?? row.projectType?.projectTypeId ?? "—",
   },
-  { key: "url", header: "URL",  },
+  {
+    key: "url",
+    header: "URL",
+
+    render: (row) => (
+      <a href={row.url} target="_blank" rel="noopener noreferrer" style={{ color: COLORS.textSecondary, textDecoration: "none" }}>
+        {row.url}
+      </a>
+    ),
+  },
   { key: "userName", header: "User Name",  },
   { key: "password", header: "Password",  },
   { key: "status", header: "Status",  },

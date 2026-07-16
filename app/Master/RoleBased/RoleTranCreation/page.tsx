@@ -20,7 +20,7 @@ import {
   useRoleTransactions, useInsertRoleTransaction,
   useDeleteRoleTransaction, useToggleRoleTransactionActive, useMenu,
 } from "@/hooks/ApiHooks/RoleTran/useRoleTran";
-import { RoleTran }  from "@/types/RoleTran/RoleTran";
+import { RoleTran, RoleTranInput }  from "@/types/RoleTran/RoleTran";
 import { useRole } from "@/hooks/ApiHooks/RoleMaster/useRoleMaster";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -53,9 +53,9 @@ const T = {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ContentNode   { ID: number; NAME: string }
-interface SubModuleNode { ID: number; NAME: string; CONTENTS: ContentNode[] }
-interface ModuleNode    { ID: number; NAME: string; CONTENTS: ContentNode[]; subModules: SubModuleNode[] }
+interface ContentNode   { id: number; name: string }
+interface SubModuleNode { id: number; name: string; moduleContent: ContentNode[] }
+interface ModuleNode { id: number; name: string; moduleContent: ContentNode[]; subModulel: SubModuleNode[] }
 type CheckState = "none" | "some" | "all";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -64,6 +64,23 @@ function getCheckState(IDs: number[], selected: Set<number>): CheckState {
   if (!IDs.length) return "none";
   const n = IDs.filter(ID => selected.has(ID)).length;
   return n === 0 ? "none" : n === IDs.length ? "all" : "some";
+}
+
+// ECOM_ROLETRAN persists id + name columns directly (no server-side join), so
+// the insert payload must carry every field the entity has, minus the
+// auto-generated SNO.
+function toRoleTranInputs(txs: RoleTran[]): RoleTranInput[] {
+  return txs.map(tx => ({
+    ROLEID: tx.ROLEID,
+    ROLENAME: tx.ROLENAME,
+    MODULEID: tx.MODULEID,
+    MODULENAME: tx.MODULENAME,
+    SUBMODULEID: tx.SUBMODULEID,
+    SUBMODULENAME: tx.SUBMODULENAME,
+    CONTENTID: tx.CONTENTID,
+    CONTENTNAME: tx.CONTENTNAME,
+    ACTIVE: tx.ACTIVE,
+  }));
 }
 
 // ─── TriCheckbox ──────────────────────────────────────────────────────────────
@@ -92,11 +109,11 @@ const ContentRow = memo(({ content, selected, onToggle }: {
     transition: "background 0.12s",
   }}>
     <input
-      type="checkbox" checked={selected} onChange={() => onToggle(content.ID)}
+      type="checkbox" checked={selected} onChange={() => onToggle(content.id)}
       style={{ cursor: "pointer", width: 13, height: 13, accentColor: T.accent, flexShrink: 0 }}
     />
     <span style={{ color: selected ? "#1D4ED8" : T.textMID, transition: "color 0.12s" }}>
-      {content.NAME}
+      {content.name}
     </span>
   </label>
 ));
@@ -113,7 +130,7 @@ const SubModuleRow = memo(({ sub, selected, onToggleContent, onToggleGroup, forc
   const [open, setOpen] = useState(forceOpen ?? true);
   useEffect(() => { if (forceOpen !== undefined) setOpen(forceOpen); }, [forceOpen]);
 
-  const IDs = useMemo(() => sub.CONTENTS.map(c => c.ID), [sub.CONTENTS]);
+  const IDs = useMemo(() => sub.moduleContent.map(c => c.id), [sub.moduleContent]);
   const state = getCheckState(IDs, selected);
   const checkedCount = IDs.filter(ID => selected.has(ID)).length;
 
@@ -138,7 +155,7 @@ const SubModuleRow = memo(({ sub, selected, onToggleContent, onToggleGroup, forc
           style={{ cursor: "pointer", userSelect: "none", flex: 1 }}
           transition="color 0.12s"
         >
-          📁 {sub.NAME}
+          📁 {sub.name}
         </Text>
         {state !== "none" && (
           <Box
@@ -151,8 +168,8 @@ const SubModuleRow = memo(({ sub, selected, onToggleContent, onToggleGroup, forc
       </Flex>
       {open && (
         <Box>
-          {sub.CONTENTS.map(c => (
-            <ContentRow key={c.ID} content={c} selected={selected.has(c.ID)} onToggle={onToggleContent} />
+          {sub.moduleContent.map(c => (
+            <ContentRow key={c.id} content={c} selected={selected.has(c.id)} onToggle={onToggleContent} />
           ))}
         </Box>
       )}
@@ -170,12 +187,14 @@ const ModuleRow = memo(({ mod, selected, onToggleContent, onToggleGroup, forceOp
   forceOpen?: boolean;
   expandedSubIDs?: Set<number>;
 }) => {
+
+  console.log(mod,'mod')
   const [open, setOpen] = useState(forceOpen ?? true);
   useEffect(() => { if (forceOpen !== undefined) setOpen(forceOpen); }, [forceOpen]);
 
   const allIDs = useMemo(() => [
-    ...mod.CONTENTS.map(c => c.ID),
-    ...mod.subModules.flatMap(s => s.CONTENTS.map(c => c.ID)),
+    ...mod.moduleContent.map(c => c.id),
+    // ...mod.SUBMODULES.flatMap(s => s.CONTENTS.map(c => c.ID)),
   ], [mod]);
 
   const state = getCheckState(allIDs, selected);
@@ -184,8 +203,8 @@ const ModuleRow = memo(({ mod, selected, onToggleContent, onToggleGroup, forceOp
   return (
     <Box
       mb={1.5}
-      border={`1px solID ${state !== "none" ? T.accentMID : T.border}`}
-      borderRadius={T.radiusMd} overflow="hIDden"
+      border={`1px solid ${state !== "none" ? T.accentMID : T.border}`}
+      borderRadius={T.radiusMd} overflow="hidden"
       transition="border-color 0.15s"
       boxShadow={state !== "none" ? "0 0 0 2px rgba(59,130,246,0.08)" : "none"}
     >
@@ -211,7 +230,7 @@ const ModuleRow = memo(({ mod, selected, onToggleContent, onToggleGroup, forceOp
           style={{ cursor: "pointer", userSelect: "none" }}
           transition="color 0.12s"
         >
-          {mod.NAME}
+          {mod.name}
         </Text>
         {state !== "none" && (
           <Box
@@ -224,16 +243,16 @@ const ModuleRow = memo(({ mod, selected, onToggleContent, onToggleGroup, forceOp
       </Flex>
       {open && (
         <Box py={1} bg={T.bgCard}>
-          {mod.CONTENTS.map(c => (
-            <ContentRow key={c.ID} content={c} selected={selected.has(c.ID)} onToggle={onToggleContent} />
+          {mod.moduleContent.map(c => (
+            <ContentRow key={c.id} content={c} selected={selected.has(c.id)} onToggle={onToggleContent} />
           ))}
-          {mod.subModules.map(sub => (
+          {/* {mod.SUBMODULES.map(sub => (
             <SubModuleRow
               key={sub.ID} sub={sub} selected={selected}
               onToggleContent={onToggleContent} onToggleGroup={onToggleGroup}
               forceOpen={expandedSubIDs ? expandedSubIDs.has(sub.ID) : true}
             />
-          ))}
+          ))} */}
         </Box>
       )}
     </Box>
@@ -250,8 +269,8 @@ const ModuleTree = memo(({ menuData, selectedContentIDs, onToggleContent, onTogg
 }) => {
   const allIDs = useMemo(() =>
     menuData.flatMap(m => [
-      ...m.CONTENTS.map(c => c.ID),
-      ...m.subModules.flatMap(s => s.CONTENTS.map(c => c.ID)),
+      ...m.moduleContent.map(c => c.id),
+      // ...m.SUBMODULES.flatMap(s => s.CONTENTS.map(c => c.ID)),
     ]), [menuData]);
 
   const rootState = getCheckState(allIDs, selectedContentIDs);
@@ -261,7 +280,7 @@ const ModuleTree = memo(({ menuData, selectedContentIDs, onToggleContent, onTogg
     <Box>
       <Flex
         align="center" gap={2} px={3} py="6px" mb={2}
-        bg={T.bg} borderRadius={T.radius} border={`1px solID ${T.border}`}
+        bg={T.bg} borderRadius={T.radius} border={`1px solid ${T.border}`}
       >
         <TriCheckbox state={rootState} onChange={() => onToggleGroup(allIDs)} />
         <Text fontSize="xs" fontWeight="bold" color={T.textMID} flex={1}>Select All</Text>
@@ -273,9 +292,9 @@ const ModuleTree = memo(({ menuData, selectedContentIDs, onToggleContent, onTogg
       </Flex>
       {menuData.map(mod => (
         <ModuleRow
-          key={mod.ID} mod={mod} selected={selectedContentIDs}
+          key={mod.id} mod={mod} selected={selectedContentIDs}
           onToggleContent={onToggleContent} onToggleGroup={onToggleGroup}
-          forceOpen={expandedModuleIDs ? expandedModuleIDs.has(mod.ID) : true}
+          forceOpen={expandedModuleIDs ? expandedModuleIDs.has(mod.id) : true}
           expandedSubIDs={expandedSubIDs}
         />
       ))}
@@ -335,7 +354,7 @@ const MergedViewTable = memo(({ txs, onToggle, onDelete, isToggling, isDeleting 
 
   const cell: React.CSSProperties = {
     padding: "9px 14px", fontSize: 13,
-    borderBottom: `1px solID ${T.border}`, verticalAlign: "mIDdle",
+    borderBottom: `1px solid ${T.border}`, verticalAlign: "middle",
   };
 
   return (
@@ -349,7 +368,7 @@ const MergedViewTable = memo(({ txs, onToggle, onDelete, isToggling, isDeleting 
                 textAlign: i >= 3 ? "center" : "left",
                 color: "#E2E8F0", fontWeight: 600, fontSize: 11.5,
                 letterSpacing: "0.06em", textTransform: "uppercase",
-                borderBottom: `2px solID ${T.navyLight}`, whiteSpace: "nowrap",
+                borderBottom: `2px solid ${T.navyLight}`, whiteSpace: "nowrap",
               }}>{h}</th>
             ))}
           </tr>
@@ -366,9 +385,9 @@ const MergedViewTable = memo(({ txs, onToggle, onDelete, isToggling, isDeleting 
                   style={{
                     ...cell,
                     background: T.accentLight,
-                    borderRight: `2px solID ${T.accentMID}`,
-                    borderBottom: `1px solID ${T.accentMID}`,
-                    textAlign: "center", verticalAlign: "mIDdle", minWidth: 120,
+                    borderRight: `2px solid ${T.accentMID}`,
+                    borderBottom: `1px solid ${T.accentMID}`,
+                    textAlign: "center", verticalAlign: "middle", minWidth: 120,
                   }}
                 >
                   <Box
@@ -386,9 +405,9 @@ const MergedViewTable = memo(({ txs, onToggle, onDelete, isToggling, isDeleting 
                   rowSpan={subSpans[i]!}
                   style={{
                     ...cell, background: "#F7FAFF",
-                    borderRight: `1px solID ${T.border}`,
-                    borderBottom: `1px solID ${T.border}`,
-                    textAlign: "center", verticalAlign: "mIDdle", minWidth: 110,
+                    borderRight: `1px solid ${T.border}`,
+                    borderBottom: `1px solid ${T.border}`,
+                    textAlign: "center", verticalAlign: "middle", minWidth: 110,
                   }}
                 >
                   {row.subModuleNAME === "—" ? (
@@ -435,7 +454,7 @@ const MergedViewTable = memo(({ txs, onToggle, onDelete, isToggling, isDeleting 
                     title={row.active ? "Deactivate" : "Activate"}
                     style={{
                       padding: "3px 10px", fontSize: 11.5, fontWeight: 600,
-                      borderRadius: 6, cursor: "pointer", border: "1px solID",
+                      borderRadius: 6, cursor: "pointer", border: "1px solid",
                       borderColor: row.active ? "#F59E0B" : T.green,
                       color: row.active ? T.orange : T.green,
                       background: row.active ? "#FFFBEB" : "#F0FDF4",
@@ -451,7 +470,7 @@ const MergedViewTable = memo(({ txs, onToggle, onDelete, isToggling, isDeleting 
                     title="Delete"
                     style={{
                       padding: "4px 8px", borderRadius: 6, cursor: "pointer",
-                      border: `1px solID ${T.redLight}`, background: T.redLight,
+                      border: `1px solid ${T.redLight}`, background: T.redLight,
                       color: T.red, display: "flex", alignItems: "center",
                       transition: "all 0.12s",
                       opacity: isDeleting || !row.sno ? 0.5 : 1,
@@ -483,8 +502,8 @@ const RoleCard = memo(({ roleNAME, txs, onEdit, onToggle, onDelete, isToggling, 
 
   return (
     <Box
-      mb={4} border={`1px solID ${T.border}`} borderRadius={T.radiusLg}
-      overflow="hIDden" boxShadow="0 1px 4px rgba(0,0,0,0.06)"
+      mb={4} border={`1px solid ${T.border}`} borderRadius={T.radiusLg}
+      overflow="hidden" boxShadow="0 1px 4px rgba(0,0,0,0.06)"
       transition="box-shadow 0.15s"
       _hover={{ boxShadow: "0 3px 12px rgba(0,0,0,0.1)" }}
     >
@@ -527,7 +546,7 @@ const RoleCard = memo(({ roleNAME, txs, onEdit, onToggle, onDelete, isToggling, 
               display: "flex", alignItems: "center", gap: 5,
               padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
               background: "rgba(255,255,255,0.12)", color: "white",
-              border: "1px solID rgba(255,255,255,0.2)",
+              border: "1px solid rgba(255,255,255,0.2)",
               cursor: "pointer", transition: "background 0.12s",
             }}
           >
@@ -539,12 +558,12 @@ const RoleCard = memo(({ roleNAME, txs, onEdit, onToggle, onDelete, isToggling, 
               display: "flex", alignItems: "center", gap: 5,
               padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
               background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)",
-              border: "1px solID rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.12)",
               cursor: "pointer", transition: "background 0.12s",
             }}
           >
             {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-            {expanded ? "HIDe" : "Show"}
+            {expanded ? "Hide" : "Show"}
           </button>
         </HStack>
       </Flex>
@@ -577,11 +596,16 @@ export default function RoleTranCreationPage() {
   const [editingRole,  setEditingRole]  = useState<{ roleNAME: string; originalRows: RoleTran[] } | null>(null);
 
   const { data: menu = [] } = useMenu();
+
+  
   const { data: roleTransactions, isLoading: isLoadingTransactions, refetch } = useRoleTransactions();
   const { mutate: insertRoles,      isPending: isInserting } = useInsertRoleTransaction();
   const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteRoleTransaction();
   const { mutate: toggleTransaction, isPending: isToggling } = useToggleRoleTransactionActive();
   const { roles, loading: loadingRoles } = useRole();
+
+
+  console.log(menu,'roleTransactions')
 
   // ── Content meta lookup ────────────────────────────────────────────────────
   const contentMeta = useMemo(() => {
@@ -590,14 +614,15 @@ export default function RoleTranCreationPage() {
       subModuleID: number; subModuleNAME: string; contentNAME: string;
     }>();
     (menu as unknown as ModuleNode[] ).forEach(mod => {
-      mod.CONTENTS?.forEach(c => {
-        map.set(c.ID, { moduleID: mod.ID, moduleNAME: mod.NAME, subModuleID: 0, subModuleNAME: "", contentNAME: c.NAME });
+      console.log(mod,'modmod')
+      mod.moduleContent?.forEach(c => {
+        map.set(c.id, { moduleID: mod.id, moduleNAME: mod.name, subModuleID: 0, subModuleNAME: "", contentNAME: c.name });
       });
-      mod.subModules?.forEach(sub => {
-        sub.CONTENTS?.forEach(c => {
-          map.set(c.ID, { moduleID: mod.ID, moduleNAME: mod.NAME, subModuleID: sub.ID, subModuleNAME: sub.NAME, contentNAME: c.NAME });
-        });
-      });
+      // mod.SUBMODULES?.forEach(sub => {
+      //   sub.CONTENTS?.forEach(c => {
+      //     map.set(c.ID, { moduleID: mod.ID, moduleNAME: mod.NAME, subModuleID: sub.ID, subModuleNAME: sub.NAME, contentNAME: c.NAME });
+      //   });
+      // });
     });
     return map;
   }, [menu]);
@@ -645,8 +670,11 @@ export default function RoleTranCreationPage() {
   const handleAddRows = useCallback(() => {
     if (!isFormValID) { toastError("Please select a role and at least one content"); return; }
 
+    console.log(selectedContentIDs,'selectedContentIDs')
+
     const newRows: RoleTran[] = Array.from(selectedContentIDs).map(contentID => {
       const meta = contentMeta.get(contentID);
+      console.log(meta, contentID,'meta')
       if (!meta) throw new Error(`Content ${contentID} not found`);
       return {
         ROLEID: selectedRoleID!, ROLENAME: selectedRoleNAME,
@@ -704,16 +732,20 @@ export default function RoleTranCreationPage() {
   const handleSubmit = useCallback(() => {
     if (!rows.length) { toastError("Please add at least one role transaction"); return; }
 
+    const payload = toRoleTranInputs(rows);
+    console.log(payload,'payload');
+
+
     if (editingRole) {
       const snos = editingRole.originalRows.filter(tx => tx.SNO).map(tx => tx.SNO!);
-      if (!snos.length) { insertRoles(rows, { onSuccess: handleSubmitSuccess }); return; }
+      if (!snos.length) { insertRoles(payload, { onSuccess: handleSubmitSuccess }); return; }
       let done = 0; let errored = false;
       snos.forEach(sno => deleteTransaction(sno, {
-        onSuccess: () => { done++; if (done === snos.length && !errored) insertRoles(rows, { onSuccess: handleSubmitSuccess }); },
+        onSuccess: () => { done++; if (done === snos.length && !errored) insertRoles(payload, { onSuccess: handleSubmitSuccess }); },
         onError:   () => { if (!errored) { errored = true; toastError("Error deleting old permissions"); } },
       }));
     } else {
-      insertRoles(rows, { onSuccess: handleSubmitSuccess });
+      insertRoles(payload, { onSuccess: handleSubmitSuccess });
     }
   }, [rows, editingRole, insertRoles, deleteTransaction, handleSubmitSuccess]);
 
@@ -745,14 +777,14 @@ export default function RoleTranCreationPage() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <Box bg={T.bgCard} rounded={T.radiusLg} shadow="sm" border={`1px solID ${T.border}`}>
+    <Box bg={T.bgCard} rounded={T.radiusLg} shadow="sm" border={`1px solid ${T.border}`}>
       <Tabs.Root
         value={tabValue}
         onValueChange={(d: any) => setTabValue(d.value)}
         variant="enclosed"
       >
         <Tabs.List
-          borderBottom={`2px solID ${T.border}`}
+          borderBottom={`2px solid ${T.border}`}
           bg={T.bg}
           borderRadius={`${T.radiusMd} ${T.radiusMd} 0 0`}
           p={1} gap={1}
@@ -783,7 +815,7 @@ export default function RoleTranCreationPage() {
             <GridItem>
               <Box
                 bg={T.bg} p={4} rounded={T.radiusLg}
-                border={`1px solID ${T.border}`}
+                border={`1px solid ${T.border}`}
                 boxShadow="0 1px 3px rgba(0,0,0,0.05)"
               >
                 {/* Section header */}
@@ -820,7 +852,7 @@ export default function RoleTranCreationPage() {
                       <select
                         style={{
                           width: "100%", padding: "8px 12px", fontSize: 13,
-                          borderRadius: T.radius, border: `1px solID ${T.borderMID}`,
+                          borderRadius: T.radius, border: `1px solid ${T.borderMID}`,
                           background: T.bgCard, color: T.text,
                           outline: "none", cursor: "pointer",
                         }}
@@ -844,7 +876,7 @@ export default function RoleTranCreationPage() {
                     cursor: "pointer", userSelect: "none",
                     padding: "7px 10px", borderRadius: T.radius,
                     background: active ? T.greenLight : T.bg,
-                    border: `1px solID ${active ? "#A7F3D0" : T.border}`,
+                    border: `1px solid ${active ? "#A7F3D0" : T.border}`,
                     transition: "all 0.15s", fontSize: 13, fontWeight: 500,
                     color: active ? "#065F46" : T.textMID,
                   }}>
@@ -853,7 +885,7 @@ export default function RoleTranCreationPage() {
                     Active Permission
                   </label>
 
-                  <Box borderTop={`1px solID ${T.border}`} />
+                  <Box borderTop={`1px solid ${T.border}`} />
 
                   {/* Permission tree */}
                   <Box>
@@ -871,7 +903,7 @@ export default function RoleTranCreationPage() {
                     </HStack>
                     <Box
                       maxH="340px" overflowY="auto"
-                      border={`1px solID ${T.border}`} rounded={T.radius} p={2} bg={T.bgCard}
+                      border={`1px solid ${T.border}`} rounded={T.radius} p={2} bg={T.bgCard}
                       css={{
                         "&::-webkit-scrollbar": { width: "4px" },
                         "&::-webkit-scrollbar-track": { background: "transparent" },
@@ -918,7 +950,7 @@ export default function RoleTranCreationPage() {
                         width: "100%", padding: "7px 16px", borderRadius: T.radius,
                         fontSize: 13, fontWeight: 500, cursor: "pointer",
                         background: "transparent", color: T.textMID,
-                        border: `1px solID ${T.border}`, transition: "all 0.15s",
+                        border: `1px solid ${T.border}`, transition: "all 0.15s",
                       }}
                     >
                       Cancel Edit
@@ -931,7 +963,7 @@ export default function RoleTranCreationPage() {
             {/* RIGHT: staging table */}
             <GridItem>
               <Box
-                border={`1px solID ${T.border}`} rounded={T.radiusLg} p={3} bg={T.bgCard}
+                border={`1px solid ${T.border}`} rounded={T.radiusLg} p={3} bg={T.bgCard}
                 h="100%" boxShadow="0 1px 3px rgba(0,0,0,0.05)"
               >
                 <HStack justify="space-between" mb={3}>
@@ -1009,7 +1041,7 @@ export default function RoleTranCreationPage() {
                                   style={{
                                     padding: "3px 8px", fontSize: 11.5, borderRadius: 5,
                                     background: T.accentLight, color: T.accent,
-                                    border: `1px solID ${T.accentMID}`, cursor: "pointer", fontWeight: 600,
+                                    border: `1px solid ${T.accentMID}`, cursor: "pointer", fontWeight: 600,
                                   }}
                                 >Edit</button>
                                 <button
@@ -1017,7 +1049,7 @@ export default function RoleTranCreationPage() {
                                   style={{
                                     padding: "4px 7px", borderRadius: 5,
                                     background: T.redLight, color: T.red,
-                                    border: `1px solID #FECACA`, cursor: "pointer",
+                                    border: `1px solid #FECACA`, cursor: "pointer",
                                     display: "flex", alignItems: "center",
                                   }}
                                 >
@@ -1029,7 +1061,7 @@ export default function RoleTranCreationPage() {
                         )}
                       />
                     </Box>
-                    <HStack justify="flex-end" gap={2} pt={1} borderTop={`1px solID ${T.border}`}>
+                    <HStack justify="flex-end" gap={2} pt={1} borderTop={`1px solid ${T.border}`}>
                       <button
                         onClick={handleSubmit} disabled={isInserting}
                         style={{

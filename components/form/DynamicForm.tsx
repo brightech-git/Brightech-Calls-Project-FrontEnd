@@ -4,7 +4,7 @@ import { Box, Grid ,Text ,Stack } from "@chakra-ui/react";
 
 
 import { CapitalizedInput } from '@/components/ui/CapitalizedInput';
-import { SelectCombobox } from '../ui/SelectComboBox';
+import {SelectCombobox}  from '@/components/ui/SelectComboBox';
 import { NativeSelectWrapper } from "@/components/ui/NativeSelectWrapper";
 import RadioButton from '@/components/ui/RadioButton';
 import { PasswordInput } from '@/components/ui/password-input';
