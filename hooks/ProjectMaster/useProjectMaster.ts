@@ -28,6 +28,7 @@ export const useProjectList = () =>
   useQuery({
     queryKey: PROJECT_KEY,
     queryFn: getAllProjects,
+    select :(res)=>res.data
   });
 
 // GET BY ID

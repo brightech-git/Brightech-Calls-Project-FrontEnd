@@ -50,7 +50,7 @@ export interface MenuModule {
   id: number;
   name: string;
   moduleContent: MenuContent[];
-  subModulel: MenuSubModule[];
+  subModule: MenuSubModule[];
 }
 
 // ================= ROLE TRANSACTION TYPES =================

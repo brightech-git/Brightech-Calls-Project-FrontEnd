@@ -16,7 +16,7 @@ const COMPANY_KEY = ["company-list"];
 
 // GET ALL
 export const useCompanyList = () =>
-  useQuery({ queryKey: COMPANY_KEY, queryFn: getAllCompanies });
+  useQuery({ queryKey: COMPANY_KEY, queryFn: getAllCompanies ,select :(res)=> res?.data ?? [] });
 
 // GET BY ID
 export const useGetCompanyById = (id: string) =>

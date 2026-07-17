@@ -319,6 +319,7 @@ export const useRoleTransactions = () => {
   return useQuery({
     queryKey: ["roleTransactions"],
     queryFn: getRoleTransactions,
+    select :(res)=>res.data
   });
 };
 

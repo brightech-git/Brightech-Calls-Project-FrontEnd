@@ -61,13 +61,13 @@ export const getAllCallsBookings = async (
   const response =
     await axiosInstance.get<
       PagedResponse<CallsBookingListItem>
-    >("/callsbooking", {
+      >("/callsbooking", {
       params: {
         page: params?.page ?? 0,
         size: params?.size ?? 100,
       },
     });
-
+    console.log(response , 'callsgetting')
   return response.data;
 };
 
@@ -103,6 +103,7 @@ export const getCallsByStatus = async (
     await axiosInstance.get<CallsBookingRecord[]>(
       `/callsbooking/status/${status}`
     );
+  console.log(response, 'callsgetting')
 
   return response.data;
 };

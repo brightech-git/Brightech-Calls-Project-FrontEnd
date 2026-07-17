@@ -26,6 +26,7 @@ export const useCallStatusList = () =>
   useQuery({
     queryKey: CALLSTATUS_KEY,
     queryFn: getAllCallStatus,
+    select :(res) =>res.data
   });
 
 // GET BY TICKET ID
@@ -34,6 +35,7 @@ export const useGetCallStatusById = (id: string) =>
     queryKey: ["callstatus", id],
     queryFn: () => getCallStatusById(id),
     enabled: !!id,
+    
   });
 
 // CREATE

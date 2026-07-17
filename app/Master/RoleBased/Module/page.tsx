@@ -826,7 +826,7 @@ export default function RoleTranPage() {
                                 fontSize="10px"
                                 px={2}
                               >
-                                {mod.subModulel.length} Sub
+                                {mod.subModule.length} Sub
                               </Badge>
 
                               <Badge
@@ -836,7 +836,7 @@ export default function RoleTranPage() {
                                 px={2}
                               >
                                 {mod.moduleContent.length +
-                                  mod.subModulel.reduce(
+                                  mod.subModule.reduce(
                                     (acc, s) => acc + s.moduleContent.length,
                                     0
                                   )}{" "}
@@ -904,7 +904,7 @@ export default function RoleTranPage() {
 
                           {/* SUB MODULES */}
                           <VStack align="stretch" gap={3}>
-                            {mod.subModulel.map((sub) => {
+                            {mod.subModule.map((sub) => {
                               const subExpanded = expandedSubModules.has(sub.id);
 
                               return (

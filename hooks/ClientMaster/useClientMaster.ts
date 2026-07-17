@@ -11,7 +11,7 @@ import { ClientPayload } from "@/types/ClientMaster/ClientMaster";
 const CLIENT_KEY = ["client-list"];
 
 export const useClientList = () =>
-  useQuery({ queryKey: CLIENT_KEY, queryFn: getAllClients });
+  useQuery({ queryKey: CLIENT_KEY, queryFn: getAllClients ,select :(res) => res.data  });
 
 export const useGetClientById = (id: string) =>
   useQuery({

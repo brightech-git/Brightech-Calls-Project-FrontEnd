@@ -2,7 +2,7 @@ import React from 'react';
 import { InputGroup } from '@chakra-ui/react';
 import { CapitalizedInput } from '../../components/ui/CapitalizedInput';
 import { FiSearch, FiX } from 'react-icons/fi';
-import { useTheme } from '@/context/theme/themeContext';
+import { COLORS } from '@/utils/theme';
 
 interface SearchBarProps<T = any> {
     searchTerm: string;
@@ -37,7 +37,7 @@ const SearchBar = <T,>({
     allowSpecial = true,
     className = '',
 }: SearchBarProps<T>) => {
-    const { theme } = useTheme();
+    
 
     const handleClear = () => {
         onChange('');
@@ -51,7 +51,7 @@ const SearchBar = <T,>({
     return (
         <InputGroup
             className={className}
-            startElement={<FiSearch color={theme?.colors?.accient || '#011f4b'} />}
+            startElement={<FiSearch color={COLORS.btnPrimaryBg || '#011f4b'} />}
             endElement={
                 searchTerm && !disabled ? (
                     <FiX
@@ -61,7 +61,7 @@ const SearchBar = <T,>({
                             e.currentTarget.style.color = '#bd0808';
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.color = theme?.colors?.greyColor || '#718096';
+                            e.currentTarget.style.color = COLORS.btnPrimaryBg || '#718096';
                         }}
                     />
                 ) : undefined

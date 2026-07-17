@@ -29,6 +29,7 @@ export const menuConfig: MenuEntryConfig[] = [
       // { id: "staff-master", label: "Staff Master", href: "/Master/StaffMaster", icon: Users },
       { id: "company-master", label: "Company Master", href: "/Master/CompanyMaster", icon: Users },
       { id: "client-master", label: "Client Master", href: "/Master/ClientMaster", icon: Briefcase },
+      { id: "client-visit-master", label: "Client Visit Master", href: "/Master/ClientVisitMaster", icon: Briefcase },
     ],
   },
   {
@@ -45,7 +46,7 @@ export const menuConfig: MenuEntryConfig[] = [
   {
     id: "role-based-access", label: "Role Based Access", icon: ShieldCheck,
     children: [
-      { id: "user-role", label: "User Role", href: "/Master/RoleBased/UserRole", icon: KeyRound },
+      // { id: "user-role", label: "User Role", href: "/Master/RoleBased/UserRole", icon: KeyRound },
       { id: "role-master", label: "Role Master", href: "/Master/RoleBased/RoleMaster", icon: KeyRound },
       { id: "role-transaction", label: "Role Transaction", href: "/Master/RoleBased/RoleTranCreation", icon: KeyRound },
       { id: "module", label: "Module Creation", href: "/Master/RoleBased/Module", icon: KeyRound },

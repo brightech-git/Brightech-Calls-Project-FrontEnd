@@ -20,6 +20,7 @@ import {
   AuthResponse,
   UserRecord,
 } from "@/types/Auth/Auth";
+import { ApiResponse } from "@/types/ApiResponse";
 
 // LOGIN HOOK
 export const useLogin = () => {
@@ -88,9 +89,10 @@ export const useRegister = () => {
 
 // GET ALL USERS HOOK
 export const useGetAllUsers = () => {
-  return useQuery<UserRecord[]>({
+  return useQuery<ApiResponse<UserRecord[]>, Error, UserRecord[]>({
     queryKey: ["all-users"],
     queryFn: getAllUsers,
+    select: (res) => res?.data ?? []
   });
 };
 

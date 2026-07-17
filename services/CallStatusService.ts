@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 
 import { axiosInstance } from "@/api/axiosInstance";
+import { ApiResponse } from "@/types/ApiResponse";
 
 import {
   CallStatusPayload,
@@ -41,9 +42,9 @@ export const createCallStatus = async (
 };
 
 // GET ALL
-export const getAllCallStatus = async (): Promise<CallStatusRecord[]> => {
+export const getAllCallStatus = async (): Promise<ApiResponse<CallStatusRecord[]>> => {
 
-  const response = await axiosInstance.get<CallStatusRecord[]>(
+  const response = await axiosInstance.get<ApiResponse<CallStatusRecord[]>>(
     "/callstatus/list"
   );
 

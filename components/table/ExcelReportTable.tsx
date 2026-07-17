@@ -1,7 +1,7 @@
 "use client";
 
 import { HotTable } from "@handsontable/react";
-import type { CellChange, ChangeSource } from "handsontable/common";
+import type { CellChange, ChangeSource } from "handsontable/settings";
 import { HotTableClass } from "@handsontable/react";
 import { registerAllModules } from "handsontable/registry";
 import {
@@ -347,13 +347,13 @@ export default function DataTable({
                             },
 
                             renderer: (
-                                instance,
-                                td,
-                                row,
-                                col,
-                                prop,
-                                value,
-                                cellProperties
+                                instance: Handsontable,
+                                td: HTMLTableCellElement,
+                                row: number,
+                                col: number,
+                                prop: string | number,
+                                value: unknown,
+                                cellProperties: Handsontable.CellProperties
                             ) => {
                                 // preserve numeric alignment/styles
                                 Handsontable.renderers.NumericRenderer(

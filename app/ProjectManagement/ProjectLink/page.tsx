@@ -87,11 +87,11 @@ const COLUMNS: TableColumn<ProjectLinkRecord_Table>[] = [
   { key: "linkId", header: "ID",  width: "70px", align: "center" },
   {
     key: "company", header: "Company", 
-    render: (row) => row.client?.CLIENTNAME ?? row.client?.CLIENTID ?? "—",
+    render: (row) => row?.CLIENTNAME ?? row.clientId ?? "—",
   },
   {
     key: "projectType", header: "Project Type", 
-    render: (row) => row.projectType?.projectTypeName ?? row.projectType?.projectTypeId ?? "—",
+    render: (row) => row.projectTypeName ?? row.projectTypeId ?? "—",
   },
   {
     key: "url",
@@ -129,8 +129,8 @@ const COLUMNS: TableColumn<ProjectLinkRecord_Table>[] = [
 
 const EXPORT_COLUMNS: ExportColumn<ProjectLinkRecord_Table>[] = [
   { key: "linkId", label: "ID" },
-  { key: "company", label: "Company", exportValue: (_, row) => row.client?.CLIENTNAME ?? "—" },
-  { key: "projectType", label: "Project Type", exportValue: (_, row) => row.projectType?.projectTypeName ?? "—" },
+  // { key: "company", label: "Company", exportValue: (_, row) => row.client?.CLIENTNAME ?? "—" },
+  { key: "projectType", label: "Project Type", exportValue: (_, row) => row.projectTypeName ?? "—" },
   { key: "url", label: "URL" },
   { key: "userName", label: "User Name" },
   { key: "status", label: "Status" },
@@ -162,8 +162,10 @@ export default function ProjectLinkPage() {
   const { data: projectTypes = [] } = useProjectTypeList();
   const { data: projectLinks = [], isLoading } = useProjectLinkList();
 
-  console.log(clients,'clients')
+  console.log(projectLinks,'projectLinks')
   const clientItems = clients.map((c) => ({ label: c.CLIENTNAME, value: String(c.CLIENTID) }));
+
+  console.log(clientItems,'clientItems')
   const projectTypeItems = projectTypes.map((p) => ({ label: p.projectTypeName, value: String(p.projectTypeId) }));
 
   const createMutation = useCreateProjectLink();
@@ -203,8 +205,8 @@ export default function ProjectLinkPage() {
     setEditRow(r);
 
     reset({
-      CLIENTID: r.client?.CLIENTID ?? 0,
-      projectTypeId: r.projectType?.projectTypeId ?? 0,
+      CLIENTID: r.clientId ?? 0,
+      projectTypeId: r.projectTypeId ?? 0,
       url: r.url ?? "",
       userName: r.userName ?? "",
       password: r.password ?? "",
@@ -222,8 +224,8 @@ export default function ProjectLinkPage() {
     data: ProjectLinkForm
   ) => {
     const payload = {
-      client: { CLIENTID: data.CLIENTID },
-      projectType: { projectTypeId: data.projectTypeId },
+      clientId:  data.CLIENTID ,
+      projectTypeId:data.projectTypeId ,
       url: data.url,
       userName: data.userName,
       password: data.password,

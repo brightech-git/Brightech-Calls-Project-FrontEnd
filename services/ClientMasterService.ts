@@ -1,4 +1,5 @@
 import { axiosInstance } from "@/api/axiosInstance";
+import { ApiResponse } from "@/types/ApiResponse";
 import { ClientPayload, ClientRecord } from "@/types/ClientMaster/ClientMaster";
 
 export const createClient = async (payload: ClientPayload): Promise<ClientRecord> => {
@@ -7,8 +8,8 @@ export const createClient = async (payload: ClientPayload): Promise<ClientRecord
   console.log("Client created successfully:", response);
   return response.data;
 };
-export const getAllClients = async (): Promise<ClientRecord[]> => {
-  const response = await axiosInstance.get<ClientRecord[]>("/client");
+export const getAllClients = async (): Promise<ApiResponse<ClientRecord[]>> => {
+  const response = await axiosInstance.get<ApiResponse<ClientRecord[]>>("/client");
   return response.data;
 };
 

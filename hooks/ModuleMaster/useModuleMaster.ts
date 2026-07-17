@@ -27,6 +27,7 @@ export const useModuleList = () =>
   useQuery({
     queryKey: MODULE_KEY,
     queryFn: getAllModules,
+    select :(res)=>res.data
   });
 
 // GET BY ID

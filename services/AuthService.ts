@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 
 import { axiosInstance } from "@/api/axiosInstance";
+import { ApiResponse } from "@/types/ApiResponse";
 import {
   LoginPayload,
   RegisterPayload,
@@ -14,7 +15,7 @@ import {
 // LOGIN
 export const loginUser = async (payload: LoginPayload): Promise<AuthResponse> => {
   try {
-    const response = await axiosInstance.post<AuthResponse>("/auth/login", payload);
+    const response = await axiosInstance.post<AuthResponse>("/user/login", payload);
     return response.data;
   } catch (err) {
     console.error("Login Error:", err);
@@ -25,7 +26,7 @@ export const loginUser = async (payload: LoginPayload): Promise<AuthResponse> =>
 // REGISTER
 export const registerUser = async (payload: RegisterPayload): Promise<AuthResponse> => {
   try {
-    const response = await axiosInstance.post<AuthResponse>("/auth/register", payload);
+    const response = await axiosInstance.post<AuthResponse>("/user/register", payload);
     return response.data;
   } catch (err) {
     console.error("Register Error:", err);
@@ -34,24 +35,24 @@ export const registerUser = async (payload: RegisterPayload): Promise<AuthRespon
 };
 
 // GET ALL USERS
-export const getAllUsers = async (): Promise<UserRecord[]> => {
-  const response = await axiosInstance.get<UserRecord[]>("/auth/users");
+export const getAllUsers = async (): Promise<ApiResponse<UserRecord[]>> => {
+  const response = await axiosInstance.get<ApiResponse<UserRecord[]>>("/user");
   return response.data;
 };
 
 // GET USER BY ID
 export const getUserById = async (id: string): Promise<UserRecord> => {
-  const response = await axiosInstance.get<UserRecord>(`/auth/users/${id}`);
+  const response = await axiosInstance.get<UserRecord>(`/user/${id}`);
   return response.data;
 };
 
 // UPDATE USER
 export const updateUser = async (id: string, payload: UpdateUserPayload): Promise<UserRecord> => {
-  const response = await axiosInstance.put<UserRecord>(`/auth/users/${id}`, payload);
+  const response = await axiosInstance.put<UserRecord>(`/user/${id}`, payload);
   return response.data;
 };
 
 // DELETE USER
 export const deleteUser = async (id: string): Promise<void> => {
-  await axiosInstance.delete(`/auth/users/${id}`);
+  await axiosInstance.delete(`/user/${id}`);
 };

@@ -4,59 +4,77 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Image as ImageIcon } from "lucide-react";
 
 import { CustomTable, TableColumn } from "@/components/CustomTable";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { SwitchInput } from "@/components/ui/SwitchInput";
+import { FileUploader } from "@/components/ui/FileUploadInput";
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
 import { COLORS, FONT, RADIUS } from "@/utils/theme";
 import {
-  useCompanyList,
-  useCreateCompany,
-  useUpdateCompany,
-  useDeleteCompany,
-} from "@/hooks/CompanyMaster/useCompanyMaster";
-import { CompanyRecord, CompanyRecord_Table } from "@/types/CompanyMaster/CompanyMaster";
+  useClientVisitList,
+  useCreateClientVisit,
+  useUpdateClientVisit,
+  useDeleteClientVisit,
+} from "@/hooks/ApiHooks/ClientVisit/useClientVisit";
+import { ClientVisitRecord, ClientVisitRecord_Table } from "@/types/ClientVisit/ClientVisit";
+
+// ─── Media URL helper ──────────────────────────────────────────────────────────
+// Media paths come back server-relative (e.g. "/uploads/clientvisit/xxx.jpg"),
+// rooted at the API host, not under the "/api/v1" prefix used for JSON calls.
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8112/api/v1";
+const MEDIA_ORIGIN = API_BASE.replace(/\/api\/v1\/?$/, "");
+const mediaUrl = (path: string) =>
+  path.startsWith("http") ? path : `${MEDIA_ORIGIN}${path}`;
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const companySchema = z.object({
-  COMPANYID:    z.string().min(1, "Company ID is required"),
-  COMPANYNAME:  z.string().min(1, "Company name is required"),
-  COSTID:       z.string().optional(),
-  PHONE:        z.string().optional(),
-  MOBILE:       z.string().regex(/^[6-9]\d{9}$/, "Enter valid 10-digit mobile"),
-  EMAIL:        z.string().email("Enter valid email"),
-  ADDRESS1:     z.string().optional(),
-  ADDRESS2:     z.string().optional(),
-  ADDRESS3:     z.string().optional(),
-  ADDRESS4:     z.string().optional(),
-  AREACODE:     z.string().optional(),
-  GSTNO:        z.string().optional(),
-  PANNO:        z.string().optional(),
-  TANNO:        z.string().optional(),
-  TDSNO:        z.string().optional(),
-  TINNO:        z.string().optional(),
-  CSTNO:        z.string().optional(),
-  LOCALTAXNO:   z.string().optional(),
-  SHORTKEY:     z.string().optional(),
-  ACTIVE:       z.enum(["Y", "N"]),
+const clientVisitSchema = z.object({
+  COMPANYNAME:  z.string().min(1, "Client name is required"),
+  COMPANYID:   z.string().optional(),
+
+  PHONE:       z.string().optional(),
+  MOBILE:      z.string().regex(/^[6-9]\d{9}$/, "Enter valid 10-digit mobile"),
+  EMAIL:       z.string().optional(),
+  ADDRESS1:    z.string().optional(),
+  ADDRESS2:    z.string().optional(),
+  ADDRESS3:    z.string().optional(),
+  REMARKS:     z.string().optional(),
+  AREACODE:    z.string().optional(),
+  GSTNO:       z.string().optional(),
+  PANNO:       z.string().optional(),
+  TANNO:       z.string().optional(),
+  TDSNO:       z.string().optional(),
+  TINNO:       z.string().optional(),
+  CSTNO:       z.string().optional(),
+  LOCALTAXNO:  z.string().optional(),
+  SHORTKEY:    z.string().optional(),
+  ACTIVE:      z.enum(["Y", "N"]),
 });
 
-type CompanyForm = z.infer<typeof companySchema>;
+type ClientVisitForm = z.infer<typeof clientVisitSchema>;
 
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
-const COLUMNS: TableColumn<CompanyRecord_Table>[] = [
-  { key: "COMPID",      header: "#",           align: "center", width: "50px" },
-  { key: "COMPANYID",   header: "Company ID",  sortable: true,  width: "100px" },
-  { key: "COMPANYNAME", header: "Name",        sortable: true },
-  { key: "MOBILE",      header: "Mobile",      sortable: true },
-  { key: "EMAIL",       header: "Email",       sortable: true },
-  { key: "GSTNO",       header: "GST No",      sortable: true },
+const COLUMNS: TableColumn<ClientVisitRecord_Table>[] = [
+  { key: "ID",         header: "#",           align: "center", width: "50px" },
+  { key: "COMPANYNAME", header: "Client Name", sortable: true },
+  { key: "MOBILE",     header: "Mobile",      sortable: true },
+  { key: "EMAIL",      header: "Email",       sortable: true },
+  { key: "media",      header: "Media",       align: "center", width: "80px",
+    render: (row) => (
+      <span style={{
+        display: "inline-flex", alignItems: "center", gap: 4,
+        fontSize: 11, color: COLORS.textMuted,
+      }}>
+        <ImageIcon size={13} /> {row.media?.length ?? 0}
+      </span>
+    ),
+  },
   { key: "ACTIVE",      header: "Status",      sortable: true,
     render: (row) => (
       <span style={{
@@ -72,49 +90,54 @@ const COLUMNS: TableColumn<CompanyRecord_Table>[] = [
 
 // ─── Default values ───────────────────────────────────────────────────────────
 
-const DEFAULTS: CompanyForm = {
-  COMPANYID: "", COMPANYNAME: "", COSTID: "", SHORTKEY: "",
+const DEFAULTS: ClientVisitForm = {
+  COMPANYNAME: "", COMPANYID: "",  SHORTKEY: "",
   PHONE: "", MOBILE: "", EMAIL: "", ACTIVE: "Y",
-  ADDRESS1: "", ADDRESS2: "", ADDRESS3: "", ADDRESS4: "", AREACODE: "",
+  ADDRESS1: "", ADDRESS2: "", ADDRESS3: "", REMARKS: "", AREACODE: "",
   GSTNO: "", PANNO: "", TANNO: "", TDSNO: "", TINNO: "", CSTNO: "", LOCALTAXNO: "",
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function CompanyMasterPage() {
-  usePageHeader({ title: "Company Master", subtitle: "Manage company records" });
+export default function ClientVisitMasterPage() {
+  usePageHeader({ title: "Client Visit Master", subtitle: "Manage client visit records" });
 
   const toast = useToast();
   const [open, setOpen]           = useState(false);
-  const [editRow, setEditRow]     = useState<CompanyRecord | null>(null);
-  const [deleteRow, setDeleteRow] = useState<CompanyRecord | null>(null);
+  const [editRow, setEditRow]     = useState<ClientVisitRecord | null>(null);
+  const [deleteRow, setDeleteRow] = useState<ClientVisitRecord | null>(null);
+  const [media, setMedia]         = useState<File[]>([]);
 
-  const { data: companies = [], isLoading } = useCompanyList();
-  const createMutation = useCreateCompany();
-  const updateMutation = useUpdateCompany();
-  const deleteMutation = useDeleteCompany();
+  const { data: visits = [], isLoading } = useClientVisitList();
+
+
+    console.log(visits,'visits')
+
+  const createMutation = useCreateClientVisit();
+  const updateMutation = useUpdateClientVisit();
+  const deleteMutation = useDeleteClientVisit();
   const isPending = createMutation.isPending || updateMutation.isPending;
 
-  console.log(companies,'companies')
-
-  const { control, handleSubmit, reset, formState: { errors } } = useForm<CompanyForm>({
-    resolver: zodResolver(companySchema),
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<ClientVisitForm>({
+    resolver: zodResolver(clientVisitSchema),
     defaultValues: DEFAULTS,
   });
 
   const openCreate = () => {
     setEditRow(null);
+    setMedia([]);
     reset(DEFAULTS);
     setOpen(true);
   };
 
-  const openEdit = (row: CompanyRecord_Table) => {
-    const r = row as CompanyRecord;
+  const openEdit = (row: ClientVisitRecord_Table) => {
+    const r = row as ClientVisitRecord;
     setEditRow(r);
+    setMedia([]);
     reset({
+    COMPANYNAME: r.COMPANYNAME  ?? "",
       COMPANYID:   r.COMPANYID   ?? "",
-      COMPANYNAME: r.COMPANYNAME ?? "",
-      COSTID:      r.COSTID      ?? "",
+    //   COSTID:      r.COSTID      ?? "",
       SHORTKEY:    r.SHORTKEY    ?? "",
       PHONE:       r.PHONE       ?? "",
       MOBILE:      r.MOBILE      ?? "",
@@ -123,7 +146,7 @@ export default function CompanyMasterPage() {
       ADDRESS1:    r.ADDRESS1    ?? "",
       ADDRESS2:    r.ADDRESS2    ?? "",
       ADDRESS3:    r.ADDRESS3    ?? "",
-      ADDRESS4:    r.ADDRESS4    ?? "",
+      REMARKS:     r.REMARKS     ?? "",
       AREACODE:    r.AREACODE    ?? "",
       GSTNO:       r.GSTNO       ?? "",
       PANNO:       r.PANNO       ?? "",
@@ -136,33 +159,33 @@ export default function CompanyMasterPage() {
     setOpen(true);
   };
 
-  const onSubmit = async (data: CompanyForm) => {
+  const onSubmit = async (data: ClientVisitForm) => {
     try {
       if (editRow) {
-        const payload = { ...data, COMPID: editRow.COMPID, USERID: editRow.USERID };
-        console.log("[CompanyMaster] UPDATE payload:", payload);
-        const res = await updateMutation.mutateAsync({ id: String(editRow.COMPID), payload });
-        console.log("[CompanyMaster] UPDATE response:", res);
-        toast.success("Company Updated", `"${res.COMPANYNAME}" updated successfully.`);
+        const res = await updateMutation.mutateAsync({
+          id: String(editRow.ID),
+          payload: data,
+          media,
+        });
+        toast.success("Visit Updated", `"${res.COMPANYNAME}" updated successfully.`);
       } else {
-        console.log("[CompanyMaster] CREATE payload:", data);
-        const res = await createMutation.mutateAsync(data);
-        console.log("[CompanyMaster] CREATE response:", res);
-        toast.success("Company Created", `"${res.COMPANYNAME}" created successfully.`);
+        const res = await createMutation.mutateAsync({ payload: data, media });
+        toast.success("Visit Created", `"${res.COMPANYNAME}" created successfully.`);
       }
       setOpen(false);
+      setMedia([]);
       reset(DEFAULTS);
     } catch (err: any) {
-      console.error("[CompanyMaster] ERROR:", err?.response ?? err);
+      console.error("[ClientVisitMaster] ERROR:", err?.response ?? err);
       toast.error(editRow ? "Update Failed" : "Create Failed", err?.response?.data?.message || err?.message || "Operation failed.");
     }
   };
 
   const confirmDelete = () => {
     if (!deleteRow) return;
-    deleteMutation.mutate(String(deleteRow.COMPID), {
+    deleteMutation.mutate(String(deleteRow.ID), {
       onSuccess: () => {
-        toast.success("Company Deleted", `"${deleteRow.COMPANYNAME}" deleted successfully.`);
+        toast.success("Visit Deleted", `"${deleteRow.COMPANYNAME}" deleted successfully.`);
         setDeleteRow(null);
       },
       onError: (err: any) => {
@@ -175,14 +198,14 @@ export default function CompanyMasterPage() {
   return (
     <>
       <style>{`
-        .cm-modal-overlay {
+        .cv-modal-overlay {
           position: fixed; inset: 0;
           background: rgba(0,0,0,0.4);
           display: flex; align-items: flex-start; justify-content: center;
           z-index: 1000; padding: 10px 16px;
           overflow-y: auto;
         }
-        .cm-modal-box {
+        .cv-modal-box {
           background: ${COLORS.cardBg};
           border: 1px solid ${COLORS.cardBorder};
           border-radius: ${RADIUS.xl};
@@ -191,17 +214,17 @@ export default function CompanyMasterPage() {
           display: flex; flex-direction: column;
           font-family: ${FONT.family};
           box-shadow: 0 8px 32px rgba(0,0,0,0.14);
-          animation: cm-slide-up 0.18s ease;
+          animation: cv-slide-up 0.18s ease;
         }
-        .cm-modal-box form {
+        .cv-modal-box form {
           display: flex; flex-direction: column;
           flex: 1; min-height: 0;
         }
-        @keyframes cm-slide-up {
+        @keyframes cv-slide-up {
           from { transform: translateY(10px); opacity: 0; }
           to   { transform: translateY(0);    opacity: 1; }
         }
-        .cm-modal-head {
+        .cv-modal-head {
           padding: 10px 14px 8px;
           border-bottom: 1px solid ${COLORS.cardBorder};
           display: flex; align-items: center; justify-content: space-between;
@@ -209,10 +232,10 @@ export default function CompanyMasterPage() {
           border-radius: ${RADIUS.xl} ${RADIUS.xl} 0 0;
           flex-shrink: 0;
         }
-        .cm-modal-title { font-size: 13px; font-weight: 700; color: ${COLORS.textPrimary}; }
-        .cm-modal-sub   { font-size: 10px; color: ${COLORS.textMuted}; margin-top: 1px; }
-        .cm-modal-body  { padding: 10px 14px; overflow-y: auto; flex: 1; min-height: 0; }
-        .cm-modal-footer {
+        .cv-modal-title { font-size: 13px; font-weight: 700; color: ${COLORS.textPrimary}; }
+        .cv-modal-sub   { font-size: 10px; color: ${COLORS.textMuted}; margin-top: 1px; }
+        .cv-modal-body  { padding: 10px 14px; overflow-y: auto; flex: 1; min-height: 0; }
+        .cv-modal-footer {
           padding: 8px 14px;
           border-top: 1px solid ${COLORS.cardBorder};
           display: flex; justify-content: flex-end; gap: 8px;
@@ -220,33 +243,46 @@ export default function CompanyMasterPage() {
           border-radius: 0 0 ${RADIUS.xl} ${RADIUS.xl};
           flex-shrink: 0;
         }
-        .cm-section-label {
+        .cv-section-label {
           font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
           text-transform: uppercase; color: ${COLORS.textMuted};
           padding-bottom: 4px; border-bottom: 1px solid ${COLORS.cardBorder};
           margin-bottom: 6px; margin-top: 10px;
         }
-        .cm-section-label:first-of-type { margin-top: 0; }
-        .cm-grid-2 {
+        .cv-section-label:first-of-type { margin-top: 0; }
+        .cv-grid-2 {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 6px 24px;
         }
-        .cm-field-row {
+        .cv-field-row {
           display: flex;
           flex-direction: column;
           gap: 4px;
         }
-        .cm-field-label {
+        .cv-field-row-full { grid-column: 1 / -1; }
+        .cv-field-label {
           font-size: 12px;
           font-weight: 600;
           color: ${COLORS.textSecondary};
         }
-        .cm-field-error {
+        .cv-field-error {
           font-size: 11px;
           color: ${COLORS.error};
         }
-        .cm-btn-primary {
+        .cv-existing-media {
+          display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;
+        }
+        .cv-existing-media-item {
+          width: 64px; height: 64px; border-radius: ${RADIUS.md};
+          overflow: hidden; border: 1px solid ${COLORS.cardBorder};
+          background: ${COLORS.gray50};
+          display: flex; align-items: center; justify-content: center;
+        }
+        .cv-existing-media-item img, .cv-existing-media-item video {
+          width: 100%; height: 100%; object-fit: cover;
+        }
+        .cv-btn-primary {
           display: inline-flex; align-items: center; gap: 6px;
           padding: 0 16px; height: 34px; border-radius: ${RADIUS.md};
           border: none; background: ${COLORS.btnPrimaryBg};
@@ -254,9 +290,9 @@ export default function CompanyMasterPage() {
           font-size: 12px; font-weight: 600; cursor: pointer;
           transition: background 0.15s; font-family: inherit;
         }
-        .cm-btn-primary:hover { background: ${COLORS.btnPrimaryHover}; }
-        .cm-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .cm-btn-secondary {
+        .cv-btn-primary:hover { background: ${COLORS.btnPrimaryHover}; }
+        .cv-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cv-btn-secondary {
           display: inline-flex; align-items: center; gap: 6px;
           padding: 0 16px; height: 34px; border-radius: ${RADIUS.md};
           border: 1px solid ${COLORS.btnSecondaryBorder};
@@ -264,22 +300,22 @@ export default function CompanyMasterPage() {
           font-size: 12px; font-weight: 500; cursor: pointer;
           transition: background 0.15s; font-family: inherit;
         }
-        .cm-btn-secondary:hover { background: ${COLORS.btnSecondaryHover}; }
-        .cm-close-btn {
+        .cv-btn-secondary:hover { background: ${COLORS.btnSecondaryHover}; }
+        .cv-close-btn {
           width: 26px; height: 26px; border-radius: 6px;
           border: 1px solid ${COLORS.cardBorder};
           background: ${COLORS.cardBg}; color: ${COLORS.textMuted};
           cursor: pointer; display: flex; align-items: center; justify-content: center;
           transition: background 0.15s, color 0.15s;
         }
-        .cm-close-btn:hover { background: ${COLORS.errorBg}; color: ${COLORS.error}; }
-        .cm-modal-box input, .cm-modal-box textarea, .cm-modal-box select {
+        .cv-close-btn:hover { background: ${COLORS.errorBg}; color: ${COLORS.error}; }
+        .cv-modal-box input, .cv-modal-box textarea, .cv-modal-box select {
           background: ${COLORS.inputBg} !important;
           border: 1px solid ${COLORS.inputBorder} !important;
           color: ${COLORS.inputText} !important;
         }
-        .cm-modal-box input::placeholder { color: ${COLORS.inputPlaceholder} !important; }
-        .cm-modal-box input:focus {
+        .cv-modal-box input::placeholder { color: ${COLORS.inputPlaceholder} !important; }
+        .cv-modal-box input:focus {
           border-color: ${COLORS.inputBorderFocus} !important;
           box-shadow: 0 0 0 2px rgba(107,114,128,0.15) !important;
         }
@@ -287,32 +323,32 @@ export default function CompanyMasterPage() {
 
       {/* Table */}
       <CustomTable
-        title="All Companies"
+        title="All Client Visits"
         columns={COLUMNS}
-        data={companies as CompanyRecord_Table[] || []}
-        rowKey="COMPID"
+        data={visits as ClientVisitRecord_Table[] || []}
+        rowKey="ID"
         isLoading={isLoading}
         onEdit={openEdit}
-        onDelete={(row) => setDeleteRow(row as CompanyRecord)}
+        onDelete={(row) => setDeleteRow(row as ClientVisitRecord)}
         searchPlaceholder="Search by name, GST, mobile..."
-        emptyMessage="No companies found."
+        emptyMessage="No client visits found."
         toolbarRight={
-          <button className="cm-btn-primary" onClick={openCreate}>
-            <Plus size={13} /> Add Company
+          <button className="cv-btn-primary" onClick={openCreate}>
+            <Plus size={13} /> Add Client Visit
           </button>
         }
       />
 
       {/* Modal */}
       {open && (
-        <div className="cm-modal-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
-          <div className="cm-modal-box">
-            <div className="cm-modal-head">
+        <div className="cv-modal-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
+          <div className="cv-modal-box">
+            <div className="cv-modal-head">
               <div>
-                <div className="cm-modal-title">{editRow ? "Edit Company" : "Add Company"}</div>
-                <div className="cm-modal-sub">{editRow ? `Editing: ${editRow.COMPANYNAME}` : "Fill in the details below"}</div>
+                <div className="cv-modal-title">{editRow ? "Edit Client Visit" : "Add Client Visit"}</div>
+                <div className="cv-modal-sub">{editRow ? `Editing: ${editRow.COMPANYNAME}` : "Fill in the details below"}</div>
               </div>
-              <button className="cm-close-btn" onClick={() => setOpen(false)}>✕</button>
+              <button className="cv-close-btn" onClick={() => setOpen(false)}>✕</button>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit, (errs) => {
@@ -320,31 +356,11 @@ export default function CompanyMasterPage() {
               const msg = (first as any)?.message || "Please fix the form errors.";
               toast.error("Validation Error", msg);
             })}>
-              <div className="cm-modal-body">
-                <div className="cm-section-label">Basic Information</div>
-                <div className="cm-grid-2">
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Company ID *</label>
-                    <Controller
-                      name="COMPANYID"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="COMPANYID"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="e.g. BTS"
-                          isCapitalized
-                          disabled={!!editRow}
-                          maxWidth="100%"
-                        />
-                      )}
-                    />
-                    {errors.COMPANYID && <span className="cm-field-error">{errors.COMPANYID.message}</span>}
-                  </div>
-
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Company Name *</label>
+              <div className="cv-modal-body">
+                <div className="cv-section-label">Basic Information</div>
+                <div className="cv-grid-2">
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">Client Name *</label>
                     <Controller
                       name="COMPANYNAME"
                       control={control}
@@ -353,17 +369,17 @@ export default function CompanyMasterPage() {
                           value={field.value}
                           field="COMPANYNAME"
                           onChange={(_, value) => field.onChange(value)}
-                          placeholder="Full company name"
+                          placeholder="Full client name"
                           isCapitalized
                           maxWidth="100%"
                         />
                       )}
                     />
-                    {errors.COMPANYNAME && <span className="cm-field-error">{errors.COMPANYNAME.message}</span>}
+                    {errors.COMPANYNAME && <span className="cv-field-error">{errors.COMPANYNAME.message}</span>}
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Cost ID</label>
+                  {/* <div className="cv-field-row">
+                    <label className="cv-field-label">Cost ID</label>
                     <Controller
                       name="COSTID"
                       control={control}
@@ -377,10 +393,10 @@ export default function CompanyMasterPage() {
                         />
                       )}
                     />
-                  </div>
+                  </div> */}
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Short Key</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">Short Key</label>
                     <Controller
                       name="SHORTKEY"
                       control={control}
@@ -396,8 +412,8 @@ export default function CompanyMasterPage() {
                     />
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Phone</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">Phone</label>
                     <Controller
                       name="PHONE"
                       control={control}
@@ -413,8 +429,8 @@ export default function CompanyMasterPage() {
                     />
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Mobile *</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">Mobile *</label>
                     <Controller
                       name="MOBILE"
                       control={control}
@@ -429,11 +445,11 @@ export default function CompanyMasterPage() {
                         />
                       )}
                     />
-                    {errors.MOBILE && <span className="cm-field-error">{errors.MOBILE.message}</span>}
+                    {errors.MOBILE && <span className="cv-field-error">{errors.MOBILE.message}</span>}
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Email *</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">Email *</label>
                     <Controller
                       name="EMAIL"
                       control={control}
@@ -448,11 +464,11 @@ export default function CompanyMasterPage() {
                         />
                       )}
                     />
-                    {errors.EMAIL && <span className="cm-field-error">{errors.EMAIL.message}</span>}
+                    {errors.EMAIL && <span className="cv-field-error">{errors.EMAIL.message}</span>}
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Status *</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">Status *</label>
                     <Controller
                       name="ACTIVE"
                       control={control}
@@ -467,14 +483,31 @@ export default function CompanyMasterPage() {
                         />
                       )}
                     />
-                    {errors.ACTIVE && <span className="cm-field-error">{errors.ACTIVE.message}</span>}
+                    {errors.ACTIVE && <span className="cv-field-error">{errors.ACTIVE.message}</span>}
+                  </div>
+
+                  <div className="cv-field-row cv-field-row-full">
+                    <label className="cv-field-label">Remarks</label>
+                    <Controller
+                      name="REMARKS"
+                      control={control}
+                      render={({ field }) => (
+                        <CapitalizedInput
+                          value={field.value}
+                          field="REMARKS"
+                          onChange={(_, value) => field.onChange(value)}
+                          placeholder="Visit notes / remarks"
+                          maxWidth="100%"
+                        />
+                      )}
+                    />
                   </div>
                 </div>
 
-                <div className="cm-section-label">Address</div>
-                <div className="cm-grid-2">
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Address 1</label>
+                <div className="cv-section-label">Address</div>
+                <div className="cv-grid-2">
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">Address 1</label>
                     <Controller
                       name="ADDRESS1"
                       control={control}
@@ -490,8 +523,8 @@ export default function CompanyMasterPage() {
                     />
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Address 2</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">Address 2</label>
                     <Controller
                       name="ADDRESS2"
                       control={control}
@@ -507,8 +540,8 @@ export default function CompanyMasterPage() {
                     />
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Address 3</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">Address 3</label>
                     <Controller
                       name="ADDRESS3"
                       control={control}
@@ -524,25 +557,8 @@ export default function CompanyMasterPage() {
                     />
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Address 4</label>
-                    <Controller
-                      name="ADDRESS4"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="ADDRESS4"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="State"
-                          maxWidth="100%"
-                        />
-                      )}
-                    />
-                  </div>
-
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Area Code</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">Area Code</label>
                     <Controller
                       name="AREACODE"
                       control={control}
@@ -559,10 +575,10 @@ export default function CompanyMasterPage() {
                   </div>
                 </div>
 
-                <div className="cm-section-label">Tax Information</div>
-                <div className="cm-grid-2">
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">GST No</label>
+                <div className="cv-section-label">Tax Information</div>
+                <div className="cv-grid-2">
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">GST No</label>
                     <Controller
                       name="GSTNO"
                       control={control}
@@ -580,8 +596,8 @@ export default function CompanyMasterPage() {
                     />
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">PAN No</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">PAN No</label>
                     <Controller
                       name="PANNO"
                       control={control}
@@ -599,8 +615,8 @@ export default function CompanyMasterPage() {
                     />
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">TAN No</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">TAN No</label>
                     <Controller
                       name="TANNO"
                       control={control}
@@ -617,8 +633,8 @@ export default function CompanyMasterPage() {
                     />
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">TDS No</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">TDS No</label>
                     <Controller
                       name="TDSNO"
                       control={control}
@@ -634,8 +650,8 @@ export default function CompanyMasterPage() {
                     />
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">TIN No</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">TIN No</label>
                     <Controller
                       name="TINNO"
                       control={control}
@@ -651,8 +667,8 @@ export default function CompanyMasterPage() {
                     />
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">CST No</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">CST No</label>
                     <Controller
                       name="CSTNO"
                       control={control}
@@ -668,8 +684,8 @@ export default function CompanyMasterPage() {
                     />
                   </div>
 
-                  <div className="cm-field-row">
-                    <label className="cm-field-label">Local Tax No</label>
+                  <div className="cv-field-row">
+                    <label className="cv-field-label">Local Tax No</label>
                     <Controller
                       name="LOCALTAXNO"
                       control={control}
@@ -685,13 +701,40 @@ export default function CompanyMasterPage() {
                     />
                   </div>
                 </div>
+
+                <div className="cv-section-label">Visit Media</div>
+
+                {editRow && !!editRow.media?.length && (
+                  <div className="cv-existing-media">
+                    {editRow.media.map((m, i) => (
+                      <div key={m.id ?? i} className="cv-existing-media-item">
+                        {m.mediaType === "VIDEO" ? (
+                          <video src={mediaUrl(m.mediaUrl ?? "")} muted />
+                        ) : (
+                          <img src={mediaUrl(m.mediaUrl ?? "")} alt={`Visit media ${i + 1}`} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <FileUploader
+                  mode="multiple"
+                  maxFiles={5}
+                  acceptTypes={["image", "video"]}
+                  showPreview
+                  dropzoneText="Drag images or videos here"
+                  buttonText="Choose Media"
+                  onFilesChange={setMedia}
+                  onError={(msg) => toast.error("Media Error", msg)}
+                />
               </div>
 
-              <div className="cm-modal-footer">
-                <button type="button" className="cm-btn-secondary" onClick={() => setOpen(false)}>Cancel</button>
-                <button type="submit" className="cm-btn-primary" disabled={isPending}>
+              <div className="cv-modal-footer">
+                <button type="button" className="cv-btn-secondary" onClick={() => setOpen(false)}>Cancel</button>
+                <button type="submit" className="cv-btn-primary" disabled={isPending}>
                   <Pencil size={12} />
-                  {isPending ? "Saving..." : editRow ? "Update Company" : "Create Company"}
+                  {isPending ? "Saving..." : editRow ? "Update Visit" : "Create Visit"}
                 </button>
               </div>
             </form>

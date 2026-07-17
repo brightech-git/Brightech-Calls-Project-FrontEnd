@@ -100,7 +100,11 @@ export default function CallStatusPage() {
   const [viewId, setViewId] = useState<string | null>(null);
 
   const { data: pagedBookings, isLoading } = useCallsBookingList();
+
+  console.log(pagedBookings, 'pagedBookings')
+
   const bookings = pagedBookings?.content ?? [];
+  
   const createMutation = useCreateCallStatus();
   const { data: viewList, isLoading: viewLoading } = useGetCallStatusById(viewId ?? "");
 
@@ -152,7 +156,7 @@ export default function CallStatusPage() {
           PROJECTNAME: activeRow.PROJECTNAME ?? "",
           MODULEID:    activeRow.MODULEID    ?? "",
           MODULENAME:  activeRow.MODULENAME  ?? "",
-          STAFFID:     activeRow.STAFFID     ?? "",
+          STAFFID:     activeRow.STAFFIDS    ?? "",
           ACTIVE:      activeRow.ACTIVE      ?? "Y",
           TKTDATE:     values.TKTDATE,
           STATUS:      values.STATUS,
@@ -244,7 +248,7 @@ export default function CallStatusPage() {
                     ["Client",       viewList.CLIENTNAME],
                     ["Project",      viewList.PROJECTNAME],
                     ["Module",       viewList.MODULENAME],
-                    ["Staff",        viewList.STAFFNAME || viewList.STAFFID],
+                    ["Staff",        viewList.STAFFNAME || viewList.STAFFIDS],
                     ["Status",       viewList.STATUS],
                     ["Active",       viewList.ACTIVE],
                     ["Description",  viewList.DESCRIPTION],
@@ -418,7 +422,7 @@ export default function CallStatusPage() {
                   <span className="cs-info-item">Company: <b>{activeRow.COMPANYNAME || "—"}</b></span>
                   <span className="cs-info-item">Project: <b>{activeRow.PROJECTNAME || "—"}</b></span>
                   <span className="cs-info-item">Module: <b>{activeRow.MODULENAME || "—"}</b></span>
-                  <span className="cs-info-item">Staff: <b>{activeRow.STAFFNAME || activeRow.STAFFID || "—"}</b></span>
+                  <span className="cs-info-item">Staff: <b>{activeRow.STAFFNAME || activeRow.STAFFIDS || "—"}</b></span>
                 </div>
 
                 {/* User-entered fields */}

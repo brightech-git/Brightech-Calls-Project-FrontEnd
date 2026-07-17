@@ -10,11 +10,14 @@ export interface LoginPayload {
 export interface RegisterPayload {
   username: string;
   password: string;
+  roleId: string;
+  active: string;
 }
 
 export interface UpdateUserPayload {
   username: string;
   password: string;
+  roleId: string;
   active: string;
 }
 
@@ -37,7 +40,7 @@ export interface UserRecord {
   USERNAME: string;
   ACTIVE: string;
   PWD: string;
-  AUTHPWD: string | null;
+  ROLENAME :string
   UPDATED: string | null;
   UPTIME: string | null;
 }

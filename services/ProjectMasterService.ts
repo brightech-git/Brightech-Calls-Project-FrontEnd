@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 
 import { axiosInstance } from "@/api/axiosInstance";
+import { ApiResponse } from "@/types/ApiResponse";
 import {
   ProjectPayload,
   ProjectRecord,
@@ -21,8 +22,8 @@ export const createProject = async (
 };
 
 // GET ALL
-export const getAllProjects = async (): Promise<ProjectRecord[]> => {
-  const response = await axiosInstance.get<ProjectRecord[]>("/project");
+export const getAllProjects = async (): Promise<ApiResponse<ProjectRecord[]>> => {
+  const response = await axiosInstance.get<ApiResponse<ProjectRecord[]>>("/project");
 
   return response.data;
 };

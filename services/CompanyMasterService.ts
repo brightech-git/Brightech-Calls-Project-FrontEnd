@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 
 import { axiosInstance } from "@/api/axiosInstance";
+import { ApiResponse } from "@/types/ApiResponse";
 import { CompanyPayload, CompanyRecord } from "@/types/CompanyMaster/CompanyMaster";
 
 // CREATE
@@ -12,8 +13,8 @@ export const createCompany = async (payload: CompanyPayload): Promise<CompanyRec
 };
 
 // GET ALL
-export const getAllCompanies = async (): Promise<CompanyRecord[]> => {
-  const response = await axiosInstance.get<CompanyRecord[]>("/company");
+export const getAllCompanies = async (): Promise<ApiResponse<CompanyRecord[]>> => {
+  const response = await axiosInstance.get<ApiResponse<CompanyRecord[]>>("/company");
   return response.data;
 };
 

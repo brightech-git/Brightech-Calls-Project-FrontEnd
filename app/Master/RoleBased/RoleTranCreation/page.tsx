@@ -599,6 +599,8 @@ export default function RoleTranCreationPage() {
 
   
   const { data: roleTransactions, isLoading: isLoadingTransactions, refetch } = useRoleTransactions();
+  
+  console.log(roleTransactions, menu,'roleTransactions')
   const { mutate: insertRoles,      isPending: isInserting } = useInsertRoleTransaction();
   const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteRoleTransaction();
   const { mutate: toggleTransaction, isPending: isToggling } = useToggleRoleTransactionActive();

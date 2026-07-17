@@ -18,6 +18,7 @@ import { useToast } from "@/components/Toast";
 import { COLORS, FONT } from "@/utils/theme";
 import { useRole } from "@/hooks/ApiHooks/RoleMaster/useRoleMaster";
 import { SelectCombobox } from "@/components/ui/SelectComboBox";
+import { NativeSelectWrapper } from "@/components/ui/NativeSelectWrapper";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,9 @@ const userSchema = z.object({
   password: z.string().min(5, "Password must be at least 5 characters"),
   confirmPassword: z.string(),
   roleId : z.string().min(1, "Role is required"),
+  active: z.enum(["Y", "N"], {
+    error: "Active must be either 'Y' or 'N'",
+  }),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -36,6 +40,9 @@ const editSchema = z.object({
   password: z.string().min(5, "Password must be at least 5 characters").or(z.literal("")),
   confirmPassword: z.string(),
   roleId : z.string().min(1, "Role is required"),
+  active: z.enum(["Y", "N"], {
+    error: "Active must be either 'Y' or 'N'",
+  }),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -100,11 +107,20 @@ export default function UserMasterPage() {
 
   console.log(roleItems,'roleItems')
 
+  const activeOptions = [
+    {label:"YES" , value :"Y"},
+    {label:"NO" , value :"N"},
+  ]
+
 
   const { mutate: register, isPending: isRegistering } = useRegister();
   const { mutate: updateUser, isPending: isUpdating }  = useUpdateUser();
   const { mutate: deleteUser, isPending: isDeleting }  = useDeleteUser();
   const { data: users = [], isLoading, refetch }       = useGetAllUsers();
+
+  const userList = users || [];
+
+  console.log(userList ,'usersList');
 
   const isEditMode = editId !== null;
 
@@ -117,6 +133,7 @@ export default function UserMasterPage() {
     formState: { errors },
   } = useForm<UserForm>({
     resolver: zodResolver(isEditMode ? editSchema : userSchema),
+    defaultValues: { username: "", password: "", confirmPassword: "", roleId: "", active: "Y" },
   });
 
   const isPending = isRegistering || isUpdating;
@@ -124,7 +141,13 @@ export default function UserMasterPage() {
   const handleEdit = (row: UserRecord & Record<string, unknown>) => {
     setEditId(row.USERID as string);
     setEditRow(row as UserRecord);
-    reset({ username: row.USERNAME as string, password: "", confirmPassword: "" });
+    reset({
+      username: row.USERNAME as string,
+      password: "",
+      confirmPassword: "",
+      roleId: row.ROLEID != null ? String(row.ROLEID) : "",
+      active: (row.ACTIVE as string) === "N" ? "N" : "Y",
+    });
   };
 
   const handleDelete = (row: UserRecord & Record<string, unknown>) => {
@@ -149,18 +172,19 @@ export default function UserMasterPage() {
   const handleCancel = () => {
     setEditId(null);
     setEditRow(null);
-    reset({ username: "", password: "", confirmPassword: "" });
+    reset({ username: "", password: "", confirmPassword: "", roleId: "", active: "Y" });
   };
 
   const onSubmit = (data: UserForm) => {
     const { confirmPassword: _, ...payload } = data;
+    console.log("triggers")
 
     if (isEditMode) {
       const updatePayload = {
         username: payload.username,
         password: payload.password || editRow?.PWD || "",
-        active:   editRow?.ACTIVE ?? "Y",
-     
+        roleId:   payload.roleId,
+        active:   payload.active,
       };
       console.log("[UserMaster] UPDATE payload:", updatePayload);
       updateUser({ id: editId!, payload: updatePayload }, {
@@ -420,6 +444,26 @@ export default function UserMasterPage() {
                
                   </div>
 
+                  <div className="um-field-row">
+                    <label className="um-field-label">
+                      Active *
+                    </label>
+                    <Controller
+                      name="active"
+                      control={control}
+                      render={({ field }) => (
+                        <NativeSelectWrapper
+                          value={field.value}
+                          onChange={(val) => field.onChange(val)}
+                          items={activeOptions}
+                          placeholder="Select Status"
+                        />
+                      )
+                      }
+                    />
+                    {errors.active && <span className="um-field-error">{errors.active.message}</span>}
+                  </div>
+
                   <HStack w="full" gap="8px">
                     <button type="submit" className="btn-primary" disabled={isPending}
                       tabIndex={4} style={{ flex: 1 }}>
@@ -444,7 +488,7 @@ export default function UserMasterPage() {
             <CustomTable
               title="Registered Users"
               columns={COLUMNS}
-              data={users as (UserRecord & Record<string, unknown>)[]}
+              data={userList as (UserRecord & Record<string, unknown>)[]}
               rowKey="USERID"
               isLoading={isLoading}
               searchPlaceholder="Search users..."

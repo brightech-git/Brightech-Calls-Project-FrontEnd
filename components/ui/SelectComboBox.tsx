@@ -47,8 +47,15 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
     const [typedInput, setTypedInput] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const [highlightedValue, setHighlightedValue] = useState<string | null>(null);
+    const safeItems = React.useMemo(
+        () => (items || []).map((item) => ({
+            label: item.label ?? "",
+            value: item.value ?? "",
+        })),
+        [items]
+    );
     const { collection, filter: applyFilter, set: setCollection } = useListCollection({
-        initialItems: items,
+        initialItems: safeItems,
         itemToString: (item) => item.label,
         itemToValue: (item) => item.value,
         filter: contains,
@@ -56,9 +63,9 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
 
     // Update collection when items change
     useEffect(() => {
-        setCollection(items || []);
+        setCollection(safeItems);
         applyFilter("");
-    }, [items, setCollection, applyFilter]);
+    }, [safeItems, setCollection, applyFilter]);
 
     // Reset filter when editId changes
     useEffect(() => {
@@ -81,15 +88,15 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
 
     // Update typed input when value or items change
     useEffect(() => {
-        if (value && items?.length > 0) {
-            const selectedItem = items.find(
+        if (value && safeItems.length > 0) {
+            const selectedItem = safeItems.find(
                 (item) => String(item.value) === String(value)
             );
             setTypedInput(selectedItem ? selectedItem.label.toUpperCase() : "");
         } else {
             setTypedInput("");
         }
-    }, [value, items]);
+    }, [value, safeItems]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === "Enter" || e.key === "Tab") {
@@ -136,7 +143,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
         if (disable) return;
         const val = e.value[0] || "";
         onChange(val);
-        const selectedItem = items?.find(item => item.value === val);
+        const selectedItem = safeItems.find(item => item.value === val);
         setTypedInput(selectedItem?.label.toUpperCase() || "");
         setIsOpen(false);
 

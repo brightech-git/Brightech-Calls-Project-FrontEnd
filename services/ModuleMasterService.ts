@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 
 import { axiosInstance } from "@/api/axiosInstance";
+import { ApiResponse } from "@/types/ApiResponse";
 
 import {
   ModulePayload,
@@ -24,8 +25,8 @@ export const createModule = async (
 };
 
 // GET ALL
-export const getAllModules = async (): Promise<ModuleRecord[]> => {
-  const response = await axiosInstance.get<ModuleRecord[]>(
+export const getAllModules = async (): Promise<ApiResponse<ModuleRecord[]>> => {
+  const response = await axiosInstance.get<ApiResponse<ModuleRecord[]>>(
     `${baseUrl}`
   );
 

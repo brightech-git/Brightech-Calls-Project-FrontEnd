@@ -216,10 +216,12 @@ export function CustomTable<T extends Record<string, unknown>>({
   const [selected, setSelected] = useState<Set<unknown>>(new Set());
 
   // ── Derived data ──
+  const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return data;
+    if (!search.trim()) return rows;
     const q = search.toLowerCase();
-    return data.filter((row) =>
+    return rows.filter((row) =>
       columns.some((col) => {
         const val = getVal(row, col.key as string);
         return String(val ?? "").toLowerCase().includes(q);

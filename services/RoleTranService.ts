@@ -223,7 +223,7 @@ export const deleteContent = async (id: number) => {
 
 // GET ROLE TRANSACTIONS
 export const getRoleTransactions = async () => {
-  const { data } = await axiosInstance.get<RoleTran[]>(
+  const { data } = await axiosInstance.get<ApiResponse<RoleTran[]>>(
     `/roletran`
   );
 
