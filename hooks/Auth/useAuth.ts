@@ -32,21 +32,22 @@ export const useLogin = () => {
       return loginUser(payload);
     },
 
-    onSuccess: (data: AuthResponse) => {
+
+    onSuccess: (data: ApiResponse<AuthResponse>) => {
       console.log("Login Success:", data);
 
       localStorage.setItem("isLoggedIn",  "true");
-      localStorage.setItem("calls_token",       data.token ?? "");
-      localStorage.setItem("userId",      String(data.userId ?? ""));
-      localStorage.setItem("staffId",     String(data.staffId ?? ""));
-      localStorage.setItem("username",    data.username ?? "");
-      localStorage.setItem("staffName",   data.staffName ?? "");
-      localStorage.setItem("role",        data.role ?? "");
-      localStorage.setItem("mobileNo",    data.mobileNo ?? "");
-      localStorage.setItem("active",      data.active ?? "");
+      localStorage.setItem("calls_token",       data?.data?.token ?? "");
+      localStorage.setItem("userId",      String(data?.data?.userId ?? ""));
+      localStorage.setItem("staffId",     String(data?.data?.staffId ?? ""));
+      localStorage.setItem("username",    data?.data?.username ?? "");
+      localStorage.setItem("staffName",   data?.data?.staffName ?? "");
+      localStorage.setItem("role",        data?.data?.role ?? "");
+      localStorage.setItem("mobileNo",    data?.data?.mobileNo ?? "");
+      localStorage.setItem("active",      data?.data?.active ?? "");
       localStorage.setItem("user",        JSON.stringify(data));
-      if (data.menuIds) {
-        localStorage.setItem("menuIds", JSON.stringify(data.menuIds));
+      if (data?.data?.menuIds) {
+        localStorage.setItem("menuIds", JSON.stringify(data?.data?.menuIds));
       } else {
         localStorage.removeItem("menuIds");
       }

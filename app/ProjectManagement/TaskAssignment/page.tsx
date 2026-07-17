@@ -160,7 +160,9 @@ export default function CallsBookingPage() {
     isLoading,
   } = useCallsBookingList();
 
-  const bookings = pagedBookings?.content ?? [];
+  console.log("pagedBookings",pagedBookings,"pagedBookings")
+
+  const bookings = pagedBookings?.data?.content ?? [];
 
   const {
     data: viewData,
