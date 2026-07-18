@@ -8,14 +8,15 @@ import { ApiResponse } from "@/types/ApiResponse";
 import {
   CallStatusPayload,
   CallStatusRecord,
+  CallStatusListItem,
+  CallStatusTicketDetail,
 } from "@/types/CallStatus/CallStatus";
-import { CallsBookingRecord } from "@/types/TaskAssignment/TaskAssignment";
 
-// CREATE
+// CREATE — supports multiple media files (image/video) per status entry
 export const createCallStatus = async (
   payload: CallStatusPayload,
-  image?: File | null
-): Promise<CallStatusRecord> => {
+  media?: File[]
+): Promise<ApiResponse<CallStatusRecord>> => {
 
   const formData = new FormData();
 
@@ -24,11 +25,11 @@ export const createCallStatus = async (
     JSON.stringify(payload)
   );
 
-  if (image) {
-    formData.append("image", image);
-  }
+  (media ?? []).forEach((file) => {
+    formData.append("media", file);
+  });
 
-  const response = await axiosInstance.post<CallStatusRecord>(
+  const response = await axiosInstance.post<ApiResponse<CallStatusRecord>>(
     "/callstatus/save",
     formData,
     {
@@ -41,24 +42,27 @@ export const createCallStatus = async (
   return response.data;
 };
 
-// GET ALL
-export const getAllCallStatus = async (): Promise<ApiResponse<CallStatusRecord[]>> => {
+// ACTIVE BOOKINGS + LAST STATUS — for the Call Status list page
+export const getActiveBookingsWithLastStatus = async (): Promise<
+  ApiResponse<CallStatusListItem[]>
+> => {
 
-  const response = await axiosInstance.get<ApiResponse<CallStatusRecord[]>>(
-    "/callstatus/list"
+  const response = await axiosInstance.get<ApiResponse<CallStatusListItem[]>>(
+    "/callstatus/active-bookings"
   );
 
   return response.data;
 };
 
-// GET BY TICKET ID (returns the full booking, including its media)
-export const getCallStatusById = async (
-  id: string
-): Promise<CallsBookingRecord> => {
+// GET CALL STATUS + BOOKING SUMMARY FOR ONE TICKET (used by the Call
+// Status detail page, and by the Task Assignment preview's history section)
+export const getCallStatusHistory = async (
+  tktId: number
+): Promise<ApiResponse<CallStatusTicketDetail>> => {
 
-  const response = await axiosInstance.get<CallsBookingRecord>(
-    `/callsbooking/${id}`
-  );
+  const response = await axiosInstance.get<
+    ApiResponse<CallStatusTicketDetail>
+  >(`/callstatus/ticket/${tktId}`);
 
   return response.data;
 };

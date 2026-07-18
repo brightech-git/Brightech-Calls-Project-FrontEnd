@@ -37,7 +37,7 @@ export const COLORS = {
   sidebarNavHoverText:    TEXT_WHITE,
   sidebarNavActiveBg:     TEXT_WHITE,
   sidebarNavActiveText:   TEXT_PRIMARY,
-  sidebarChevron:         TEXT_MUTED,
+  sidebarChevron:         TEXT_INVERSE,
   sidebarChevronActive:   TEXT_WHITE,
   sidebarChildDot:        "#d1d5db",
   sidebarChildDotActive:  TEXT_WHITE,

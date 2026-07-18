@@ -11,24 +11,60 @@ import { SwitchInput } from "@/components/ui/SwitchInput";
 
 export interface MediaItem {
   uid: string;
-  mediaId?: number | null;
-  file: File;
+  /** Existing row's own id (Media.sno) — set only for items already saved
+   *  on the server. Null/undefined for files picked but not uploaded yet. */
+  id?: number | null;
+  /** Present for newly picked files. Existing (already-uploaded) items
+   *  have no File object — they're shown via previewUrl instead. */
+  file?: File | null;
+  /** Display name for already-uploaded items that have no File object. */
+  fileName?: string;
   previewUrl: string;
   mediaType: string;
   active: boolean;
+  /** True when this item was loaded from the server (edit mode), false/undefined for a new pick. */
+  isExisting?: boolean;
 }
 
 export const makeMediaItem = (file: File): MediaItem => ({
   uid: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  mediaId: null,
+  id: null,
   file,
   previewUrl: URL.createObjectURL(file),
   mediaType: file.type.split("/")[0] || "file",
   active: true,
+  isExisting: false,
 });
 
+// Seed a MediaItem from an already-uploaded server record (edit mode).
+// `mediaUrl` is joined with `baseUrl` (e.g. NEXT_PUBLIC_IMAGE_URL) to build
+// a real, viewable previewUrl — not a blob: URL, so it must not be revoked.
+export const makeExistingMediaItem = (
+  record: {
+    id?: number | null;
+    mediaUrl?: string | null;
+    mediaType?: string | null;
+    displayOrder?: number | null;
+    active?: boolean | null;
+  },
+  baseUrl: string
+): MediaItem => ({
+  uid: `existing-${record.id}-${Math.random().toString(36).slice(2)}`,
+  id: record.id ?? null,
+  file: null,
+  fileName: (record.mediaUrl ?? "").split("/").pop() || "file",
+  previewUrl: `${baseUrl}${record.mediaUrl ?? ""}`,
+  mediaType: (record.mediaType ?? "file").toLowerCase(),
+  active: record.active !== false,
+  isExisting: true,
+});
+
+// Only revoke blob: URLs created for newly picked files — existing items'
+// previewUrl points at a real server file and must be left alone.
 export const revokeMediaItems = (items: MediaItem[]) =>
-  items.forEach((m) => URL.revokeObjectURL(m.previewUrl));
+  items.forEach((m) => {
+    if (!m.isExisting) URL.revokeObjectURL(m.previewUrl);
+  });
 
 interface MediaManagerProps {
   value: MediaItem[];
@@ -38,10 +74,11 @@ interface MediaManagerProps {
   onError?: (msg: string) => void;
 }
 
-// Grid of media slots — each can be reordered (sets DISPLAY_ORDER),
-// replaced in place (swaps the file, keeps its position/active flag),
-// toggled active/inactive, or removed. Only active items are uploaded,
-// in their current on-screen order.
+// Grid of media slots — each can be reordered (sets displayOrder),
+// toggled active/inactive, or removed. Only active items are uploaded/kept,
+// in their current on-screen order. Already-uploaded (existing) items are
+// never deleted outright — removing one just marks it inactive, same as
+// everywhere else in the app; only unsaved new picks are dropped entirely.
 export function MediaManager({
   value,
   onChange,
@@ -70,13 +107,15 @@ export function MediaManager({
     onChange([...value, ...picked.map(makeMediaItem)]);
   };
 
+  // Replace is only offered for not-yet-uploaded picks — an existing
+  // (already-saved) item can only be toggled active/inactive or reordered.
   const handleReplace = (uid: string, files: FileList | null) => {
     const file = files?.[0];
     if (!file) return;
 
     onChange(
       value.map((m) => {
-        if (m.uid !== uid) return m;
+        if (m.uid !== uid || m.isExisting) return m;
         URL.revokeObjectURL(m.previewUrl);
         return { ...makeMediaItem(file), uid: m.uid, active: m.active };
       })
@@ -85,7 +124,16 @@ export function MediaManager({
 
   const remove = (uid: string) => {
     const target = value.find((m) => m.uid === uid);
-    if (target) URL.revokeObjectURL(target.previewUrl);
+    if (!target) return;
+
+    if (target.isExisting) {
+      // Soft-remove: keep the row, just mark it inactive (consistent with
+      // the active/inactive convention used across the rest of the app).
+      onChange(value.map((m) => (m.uid === uid ? { ...m, active: false } : m)));
+      return;
+    }
+
+    URL.revokeObjectURL(target.previewUrl);
     onChange(value.filter((m) => m.uid !== uid));
   };
 
@@ -131,7 +179,7 @@ export function MediaManager({
             <button
               type="button"
               onClick={() => remove(item.uid)}
-              title="Remove"
+              title={item.isExisting ? "Mark inactive" : "Remove"}
               style={{
                 position: "absolute", top: 4, right: 4, zIndex: 2,
                 width: 20, height: 20, borderRadius: "50%", border: "none",
@@ -144,7 +192,7 @@ export function MediaManager({
 
             <div style={{ height: 90, background: COLORS.gray50, display: "flex", alignItems: "center", justifyContent: "center" }}>
               {item.mediaType === "image" ? (
-                <img src={item.previewUrl} alt={item.file.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={item.previewUrl} alt={item.file?.name ?? item.fileName ?? "media"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : item.mediaType === "video" ? (
                 <video src={item.previewUrl} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
@@ -154,10 +202,10 @@ export function MediaManager({
 
             <div style={{ padding: 6, display: "flex", flexDirection: "column", gap: 4 }}>
               <div
-                title={item.file.name}
+                title={item.file?.name ?? item.fileName ?? ""}
                 style={{ fontSize: 10, color: COLORS.textMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
               >
-                {item.file.name}
+                {item.file?.name ?? item.fileName ?? ""}
               </div>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -170,17 +218,19 @@ export function MediaManager({
                   </button>
                 </div>
 
-                <button
-                  type="button"
-                  title="Replace file"
-                  onClick={() => {
-                    setReplacingUid(item.uid);
-                    replaceInputRef.current?.click();
-                  }}
-                  style={iconBtnStyle(false)}
-                >
-                  <RefreshCw size={12} />
-                </button>
+                {!item.isExisting && (
+                  <button
+                    type="button"
+                    title="Replace file"
+                    onClick={() => {
+                      setReplacingUid(item.uid);
+                      replaceInputRef.current?.click();
+                    }}
+                    style={iconBtnStyle(false)}
+                  >
+                    <RefreshCw size={12} />
+                  </button>
+                )}
               </div>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

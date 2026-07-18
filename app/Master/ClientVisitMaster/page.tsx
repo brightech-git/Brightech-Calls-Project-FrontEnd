@@ -11,6 +11,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { SwitchInput } from "@/components/ui/SwitchInput";
 import { FileUploader } from "@/components/ui/FileUploadInput";
+import { MediaLightbox, LightboxItem } from "@/components/ui/MediaLightbox";
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
 import { COLORS, FONT, RADIUS } from "@/utils/theme";
@@ -107,6 +108,7 @@ export default function ClientVisitMasterPage() {
   const [editRow, setEditRow]     = useState<ClientVisitRecord | null>(null);
   const [deleteRow, setDeleteRow] = useState<ClientVisitRecord | null>(null);
   const [media, setMedia]         = useState<File[]>([]);
+  const [lightbox, setLightbox]   = useState<{ items: LightboxItem[]; index: number } | null>(null);
 
   const { data: visits = [], isLoading } = useClientVisitList();
 
@@ -179,6 +181,70 @@ export default function ClientVisitMasterPage() {
       console.error("[ClientVisitMaster] ERROR:", err?.response ?? err);
       toast.error(editRow ? "Update Failed" : "Create Failed", err?.response?.data?.message || err?.message || "Operation failed.");
     }
+  };
+
+  // Inline expandable row detail (List icon in the table) — no modal, no
+  // separate page, just an accordion-style dropdown shown under the row.
+  const renderExpandedRow = (row: ClientVisitRecord_Table) => {
+    const r = row as ClientVisitRecord;
+
+    const fields: [string, unknown][] = [
+      ["Short Key",    r.SHORTKEY],
+      ["Phone",        r.PHONE],
+      ["Mobile",       r.MOBILE],
+      ["Email",        r.EMAIL],
+      ["Address 1",    r.ADDRESS1],
+      ["Address 2",    r.ADDRESS2],
+      ["Address 3",    r.ADDRESS3],
+      ["Area Code",    r.AREACODE],
+      ["GST No",       r.GSTNO],
+      ["PAN No",       r.PANNO],
+      ["TAN No",       r.TANNO],
+      ["TDS No",       r.TDSNO],
+      ["TIN No",       r.TINNO],
+      ["CST No",       r.CSTNO],
+      ["Local Tax No", r.LOCALTAXNO],
+      ["Remarks",      r.REMARKS],
+    ];
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, fontFamily: FONT.family }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px 24px" }}>
+          {fields.map(([label, val]) => (
+            <div key={label} style={{ fontSize: 12 }}>
+              <span style={{ fontWeight: 600, color: COLORS.textSecondary }}>{label}: </span>
+              <span style={{ color: COLORS.textPrimary }}>{String(val ?? "—")}</span>
+            </div>
+          ))}
+        </div>
+
+        {r.media && r.media.length > 0 && (
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: COLORS.textMuted, marginBottom: 6 }}>
+              Media
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {r.media.map((m, idx) => (
+                <div
+                  key={m.id ?? idx}
+                  onClick={() => setLightbox({ items: r.media as LightboxItem[], index: idx })}
+                  style={{
+                    width: 70, height: 70, borderRadius: RADIUS.md, overflow: "hidden",
+                    border: `1px solid ${COLORS.cardBorder}`, cursor: "pointer",
+                  }}
+                >
+                  {m.mediaType === "VIDEO" ? (
+                    <video src={mediaUrl(m.mediaUrl ?? "")} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <img src={mediaUrl(m.mediaUrl ?? "")} alt={`media-${idx}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const confirmDelete = () => {
@@ -330,6 +396,7 @@ export default function ClientVisitMasterPage() {
         isLoading={isLoading}
         onEdit={openEdit}
         onDelete={(row) => setDeleteRow(row as ClientVisitRecord)}
+        expandedRowRender={renderExpandedRow}
         searchPlaceholder="Search by name, GST, mobile..."
         emptyMessage="No client visits found."
         toolbarRight={
@@ -750,6 +817,15 @@ export default function ClientVisitMasterPage() {
         onConfirm={confirmDelete}
         onCancel={() => setDeleteRow(null)}
       />
+
+      {lightbox && (
+        <MediaLightbox
+          items={lightbox.items}
+          index={lightbox.index}
+          onClose={() => setLightbox(null)}
+          onIndexChange={(i) => setLightbox((prev) => (prev ? { ...prev, index: i } : prev))}
+        />
+      )}
     </>
   );
 }

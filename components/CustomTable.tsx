@@ -52,8 +52,10 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Inbox,
+  List,
+  ChevronRightCircle,
 } from "lucide-react";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, Fragment } from "react";
 import { COLORS, FONT } from "@/utils/theme";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -113,6 +115,12 @@ export interface CustomTableProps<T extends Record<string, unknown>> {
   title?: string;
   /** Slot rendered in the top-right toolbar (e.g. an "Add" button) */
   toolbarRight?: React.ReactNode;
+  /**
+   * When provided, adds a "List" toggle action to each row that expands an
+   * inline row directly beneath it (accordion-style — no modal, no page nav)
+   * rendering whatever this returns. Expansion state is managed internally.
+   */
+  expandedRowRender?: (row: T) => React.ReactNode;
 }
 
 // ─── Status badge coloring ────────────────────────────────────────────────────
@@ -168,8 +176,8 @@ function SkeletonRow({ cols }: { cols: number }) {
         <Box as="td" key={i} px="16px" py="11px">
           <Box h="12px" borderRadius="6px" bg="#e5e7eb"
             w={i === 0 ? "60%" : i % 2 === 0 ? "80%" : "50%"}
-            style={{ animation: "pulse 1.5s ease-in-out infinite" }}
-          />
+            style={{ animation: "pulse 1.5s ease-in-out infinite" }} 
+            />
         </Box>
       ))}
     </Box>
@@ -206,6 +214,7 @@ export function CustomTable<T extends Record<string, unknown>>({
   emptyMessage = "No records found",
   title,
   toolbarRight,
+  expandedRowRender,
 }: CustomTableProps<T>) {
   // ── State ──
   const [search, setSearch] = useState("");
@@ -214,6 +223,20 @@ export function CustomTable<T extends Record<string, unknown>>({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
   const [selected, setSelected] = useState<Set<unknown>>(new Set());
+  const [expandedKeys, setExpandedKeys] = useState<Set<unknown>>(new Set());
+
+  const toggleExpanded = (row: T) => {
+    const key = row[rowKey];
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
   // ── Derived data ──
   const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
@@ -299,7 +322,7 @@ export function CustomTable<T extends Record<string, unknown>>({
   };
 
   // ── Actions present? ──
-  const hasActions = onEdit || onDelete || extraActions.length > 0;
+  const hasActions = !!onEdit || !!onDelete || extraActions.length > 0 || !!expandedRowRender;
   const colCount   = columns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0);
 
   // ── Page number window ──
@@ -521,71 +544,94 @@ export function CustomTable<T extends Record<string, unknown>>({
               ) : (
                 paged.map((row, rowIdx) => {
                   const isSelected = selected.has(row[rowKey]);
+                  const isExpanded = expandedRowRender ? expandedKeys.has(row[rowKey]) : false;
                   return (
-                    <Box
-                      as="tr"
-                      key={String(row[rowKey] ?? rowIdx)}
-                      className="ct-tr"
-                      bg={isSelected ? "#eff6ff" : "transparent"}
-                    >
-                      {selectable && (
-                        <Box as="td" className="ct-td" textAlign="center">
-                          <Checkbox.Root
-                            checked={isSelected}
-                            onCheckedChange={() => toggleRow(row)}
-                          >
-                            <Checkbox.HiddenInput />
-                            <Checkbox.Control w="15px" h="15px" borderRadius="4px" border="1px solid"
-                              borderColor={isSelected ? "#3b82f6" : "#bfdbfe"}
-                              bg={isSelected ? "#dbeafe" : "transparent"}>
-                              <Checkbox.Indicator color="#3b82f6" />
-                            </Checkbox.Control>
-                          </Checkbox.Root>
-                        </Box>
-                      )}
-
-                      {hasActions && (
-                        <Box as="td" className="ct-td" style={{ textAlign: "left" }}>
-                          <HStack gap="4px" justify="flex-start">
-                            {extraActions.map((act, ai) => (
-                              <button type="button" key={ai} className="ct-actions-btn" title={act.label} onClick={() => act.onClick(row)}>
-                                {act.icon}
-                              </button>
-                            ))}
-                            {onEdit && (
-                              <button type="button" className="ct-actions-btn edit" title="Edit" onClick={() => onEdit(row)}>
-                                <Pencil size={13} />
-                              </button>
-                            )}
-                            {onDelete && (
-                              <button type="button" className="ct-actions-btn delete" title="Delete" onClick={() => onDelete(row)}>
-                                <Trash2 size={13} />
-                              </button>
-                            )}
-                          </HStack>
-                        </Box>
-                      )}
-
-                      {columns.map((col, colIdx) => {
-                        const rawVal = getVal(row, col.key as string);
-                        return (
-                          <Box
-                            as="td"
-                            key={col.key as string}
-                            className={`ct-td${colIdx === 0 ? " primary" : ""}`}
-                            style={{ textAlign: col.align ?? "left" }}
-                          >
-                            {col.render ? (
-                              col.render(row, rowIdx)
-                            ) : col.isStatus ? (
-                              <StatusBadge value={String(rawVal ?? "")} />
-                            ) : (
-                              <span>{String(rawVal ?? "—")}</span>
-                            )}
+                    <Fragment key={String(row[rowKey] ?? rowIdx)}>
+                      <Box
+                        as="tr"
+                        className="ct-tr"
+                        bg={isSelected ? "#eff6ff" : "transparent"}
+                      >
+                        {selectable && (
+                          <Box as="td" className="ct-td" textAlign="center">
+                            <Checkbox.Root
+                              checked={isSelected}
+                              onCheckedChange={() => toggleRow(row)}
+                            >
+                              <Checkbox.HiddenInput />
+                              <Checkbox.Control w="15px" h="15px" borderRadius="4px" border="1px solid"
+                                borderColor={isSelected ? "#3b82f6" : "#bfdbfe"}
+                                bg={isSelected ? "#dbeafe" : "transparent"}>
+                                <Checkbox.Indicator color="#3b82f6" />
+                              </Checkbox.Control>
+                            </Checkbox.Root>
                           </Box>
-                        );
-                      })}
-                    </Box>
+                        )}
+
+                        {hasActions && (
+                          <Box as="td" className="ct-td" style={{ textAlign: "left" }}>
+                            <HStack gap="4px" justify="flex-start">
+                              {expandedRowRender && (
+                                <button
+                                  type="button"
+                                  className="ct-actions-btn"
+                                  title={isExpanded ? "Hide details" : "Show details"}
+                                  onClick={() => toggleExpanded(row)}
+                                  style={isExpanded ? { background: "#f3f4f6", color: COLORS.textPrimary } : undefined}
+                                >
+                                  <ChevronRightCircle size={20} />
+                                </button>
+                              )}
+                              {extraActions.map((act, ai) => (
+                                <button type="button" key={ai} className="ct-actions-btn" title={act.label} onClick={() => act.onClick(row)}>
+                                  {act.icon}
+                                </button>
+                              ))}
+                              {onEdit && (
+                                <button type="button" className="ct-actions-btn edit" title="Edit" onClick={() => onEdit(row)}>
+                                  <Pencil size={13} />
+                                </button>
+                              )}
+                              {onDelete && (
+                                <button type="button" className="ct-actions-btn delete" title="Delete" onClick={() => onDelete(row)}>
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
+                            </HStack>
+                          </Box>
+                        )}
+
+                        {columns.map((col, colIdx) => {
+                          const rawVal = getVal(row, col.key as string);
+                          return (
+                            <Box
+                              as="td"
+                              key={col.key as string}
+                              className={`ct-td${colIdx === 0 ? " primary" : ""}`}
+                              style={{ textAlign: col.align ?? "left" }}
+                            >
+                              {col.render ? (
+                                col.render(row, rowIdx)
+                              ) : col.isStatus ? (
+                                <StatusBadge value={String(rawVal ?? "")} />
+                              ) : (
+                                <span>{String(rawVal ?? "—")}</span>
+                              )}
+                            </Box>
+                          );
+                        })}
+                      </Box>
+
+                      {expandedRowRender && isExpanded && (
+                        <Box as="tr" className="ct-expanded-row">
+                          <td colSpan={colCount} style={{ padding: 0, borderTop: "1px solid #f3f4f6" }}>
+                            <Box bg="#f9fafb" px="16px" py="14px">
+                              {expandedRowRender(row)}
+                            </Box>
+                          </td>
+                        </Box>
+                      )}
+                    </Fragment>
                   );
                 })
               )}

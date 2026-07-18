@@ -1,51 +1,63 @@
 // ─────────────────────────────────────────────
-// types/CallsBooking/CallsBooking.ts
+// types/TaskAssignment/TaskAssignment.ts
 // ─────────────────────────────────────────────
+// Field names below are lowerCamelCase to match the backend's
+// CallsBooking JSON payloads exactly (Jackson serializes Java field
+// names as-is, and the backend now uses lowerCamelCase throughout).
 
 export interface CallsBookingPayload {
-  COMPID: number;
-  CLIENTID: number;
-  PROJECTID?: string | null;
-  PROJECTNAME?: string | null;
-  MODULEID?: string | null;
-  MODULENAME?: string | null;
-  DESCRIPTION?: string | null;
-  REMARK?: string | null;
-  /** Comma-separated Staff Master STAFFIDs, e.g. "1,2,3" */
-  STAFFIDS: string;
-  STATUS?: string | null;
-  ACTIVE?: string | null;
+  compId: number;
+  clientId: number;
+  projectId?: string | null;
+  projectName?: string | null;
+  moduleId?: string | null;
+  moduleName?: string | null;
+  description?: string | null;
+  remark?: string | null;
+  /** Comma-separated UserMaster USERIDs, e.g. "1,2,3" */
+  assignedUsers: string;
+  status?: string | null;
+  active?: string | null;
 }
 
 export interface CallsBookingMediaRecord {
-  id?: number;
+  /** This row's own unique id (Media.sno) - use this to target one
+   *  specific file (toggle/reorder it). */
+  id?: number | null;
+  /** Shared group id (MEDIAID) - the SAME value across every file
+   *  uploaded for one booking, not a unique per-file id. */
+  mediaId?: number | null;
   mediaUrl?: string | null;
   mediaType?: string | null;
-  order?: number | null;
+  displayOrder?: number | null;
   active?: boolean | null;
 }
 
 export interface CallsBookingMediaMeta {
-  mediaId?: number | null;
+  /** Set to an existing row's id (Media.sno) to edit that row's
+   *  active/displayOrder in place. Leave null for a newly uploaded file -
+   *  null entries are matched positionally, in order, to the files list. */
+  id?: number | null;
   displayOrder: number;
   active: boolean;
 }
 
 export interface CallsBookingRecord extends CallsBookingPayload {
-  SNO: number;
-  TKTID?: number | null;
-  TKTDATE?: string | null;
-  COMPANYNAME?: string | null;
-  CLIENTNAME?: string | null;
-  STAFFNAME?: string | null;
+  sno: number;
+  tktId?: number | null;
+  tktDate?: string | null;
+  companyName?: string | null;
+  clientName?: string | null;
+  /** userId -> username, resolved from assignedUsers */
+  userMap?: Record<string, string> | null;
   /** Creator's login user id — set server-side from the auth token, not client-editable */
-  USERID?: string | null;
-  CANCEL?: string | null;
-  CANCELBY?: string | null;
-  CANCELDATE?: string | null;
-  CANCELUPTIME?: string | null;
-  UPDATED?: string | null;
-  UPTIME?: string | null;
+  userId?: string | null;
+  cancel?: string | null;
+  cancelBy?: string | null;
+  cancelDate?: string | null;
+  cancelUptime?: string | null;
+  updated?: string | null;
+  uptime?: string | null;
   media?: CallsBookingMediaRecord[] | null;
 }
 
@@ -60,19 +72,20 @@ export type CallsBookingRecord_Table =
   Record<string, unknown>;
 
 // Thin shape returned by the paginated list endpoint (GET /callsbooking).
-// Use getCallsBookingById(SNO) to load the full CallsBookingRecord for
+// Use getCallsBookingById(sno) to load the full CallsBookingRecord for
 // edit / detail views.
 export interface CallsBookingListItem {
-  SNO: number;
-  TKTID?: number | null;
-  TKTDATE?: string | null;
-  COMPANYNAME?: string | null;
-  CLIENTNAME?: string | null;
-  PROJECTNAME?: string | null;
-  MODULENAME?: string | null;
-  STAFFNAME?: string | null;
-  STATUS?: string | null;
-  ACTIVE?: string | null;
+  sno: number;
+  tktId?: number | null;
+  tktDate?: string | null;
+  companyName?: string | null;
+  clientName?: string | null;
+  projectName?: string | null;
+  moduleName?: string | null;
+  /** Comma-joined usernames resolved server-side from assignedUsers */
+  assignedUsers?: string | null;
+  status?: string | null;
+  active?: string | null;
 }
 
 export type CallsBookingListItem_Table =

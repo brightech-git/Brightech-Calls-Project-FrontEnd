@@ -58,13 +58,13 @@ export const useGetCallsBookingById = (
 
 // GET MY TASKS
 export const useMyTasks = (
-  staffId: string
+  userId: string
 ) =>
   useQuery({
-    queryKey: ["my-tasks", staffId],
+    queryKey: ["my-tasks", userId],
     queryFn: () =>
-      getMyTasks(staffId),
-    enabled: !!staffId,
+      getMyTasks(userId),
+    enabled: !!userId,
   });
 
 // GET BY STATUS
@@ -114,13 +114,19 @@ export const useUpdateCallsBooking =
       mutationFn: ({
         id,
         payload,
+        media,
+        mediaMeta,
       }: {
         id: string;
         payload: CallsBookingPayload;
+        media?: File[] | null;
+        mediaMeta?: CallsBookingMediaMeta[] | null;
       }) =>
         updateCallsBooking(
           id,
-          payload
+          payload,
+          media,
+          mediaMeta
         ),
 
       onSuccess: () =>

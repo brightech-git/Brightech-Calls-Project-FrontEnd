@@ -12,7 +12,8 @@ import { SelectCombobox } from "@/components/ui/SelectComboBox";
 import { MultiSelectCombobox } from "@/components/ui/MultiSelectCombobox";
 import { TextareaField } from "@/components/ui/CapitalizesTextArea";
 import { SwitchInput } from "@/components/ui/SwitchInput";
-import { MediaManager, MediaItem, revokeMediaItems } from "@/components/ui/MediaManager";
+import { MediaManager, MediaItem, revokeMediaItems, makeExistingMediaItem } from "@/components/ui/MediaManager";
+import { MediaLightbox, LightboxItem } from "@/components/ui/MediaLightbox";
 
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
@@ -32,6 +33,7 @@ import { useClientList }  from "@/hooks/ClientMaster/useClientMaster";
 import { useProjectList } from "@/hooks/ProjectMaster/useProjectMaster";
 import { useModuleList }  from "@/hooks/ModuleMaster/useModuleMaster";
 import { useGetAllUsers } from "@/hooks/Auth/useAuth";
+import { useCallStatusHistory } from "@/hooks/CallStatus/useCallStatus";
 
 import {
   CallsBookingRecord,
@@ -43,17 +45,17 @@ import {
 // ─────────────────────────────────────────────
 
 const callsBookingSchema = z.object({
-  COMPID:      z.number().min(1, "Company is required"),
-  CLIENTID:    z.number().min(1, "Client is required"),
-  PROJECTID:   z.string().optional(),
-  PROJECTNAME: z.string().optional(),
-  MODULEID:    z.string().optional(),
-  MODULENAME:  z.string().optional(),
-  DESCRIPTION: z.string().optional(),
-  REMARK:      z.string().optional(),
-  STAFFIDS:     z.string().min(1, "Staff is required"),
-  STATUS:      z.string().optional(),
-  ACTIVE:      z.enum(["Y", "N"]),
+  clientId:      z.number().min(1, "Client is required"),
+  projectId:     z.string().optional(),
+  projectName:   z.string().optional(),
+  moduleId:      z.string().optional(),
+  moduleName:    z.string().optional(),
+  remark:        z.string().optional(),
+  assignedUsers: z.string().min(1, "Staff is required"),
+  status:        z.string().optional(),
+  // Only editable during Update (see Assignment section below) — defaults
+  // to "Y" automatically on create, same as before.
+  active:        z.string().optional(),
 });
 
 type CallsBookingForm = z.infer<typeof callsBookingSchema>;
@@ -63,19 +65,18 @@ type CallsBookingForm = z.infer<typeof callsBookingSchema>;
 // ─────────────────────────────────────────────
 
 const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
-  { key: "TKTID",       header: "Ticket ID",   sortable: true, width: "90px" },
-  { key: "COMPANYNAME", header: "Company",     sortable: true },
-  { key: "CLIENTNAME",  header: "Client",      sortable: true, render: (row) => (row.CLIENTNAME as string) || "-" },
-  { key: "PROJECTNAME", header: "Project",     sortable: true },
-  { key: "MODULENAME",  header: "Module",      sortable: true },
-  { key: "STAFFNAME",   header: "Staff",       sortable: true },
-  { key: "TKTDATE",     header: "Date",        sortable: true, render: (row) => row.TKTDATE ? new Date(row.TKTDATE as string).toLocaleDateString() : "-" },
+  { key: "tktId",       header: "Ticket ID",   sortable: true, width: "90px" },
+  { key: "clientName",  header: "Client",      sortable: true, render: (row) => (row.clientName as string) || "-" },
+  { key: "projectName", header: "Project",     sortable: true },
+  { key: "moduleName",  header: "Module",      sortable: true },
+  { key: "assignedUsers", header: "Staff",     sortable: true },
+  { key: "tktDate",     header: "Date",        sortable: true, render: (row) => row.tktDate ? new Date(row.tktDate as string).toLocaleDateString() : "-" },
   {
-    key: "STATUS",
+    key: "status",
     header: "Status",
     sortable: true,
     render: (row) => {
-      const s = row.STATUS as string;
+      const s = row.status as string;
       const bg = s === "C" || s === "COMPLETED" ? COLORS.successBg : s === "X" || s === "CANCELLED" ? COLORS.errorBg : COLORS.warningBg;
       const color = s === "C" || s === "COMPLETED" ? COLORS.success : s === "X" || s === "CANCELLED" ? COLORS.error : COLORS.warning;
       const label = s === "O" ? "Open" : s === "I" || s === "INPROGRESS" ? "In Progress" : s === "C" || s === "COMPLETED" ? "Completed" : s === "X" || s === "CANCELLED" ? "Cancelled" : s;
@@ -83,14 +84,14 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
     },
   },
   {
-    key: "ACTIVE",
+    key: "active",
     header: "Active",
     render: (row) => (
       <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
-        background: row.ACTIVE === "Y" ? COLORS.successBg : COLORS.errorBg,
-        color: row.ACTIVE === "Y" ? COLORS.success : COLORS.error,
+        background: row.active === "Y" ? COLORS.successBg : COLORS.errorBg,
+        color: row.active === "Y" ? COLORS.success : COLORS.error,
       }}>
-        {row.ACTIVE === "Y" ? "Active" : "Inactive"}
+        {row.active === "Y" ? "Active" : "Inactive"}
       </span>
     ),
   },
@@ -101,17 +102,14 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
 // ─────────────────────────────────────────────
 
 const DEFAULTS: CallsBookingForm = {
-  COMPID:      0,
-  CLIENTID:    0,
-  PROJECTID:   "",
-  PROJECTNAME: "",
-  MODULEID:    "",
-  MODULENAME:  "",
-  DESCRIPTION: "",
-  REMARK:      "",
-  STAFFIDS:    "",
-  STATUS:      "O",
-  ACTIVE:      "Y",
+  clientId:      0,
+  projectId:     "",
+  projectName:   "",
+  moduleId:      "",
+  moduleName:    "",
+  remark:        "",
+  assignedUsers: "",
+  status:        "O",
 };
 
 // ─────────────────────────────────────────────
@@ -149,6 +147,20 @@ export default function CallsBookingPage() {
   const [viewId, setViewId] =
     useState<string | null>(null);
 
+  const [lightbox, setLightbox] =
+    useState<{ items: LightboxItem[]; index: number } | null>(null);
+
+  // CLIENT-ACCOUNT SCOPING - WHEN THE LOGGED-IN USER IS A CLIENT (isClient
+  // "Y" IN localStorage, SET AT LOGIN), THE CLIENT FIELD IS PRESET TO THEIR
+  // OWN CLIENTID AND LOCKED SO THEY CAN'T PICK/SEE ANY OTHER CLIENT'S NAME.
+  // THE ACTUAL DATA SCOPING IS ENFORCED SERVER-SIDE; THIS IS DEFENSE-IN-DEPTH
+  // MATCHING THE UI TO THAT RESTRICTION.
+  const isClientUser =
+    typeof window !== "undefined" && localStorage.getItem("isClient") === "Y";
+  const myClientId = isClientUser
+    ? Number(localStorage.getItem("clientId") || 0) || 0
+    : 0;
+
   const { data: companies = [] } = useCompanyList();
   const { data: clients   = [] } = useClientList();
   const { data: projects  = [] } = useProjectList();
@@ -160,14 +172,18 @@ export default function CallsBookingPage() {
     isLoading,
   } = useCallsBookingList();
 
-  console.log("pagedBookings",pagedBookings,"pagedBookings")
-
-  const bookings = pagedBookings?.data?.content ?? [];
+  const bookings = pagedBookings?.content ?? [];
 
   const {
     data: viewData,
     isLoading: viewLoading,
   } = useGetCallsBookingById(viewId ?? "");
+
+  // Call status history for the ticket currently being previewed
+  const {
+    data: statusHistory = [],
+    isLoading: statusHistoryLoading,
+  } = useCallStatusHistory(viewData?.tktId ?? null);
 
   const createMutation =
     useCreateCallsBooking();
@@ -193,27 +209,25 @@ export default function CallsBookingPage() {
     defaultValues: DEFAULTS,
   });
 
-  const watchedProjectId = useWatch({ control, name: "PROJECTID" });
-  const watchedModuleId  = useWatch({ control, name: "MODULEID" });
+  const watchedProjectId = useWatch({ control, name: "projectId" });
+  const watchedModuleId  = useWatch({ control, name: "moduleId" });
 
-  // Auto-select company when only one exists
-  useEffect(() => {
-    if (companies.length === 1) setValue("COMPID", companies[0].COMPID);
-  }, [companies]);
+  // Company is no longer a visible field — every booking is created under
+  // the (single) company on file, applied silently at submit time.
+  const defaultCompId = companies[0]?.COMPID ?? 0;
 
-  // Auto-fill PROJECTNAME when PROJECTID changes
+  // Auto-fill projectName when projectId changes
   useEffect(() => {
     const p = projects.find((p) => String(p.projectId) === String(watchedProjectId));
-    if (p) setValue("PROJECTNAME", p.projectName ?? "");
+    if (p) setValue("projectName", p.projectName ?? "");
   }, [watchedProjectId, projects]);
 
-  // Auto-fill MODULENAME when MODULEID changes
+  // Auto-fill moduleName when moduleId changes
   useEffect(() => {
     const m = modules.find((m) => String(m.moduleId) === String(watchedModuleId));
-    if (m) setValue("MODULENAME", m.moduleName ?? "");
+    if (m) setValue("moduleName", m.moduleName ?? "");
   }, [watchedModuleId, modules]);
 
-  const companyItems = companies.map((c) => ({ label: c.COMPANYNAME, value: String(c.COMPID) }));
   const clientItems  = clients.map((c) => ({ label: c.CLIENTNAME, value: String(c.CLIENTID) }));
   const projectItems = projects.map((p) => ({ label: p.projectName, value: String(p.projectId) }));
   const moduleItems  = modules.map((m) => ({ label: m.moduleName, value: String(m.moduleId) }));
@@ -230,8 +244,11 @@ export default function CallsBookingPage() {
 
   const openCreate = () => {
     setEditRow(null);
-    const defaultCompId = companies.length === 1 ? companies[0].COMPID : 0;
-    reset({ ...DEFAULTS, COMPID: defaultCompId });
+    reset(
+      isClientUser
+        ? { ...DEFAULTS, clientId: myClientId }
+        : DEFAULTS
+    );
     setMedia((prev) => {
       revokeMediaItems(prev);
       return [];
@@ -248,28 +265,28 @@ export default function CallsBookingPage() {
 
     try {
       const r = await getCallsBookingById(
-        String(row.SNO)
+        String(row.sno)
       );
 
       setEditRow(r);
 
       reset({
-        COMPID:      r.COMPID,
-        CLIENTID:    r.CLIENTID,
-        PROJECTID:   r.PROJECTID  || "",
-        PROJECTNAME: r.PROJECTNAME || "",
-        MODULEID:    r.MODULEID   || "",
-        MODULENAME:  r.MODULENAME  || "",
-        DESCRIPTION: r.DESCRIPTION || "",
-        REMARK:      r.REMARK      || "",
-        STAFFIDS:    r.STAFFIDS    || "",
-        STATUS:      r.STATUS      || "O",
-        ACTIVE:      r.ACTIVE === "N" ? "N" : "Y",
+        clientId:      r.clientId,
+        projectId:     r.projectId    || "",
+        projectName:   r.projectName  || "",
+        moduleId:      r.moduleId     || "",
+        moduleName:    r.moduleName   || "",
+        remark:        r.remark       || "",
+        assignedUsers: r.assignedUsers || "",
+        status:        r.status       || "O",
+        active:        r.active === "N" ? "N" : "Y",
       });
 
       setMedia((prev) => {
         revokeMediaItems(prev);
-        return [];
+        return (r.media ?? []).map((m) =>
+          makeExistingMediaItem(m, process.env.NEXT_PUBLIC_IMAGE_URL ?? "")
+        );
       });
 
       setOpen(true);
@@ -288,7 +305,7 @@ export default function CallsBookingPage() {
   const openView = (
     row: CallsBookingListItem_Table
   ) => {
-    setViewId(String(row.SNO));
+    setViewId(String(row.sno));
   };
 
   // ─────────────────────────
@@ -297,46 +314,62 @@ export default function CallsBookingPage() {
     data: CallsBookingForm
   )  => {
 
-    console.log(data,'payload')
+    // Keep every existing (already-uploaded) item so its active/order
+    // state is persisted, but drop new picks the user toggled off before
+    // ever saving them — those were never uploaded, so there's nothing
+    // to keep. `newFiles` and the id:null entries below are built from
+    // the same filtered order so the backend can match them positionally.
+    const keptMedia = media.filter((m) => m.isExisting || m.active);
+
+    const newFiles = keptMedia
+      .filter((m) => !m.isExisting && m.file)
+      .map((m) => m.file as File);
+
+    const mediaMeta = keptMedia.map((m, idx) => ({
+      id: m.isExisting ? m.id ?? null : null,
+      displayOrder: idx,
+      active: m.active,
+    }));
+
+    // Company is no longer a form field — every booking is filed under the
+    // company on record, applied here automatically. Active is only
+    // editable during Update (see the Assignment section); on create it
+    // isn't shown at all and defaults to "Y".
+    const payload = {
+      ...data,
+      compId: editRow?.compId ?? defaultCompId,
+      active: editRow ? (data.active ?? editRow.active ?? "Y") : "Y",
+    };
+
     try {
       if (editRow) {
         const res =
           await updateMutation.mutateAsync(
             {
-              id: String(editRow.SNO),
-              payload: data,
+              id: String(editRow.sno),
+              payload,
+              media: newFiles,
+              mediaMeta,
             }
           );
 
         toast.success(
           "Booking Updated",
-          `"${res.TKTID}" updated successfully.`
+          `"${res.tktId}" updated successfully.`
         );
       } else {
-        const activeMedia = media.filter(
-          (m) => m.active
-        );
-
         const res =
           await createMutation.mutateAsync(
             {
-              payload: data,
-              media: activeMedia.map(
-                (m) => m.file
-              ),
-              mediaMeta: activeMedia.map(
-                (m, idx) => ({
-                  mediaId: m.mediaId ?? null,
-                  displayOrder: idx,
-                  active: m.active,
-                })
-              ),
+              payload,
+              media: newFiles,
+              mediaMeta,
             }
           );
 
         toast.success(
           "Booking Created",
-          `"${res.TKTID}" created successfully.`
+          `"${res.tktId}" created successfully.`
         );
       }
 
@@ -367,13 +400,13 @@ export default function CallsBookingPage() {
     if (!deleteRow) return;
 
     deleteMutation.mutate(
-      String(deleteRow.SNO),
+      String(deleteRow.sno),
 
       {
         onSuccess: () => {
           toast.success(
             "Booking Deleted",
-            `Ticket "${deleteRow.TKTID}" deleted successfully.`
+            `Ticket "${deleteRow.tktId}" deleted successfully.`
           );
 
           setDeleteRow(null);
@@ -447,7 +480,7 @@ export default function CallsBookingPage() {
           <div className="cb-detail-head">
             <div>
               <div className="cb-detail-title">Booking Details</div>
-              <div className="cb-detail-sub">Ticket ID: {v?.TKTID ?? viewId}</div>
+              <div className="cb-detail-sub">Ticket ID: {v?.tktId ?? viewId}</div>
             </div>
             <button className="cb-back-btn" onClick={() => setViewId(null)}>
               ← Back to List
@@ -461,20 +494,18 @@ export default function CallsBookingPage() {
               <>
                 <div className="cb-detail-grid">
                   {([
-                    ["Ticket ID",   v.TKTID],
-                    ["Ticket Date", v.TKTDATE ? new Date(v.TKTDATE as string).toLocaleString() : "—"],
-                    ["Company",     v.COMPANYNAME],
-                    ["Client",      v.CLIENTNAME],
-                    ["Project",     v.PROJECTNAME],
-                    ["Module",      v.MODULENAME],
-                    ["Staff",       v.STAFFNAME || v.STAFFIDS],
-                    ["Status",      v.STATUS],
-                    ["Active",      v.ACTIVE === "Y" ? "Active" : "Inactive"],
-                    ["Description", v.DESCRIPTION],
-                    ["Remark",      v.REMARK],
-                    ["Cancelled",   v.CANCEL],
-                    ["Cancel By",   v.CANCELBY],
-                    ["Updated",     v.UPDATED],
+                    ["Ticket ID",   v.tktId],
+                    ["Ticket Date", v.tktDate ? new Date(v.tktDate as string).toLocaleString() : "—"],
+                    ["Client",      v.clientName],
+                    ["Project",     v.projectName],
+                    ["Module",      v.moduleName],
+                    ["Staff",       v.userMap ? Object.values(v.userMap).join(", ") : v.assignedUsers],
+                    ["Status",      v.status],
+                    ["Active",      v.active === "Y" ? "Active" : "Inactive"],
+                    ["Remark",      v.remark],
+                    ["Cancelled",   v.cancel],
+                    ["Cancel By",   v.cancelBy],
+                    ["Updated",     v.updated],
                   ] as [string, unknown][]).map(([label, val]) => (
                     <div key={label} className="cb-detail-row">
                       <span className="cb-detail-label">{label}</span>
@@ -490,12 +521,14 @@ export default function CallsBookingPage() {
                       {v.media.map((m, idx) => {
                         const type = (m.mediaType ?? "").toUpperCase();
                         return (
-                        <div key={m.id ?? idx} className="cb-media-tile">
+                        // NOTE: m.mediaId is a shared group id (same across every
+                        // file in this booking), not unique per item — key on idx.
+                        <div key={idx} className="cb-media-tile">
                           {type.startsWith("IMAGE") ? (
                             <img
                               src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
                               alt={`media-${idx}`}
-                              onClick={() => window.open(`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`, "_blank")}
+                              onClick={() => setLightbox({ items: v.media as LightboxItem[], index: idx })}
                               style={{ width: "100%", height: 90, objectFit: "cover", cursor: "pointer" }}
                             />
                           ) : type.startsWith("VIDEO") ? (
@@ -523,12 +556,106 @@ export default function CallsBookingPage() {
                     </div>
                   </>
                 )}
+
+                <div className="cb-detail-section-label">Call Status History</div>
+
+                {statusHistoryLoading ? (
+                  <div style={{ padding: 16, color: COLORS.textMuted, fontSize: 12 }}>Loading...</div>
+                ) : statusHistory.length === 0 ? (
+                  <div style={{ padding: 16, color: COLORS.textMuted, fontSize: 12 }}>No status updates yet.</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {statusHistory.map((s) => {
+                      const label = s.STATUS ?? "—";
+                      const bg = label === "CLOSED" || label === "C" ? COLORS.errorBg : label === "PROCESS" || label === "I" ? COLORS.warningBg : COLORS.successBg;
+                      const color = label === "CLOSED" || label === "C" ? COLORS.error : label === "PROCESS" || label === "I" ? COLORS.warning : COLORS.success;
+
+                      return (
+                        <div
+                          key={s.sno}
+                          style={{
+                            border: `1px solid ${COLORS.cardBorder}`,
+                            borderRadius: RADIUS.md,
+                            padding: 10,
+                            background: COLORS.cardBg,
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                            <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: bg, color }}>
+                              {label}
+                            </span>
+                            <span style={{ fontSize: 11, color: COLORS.textMuted }}>
+                              {s.UPDATED ? new Date(s.UPDATED).toLocaleString() : "—"}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 4 }}>
+                            By <b style={{ color: COLORS.textPrimary }}>{s.userName ?? s.userId ?? "—"}</b>
+                          </div>
+
+                          {s.remark && (
+                            <div style={{ fontSize: 12, color: COLORS.textPrimary, marginBottom: 6 }}>{s.remark}</div>
+                          )}
+
+                          {((s.media && s.media.length > 0) || s.IMAGE) && (() => {
+                            const historyMedia = s.media && s.media.length > 0
+                              ? s.media
+                              : [{ mediaUrl: s.IMAGE, mediaType: "IMAGE", active: true }];
+                            return (
+                            <div className="cb-media-grid">
+                              {historyMedia.map((m, idx) => {
+                                const type = (m.mediaType ?? "").toUpperCase();
+                                return (
+                                  <div key={idx} className="cb-media-tile">
+                                    {type.startsWith("IMAGE") ? (
+                                      <img
+                                        src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
+                                        alt={`status-media-${idx}`}
+                                        onClick={() => setLightbox({ items: historyMedia as LightboxItem[], index: idx })}
+                                        style={{ width: "100%", height: 90, objectFit: "cover", cursor: "pointer" }}
+                                      />
+                                    ) : type.startsWith("VIDEO") ? (
+                                      <video
+                                        src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
+                                        controls
+                                        style={{ width: "100%", height: 90, objectFit: "cover" }}
+                                      />
+                                    ) : (
+                                      <a
+                                        href={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 90, fontSize: 11, color: COLORS.textSecondary }}
+                                      >
+                                        Open file
+                                      </a>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            );
+                          })()}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </>
             ) : (
               <div style={{ padding: 48, textAlign: "center", color: COLORS.textMuted }}>Booking not found.</div>
             )}
           </div>
         </div>
+
+        {lightbox && (
+          <MediaLightbox
+            items={lightbox.items}
+            index={lightbox.index}
+            onClose={() => setLightbox(null)}
+            onIndexChange={(i) => setLightbox((prev) => (prev ? { ...prev, index: i } : prev))}
+          />
+        )}
       </>
     );
   }
@@ -770,7 +897,7 @@ export default function CallsBookingPage() {
         data={
           bookings as CallsBookingListItem_Table[]
         }
-        rowKey="SNO"
+        rowKey="sno"
         isLoading={isLoading}
         onEdit={openEdit}
         onDelete={(row) =>
@@ -818,7 +945,7 @@ export default function CallsBookingPage() {
 
                 <div className="cb-modal-sub">
                   {editRow
-                    ? `Editing Ticket: ${editRow.TKTID}`
+                    ? `Editing Ticket: ${editRow.tktId}`
                     : "Fill booking details"}
                 </div>
               </div>
@@ -845,80 +972,61 @@ export default function CallsBookingPage() {
 
                 <div className="cb-grid-2">
                   <div className="cb-field-row">
-                    <label className="cb-field-label">Company *</label>
-                    <Controller
-                      name="COMPID"
-                      control={control}
-                      render={({ field }) => (
-                        <SelectCombobox
-                          value={field.value ? String(field.value) : undefined}
-                          onChange={(val) => field.onChange(val ? Number(val) : 0)}
-                          editId={editRow?.SNO ?? null}
-                          items={companyItems}
-                          placeholder="Select company"
-                          disable={companies.length === 1}
-                          maxWidth="100%"
-                        />
-                      )}
-                    />
-                    {errors.COMPID && <span className="cb-field-error">{errors.COMPID.message}</span>}
-                  </div>
-
-                  <div className="cb-field-row">
                     <label className="cb-field-label">Client *</label>
                     <Controller
-                      name="CLIENTID"
+                      name="clientId"
                       control={control}
                       render={({ field }) => (
                         <SelectCombobox
                           value={field.value ? String(field.value) : undefined}
                           onChange={(val) => field.onChange(val ? Number(val) : 0)}
-                          editId={editRow?.SNO ?? null}
+                          editId={editRow?.sno ?? null}
                           items={clientItems}
                           placeholder="Select client"
                           maxWidth="100%"
+                          disable={isClientUser}
                         />
                       )}
                     />
-                    {errors.CLIENTID && <span className="cb-field-error">{errors.CLIENTID.message}</span>}
+                    {errors.clientId && <span className="cb-field-error">{errors.clientId.message}</span>}
                   </div>
 
                   <div className="cb-field-row">
                     <label className="cb-field-label">Project</label>
                     <Controller
-                      name="PROJECTID"
+                      name="projectId"
                       control={control}
                       render={({ field }) => (
                         <SelectCombobox
                           value={field.value || undefined}
                           onChange={(val) => field.onChange(val)}
-                          editId={editRow?.SNO ?? null}
+                          editId={editRow?.sno ?? null}
                           items={projectItems}
                           placeholder="Select project"
                           maxWidth="100%"
                         />
                       )}
                     />
-                    {errors.PROJECTID && <span className="cb-field-error">{errors.PROJECTID.message}</span>}
+                    {errors.projectId && <span className="cb-field-error">{errors.projectId.message}</span>}
                   </div>
 
                   <div className="cb-field-row">
                     <label className="cb-field-label">Module</label>
                     <Controller
-                      name="MODULEID"
+                      name="moduleId"
                       control={control}
                       render={({ field }) => (
                         <SelectCombobox
                           value={field.value || undefined}
                           onChange={(val) => field.onChange(val)}
-                          editId={editRow?.SNO ?? null}
+                          editId={editRow?.sno ?? null}
                           items={moduleItems}
                           placeholder="Select module"
                           maxWidth="100%"
                         />
                       )}
                     />
-                    {errors.MODULEID && <span className="cb-field-error">{errors.MODULEID.message}</span>}
+                    {errors.moduleId && <span className="cb-field-error">{errors.moduleId.message}</span>}
                   </div>
                 </div>
 
@@ -930,59 +1038,79 @@ export default function CallsBookingPage() {
                   <div className="cb-field-row">
                     <label className="cb-field-label">Staff *</label>
                     <Controller
-                      name="STAFFIDS"
+                      name="assignedUsers"
                       control={control}
                       render={({ field }) => (
                         <MultiSelectCombobox
                           value={field.value ? field.value.split(",").filter(Boolean) : []}
                           onChange={(vals) => field.onChange(vals.join(","))}
-                          editId={editRow?.SNO ?? null}
+                          editId={editRow?.sno ?? null}
                           items={staffItems}
                           placeholder="Select staff"
                           maxWidth="100%"
                         />
                       )}
                     />
-                    {errors.STAFFIDS && <span className="cb-field-error">{errors.STAFFIDS.message}</span>}
+                    {errors.assignedUsers && <span className="cb-field-error">{errors.assignedUsers.message}</span>}
                   </div>
 
                   <div className="cb-field-row">
                     <label className="cb-field-label">Status</label>
                     <Controller
-                      name="STATUS"
+                      name="status"
                       control={control}
                       render={({ field }) => (
-                        <SelectCombobox
-                          value={field.value || undefined}
-                          onChange={(val) => field.onChange(val)}
-                          editId={editRow?.SNO ?? null}
-                          items={statusItems}
-                          placeholder="Select status"
-                          maxWidth="100%"
-                        />
+                        <>
+                          <input
+                            {...field}
+                            list="cb-status-suggestions"
+                            placeholder="Type or pick a status"
+                            style={{
+                              height: 32,
+                              padding: "0 10px",
+                              borderRadius: RADIUS.md,
+                              border: `1px solid ${COLORS.cardBorder}`,
+                              fontSize: 12,
+                              fontFamily: FONT.family,
+                              textTransform: "uppercase",
+                              color: COLORS.textPrimary,
+                              background: COLORS.cardBg,
+                            }}
+                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                          />
+                          <datalist id="cb-status-suggestions">
+                            {statusItems.map((s) => (
+                              <option key={s.value} value={s.value} />
+                            ))}
+                          </datalist>
+                        </>
                       )}
                     />
-                    {errors.STATUS && <span className="cb-field-error">{errors.STATUS.message}</span>}
+                    {errors.status && <span className="cb-field-error">{errors.status.message}</span>}
                   </div>
 
-                  <div className="cb-field-row">
-                    <label className="cb-field-label">Active *</label>
-                    <Controller
-                      name="ACTIVE"
-                      control={control}
-                      render={({ field }) => (
-                        <SwitchInput
-                          value={field.value}
-                          onChange={field.onChange}
-                          trueValue="Y"
-                          falseValue="N"
-                          labels={{ on: "Active", off: "Inactive" }}
-                          size="sm"
-                        />
-                      )}
-                    />
-                    {errors.ACTIVE && <span className="cb-field-error">{errors.ACTIVE.message}</span>}
-                  </div>
+                  {/* Active is only editable during Update — on create it
+                      defaults to "Y" automatically and isn't shown. */}
+                  {editRow && (
+                    <div className="cb-field-row">
+                      <label className="cb-field-label">Active</label>
+                      <Controller
+                        name="active"
+                        control={control}
+                        render={({ field }) => (
+                          <SwitchInput
+                            value={field.value === "N" ? "N" : "Y"}
+                            onChange={field.onChange}
+                            trueValue="Y"
+                            falseValue="N"
+                            labels={{ on: "Active", off: "Inactive" }}
+                            size="sm"
+                          />
+                        )}
+                      />
+                      {errors.active && <span className="cb-field-error">{errors.active.message}</span>}
+                    </div>
+                  )}
                 </div>
 
                 <div className="cb-section-label">
@@ -991,60 +1119,38 @@ export default function CallsBookingPage() {
 
                 <div className="cb-grid-2">
                   <div className="cb-field-row">
-                    <label className="cb-field-label">Description</label>
-                    <Controller
-                      name="DESCRIPTION"
-                      control={control}
-                      render={({ field }) => (
-                        <TextareaField
-                          value={field.value}
-                          field="DESCRIPTION"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter description"
-                          mode="inline"
-                        />
-                      )}
-                    />
-                    {errors.DESCRIPTION && <span className="cb-field-error">{errors.DESCRIPTION.message}</span>}
-                  </div>
-
-                  <div className="cb-field-row">
                     <label className="cb-field-label">Remark</label>
                     <Controller
-                      name="REMARK"
+                      name="remark"
                       control={control}
                       render={({ field }) => (
                         <TextareaField
                           value={field.value}
-                          field="REMARK"
+                          field="remark"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Enter remarks"
                           mode="inline"
                         />
                       )}
                     />
-                    {errors.REMARK && <span className="cb-field-error">{errors.REMARK.message}</span>}
+                    {errors.remark && <span className="cb-field-error">{errors.remark.message}</span>}
                   </div>
                 </div>
 
-                {!editRow && (
-                  <>
-                    <div className="cb-section-label">
-                      Media
-                    </div>
+                <div className="cb-section-label">
+                  Media
+                </div>
 
-                    <div className="cb-field-row">
-                      <label className="cb-field-label">Attachments</label>
-                      <MediaManager
-                        value={media}
-                        onChange={setMedia}
-                        accept="image/*,video/*,application/pdf,.doc,.docx"
-                        maxFiles={10}
-                        onError={(msg) => toast.error("Error", msg)}
-                      />
-                    </div>
-                  </>
-                )}
+                <div className="cb-field-row">
+                  <label className="cb-field-label">Attachments</label>
+                  <MediaManager
+                    value={media}
+                    onChange={setMedia}
+                    accept="image/*,video/*,application/pdf,.doc,.docx"
+                    maxFiles={10}
+                    onError={(msg) => toast.error("Error", msg)}
+                  />
+                </div>
               </div>
 
               <div className="cb-modal-footer">
@@ -1081,7 +1187,7 @@ export default function CallsBookingPage() {
 
       <ConfirmDialog
         open={!!deleteRow}
-        message={`Are you sure you want to delete ticket "${deleteRow?.TKTID}"?`}
+        message={`Are you sure you want to delete ticket "${deleteRow?.tktId}"?`}
         isPending={
           deleteMutation.isPending
         }

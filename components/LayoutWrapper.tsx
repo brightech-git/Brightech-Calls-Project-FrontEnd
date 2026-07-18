@@ -12,6 +12,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   const { loading: menuLoading, isRouteAllowed } = useAccessibleMenu();
 
   const isLoginPage = pathname === "/Login" || pathname === "/login";
+  const isNotFoundPage = pathname === "/404";
 
   useEffect(() => {
     if (!isLoginPage) {
@@ -24,12 +25,14 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     setChecked(true);
   }, [pathname]);
 
-  // useEffect(() => {
-  //   if (!checked || isLoginPage || menuLoading) return;
-  //   if (!isRouteAllowed(pathname)) router.replace("/Home");
-  // }, [checked, isLoginPage, menuLoading, pathname]);
-
-  // if (!checked && !isLoginPage) return null;
+  // ROLE/MENU ACCESS GUARD - a logged-in user may only open pages that are
+  // in their assigned menuIds (see useAccessibleMenu / AuthResponse.menuIds).
+  // Anything else (typed URL, stale bookmark, etc.) bounces to the 404 page
+  // instead of silently rendering the page or falling back to Home.
+  useEffect(() => {
+    if (!checked || isLoginPage || isNotFoundPage || menuLoading) return;
+    if (!isRouteAllowed(pathname)) router.replace("/404");
+  }, [checked, isLoginPage, isNotFoundPage, menuLoading, pathname]);
 
   if (isLoginPage) return <>{children}</>;
 

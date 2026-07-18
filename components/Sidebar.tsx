@@ -46,14 +46,15 @@ function NavGroupItem({ item, pathname, isOpen, onToggle, onNavigate, collapsed 
     <div className="sidebar-group">
       <div className={`sidebar-group-btn ${isOpen ? "open" : ""} ${active ? "active" : ""}`} aria-expanded={isOpen} title={collapsed ? item.label : undefined}>
         {item.href ? (
-          <Link href={item.href} className="sidebar-group-link" onClick={onNavigate}>
+          <Link href={item.href} className="sidebar-group-link" onClick={onNavigate} >
             <span className="sidebar-group-icon">{item.icon}</span>
             <span className="sidebar-group-label">{item.label}</span>
           </Link>
         ) : (
           <>
-            <span className="sidebar-group-icon">{item.icon}</span>
-            <span className="sidebar-group-label">{item.label}</span>
+          
+            <span className="sidebar-group-icon" onClick={onToggle}>{item.icon}</span>
+            <span className="sidebar-group-label" onClick={onToggle}>{item.label}</span>
           </>
         )}
         <button onClick={onToggle} className="sidebar-group-toggle" aria-label="Toggle submenu">

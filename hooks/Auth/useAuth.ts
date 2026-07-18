@@ -45,6 +45,8 @@ export const useLogin = () => {
       localStorage.setItem("role",        data?.data?.role ?? "");
       localStorage.setItem("mobileNo",    data?.data?.mobileNo ?? "");
       localStorage.setItem("active",      data?.data?.active ?? "");
+      localStorage.setItem("isClient",    data?.data?.isClient ?? "N");
+      localStorage.setItem("clientId",    String(data?.data?.clientId ?? ""));
       localStorage.setItem("user",        JSON.stringify(data));
       if (data?.data?.menuIds) {
         localStorage.setItem("menuIds", JSON.stringify(data?.data?.menuIds));
@@ -71,10 +73,10 @@ export const useRegister = () => {
       return registerUser(payload);
     },
 
-    onSuccess: (data: AuthResponse) => {
+    onSuccess: (data: ApiResponse<AuthResponse>) => {
       console.log("Register Success:", data);
 
-      localStorage.setItem("calls_token", data.token);
+      localStorage.setItem("calls_token", data?.data?.token ?? "");
       localStorage.setItem("user", JSON.stringify(data));
 
       queryClient.invalidateQueries({

@@ -1,134 +1,102 @@
 "use client";
 
-export default function DashboardPage() {
-  const stats = [
-    { label: "Total Clients",  value: "1,248", change: "+12%",    up: true },
-    { label: "Revenue",        value: "₹4.2L", change: "+8.4%",   up: true },
-    { label: "Pending Calls",  value: "37",    change: "+3 today", up: false },
-    { label: "Active Staff",   value: "14",    change: "No change",up: true },
-  ];
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {  ChevronRightCircle } from "lucide-react";
 
-  const recentUsers = [
-    { name: "Arun Kumar",   role: "Staff",    status: "Active" },
-    { name: "Priya Nair",   role: "Manager",  status: "Active" },
-    { name: "Rajan Pillai", role: "Operator", status: "Pending" },
-    { name: "Deepa Menon",  role: "Staff",    status: "Active" },
-    { name: "Suresh Babu",  role: "Staff",    status: "Inactive" },
-  ];
+import { CustomTable, TableColumn } from "@/components/CustomTable";
+import { usePageHeader } from "@/context/PageHeaderContext";
+import { COLORS } from "@/utils/theme";
+
+import { useMyTasks } from "@/hooks/TaskAssignment/useTaskAssignment";
+import { CallsBookingRecord_Table } from "@/types/TaskAssignment/TaskAssignment";
+
+// ─── Columns — active tasks assigned to the logged-in user ──────────────────
+
+const COLUMNS: TableColumn<CallsBookingRecord_Table>[] = [
+  { key: "tktId",       header: "Ticket ID", sortable: true, width: "90px" },
+  { key: "clientName",  header: "Client",    sortable: true, render: (row) => (row.clientName as string) || "-" },
+  { key: "projectName", header: "Project",   sortable: true },
+  { key: "moduleName",  header: "Module",    sortable: true },
+  {
+    key: "tktDate",
+    header: "Date",
+    sortable: true,
+    render: (row) => (row.tktDate ? new Date(row.tktDate as string).toLocaleDateString() : "-"),
+  },
+  {
+    key: "status",
+    header: "Status",
+    sortable: true,
+    render: (row) => {
+      const s = (row.status as string) ?? "";
+      const bg = s === "C" || s === "COMPLETED" ? COLORS.successBg : s === "X" || s === "CANCELLED" ? COLORS.errorBg : COLORS.warningBg;
+      const color = s === "C" || s === "COMPLETED" ? COLORS.success : s === "X" || s === "CANCELLED" ? COLORS.error : COLORS.warning;
+      const label = s === "O" ? "Open" : s === "I" || s === "INPROGRESS" ? "In Progress" : s === "C" || s === "COMPLETED" ? "Completed" : s === "X" || s === "CANCELLED" ? "Cancelled" : s || "—";
+      return <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: bg, color }}>{label}</span>;
+    },
+  },
+];
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function DashboardPage() {
+  usePageHeader({
+    title: "Home",
+    subtitle: "Active tasks assigned to you",
+  });
+
+  const router = useRouter();
+
+  // Read the logged-in user's id client-side (localStorage isn't available
+  // during SSR), then load only the bookings assigned to them.
+  const [userId, setUserId] = useState("");
+
+  useEffect(() => {
+    setUserId(localStorage.getItem("userId") ?? "");
+  }, []);
+
+  const { data: myTasks = [], isLoading } = useMyTasks(userId);
+
+  // Home only shows ACTIVE tasks — inactive ones stay visible in the full
+  // Task Assignment list, but don't belong on the "what's on my plate" view.
+  const activeTasks = useMemo(
+    () => myTasks.filter((t) => t.active === "Y"),
+    [myTasks]
+  );
+
+  // Click through to that ticket's Call Status log/detail view.
+  const openLogs = (row: CallsBookingRecord_Table) => {
+    router.push(`/ProjectManagement/CallStatus?tktId=${row.tktId}`);
+  };
 
   return (
     <>
       <style>{`
-        .dash-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 14px;
-          margin-bottom: 24px;
+        .home-btn-primary {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 0 16px; height: 34px; border-radius: 8px;
+          border: none; background: ${COLORS.btnPrimaryBg}; color: ${COLORS.btnPrimaryText};
+          font-size: 12px; font-weight: 600; cursor: pointer;
         }
-        @media (max-width: 900px) { .dash-grid { grid-template-columns: repeat(2, 1fr); } }
-
-        .stat-card {
-          background: #ffffff;
-          border: 1px solid #dbeafe;
-          border-radius: 12px;
-          padding: 18px;
-          box-shadow: 0 1px 6px rgba(59,130,246,0.07);
-        }
-        .stat-label {
-          font-size: 10.5px; font-weight: 700;
-          text-transform: uppercase; letter-spacing: 0.08em;
-          color: #93c5fd; margin-bottom: 8px;
-        }
-        .stat-value {
-          font-size: 26px; font-weight: 700;
-          color: #1e3a5f; letter-spacing: -0.03em;
-        }
-        .stat-change { font-size: 11px; margin-top: 5px; font-weight: 500; }
-        .stat-up   { color: #16a34a; }
-        .stat-down { color: #ef4444; }
-
-        .dash-card {
-          background: #ffffff;
-          border: 1px solid #dbeafe;
-          border-radius: 12px;
-          overflow: hidden;
-          box-shadow: 0 1px 6px rgba(59,130,246,0.07);
-        }
-        .dash-card-head {
-          padding: 14px 18px;
-          border-bottom: 1px solid #dbeafe;
-          display: flex; align-items: center; justify-content: space-between;
-          background: #eff6ff;
-        }
-        .dash-card-title { font-size: 13.5px; font-weight: 700; color: #1e3a5f; }
-
-        .badge {
-          font-size: 10.5px; font-weight: 600;
-          padding: 3px 10px; border-radius: 20px; letter-spacing: 0.02em;
-        }
-        .badge-blue   { background: #dbeafe; color: #1d4ed8; }
-        .badge-green  { background: #dcfce7; color: #16a34a; }
-        .badge-amber  { background: #fef9c3; color: #b45309; }
-        .badge-gray   { background: #f1f5f9; color: #64748b; }
-
-        .dash-table { width: 100%; border-collapse: collapse; }
-        .dash-table th {
-          font-size: 10px; font-weight: 700; letter-spacing: 0.09em;
-          text-transform: uppercase; color: #3b82f6;
-          padding: 10px 18px; text-align: left;
-          background: #eff6ff;
-        }
-        .dash-table td {
-          font-size: 13px; color: #64748b;
-          padding: 10px 18px; border-top: 1px solid #f0f6ff;
-        }
-        .dash-table tbody tr:hover td { background: #f8faff; }
-        .td-name { color: #1e3a5f !important; font-weight: 600; }
+        .home-btn-primary:hover { background: ${COLORS.btnPrimaryHover}; }
       `}</style>
 
-      <div className="dash-grid">
-        {stats.map((s) => (
-          <div key={s.label} className="stat-card">
-            <div className="stat-label">{s.label}</div>
-            <div className="stat-value">{s.value}</div>
-            <div className={`stat-change ${s.up ? "stat-up" : "stat-down"}`}>
-              {s.up ? "↑" : "↓"} {s.change}
-            </div>
-          </div>
-        ))}
-      </div>
+      <CustomTable
+        title="My Active Tasks"
+        columns={COLUMNS}
+        data={activeTasks as CallsBookingRecord_Table[]}
+        rowKey="sno"
+        isLoading={isLoading}
+        extraActions={[
+          {
+            label: "View Logs",
+            icon: <ChevronRightCircle size={20} />,
+            onClick: openLogs,
+          },
+        ]}
 
-      <div className="dash-card">
-        <div className="dash-card-head">
-          <div className="dash-card-title">Recent Users</div>
-          <span className="badge badge-blue">User Master</span>
-        </div>
-        <table className="dash-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Role</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentUsers.map((u) => (
-              <tr key={u.name}>
-                <td className="td-name">{u.name}</td>
-                <td>{u.role}</td>
-                <td>
-                  <span className={`badge ${
-                    u.status === "Active"   ? "badge-green" :
-                    u.status === "Pending"  ? "badge-amber" : "badge-gray"
-                  }`}>
-                    {u.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      />
     </>
   );
 }

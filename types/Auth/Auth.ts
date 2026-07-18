@@ -12,13 +12,22 @@ export interface RegisterPayload {
   password: string;
   roleId: string;
   active: string;
+  /** Y/N — defaults to "N" on the backend if omitted. */
+  isClient?: string;
+  /** Required when isClient is "Y". */
+  clientId?: number | null;
 }
 
 export interface UpdateUserPayload {
   username: string;
-  password: string;
   roleId: string;
   active: string;
+  /** Y/N. Required together with clientId when set to "Y". */
+  isClient?: string;
+  clientId?: number | null;
+  /** Both required together to change the password; omit to leave it unchanged. */
+  oldPassword?: string;
+  newPassword?: string;
 }
 
 export interface AuthResponse {
@@ -33,7 +42,10 @@ export interface AuthResponse {
   message: string;
   /** Ids of the sidebar menu entries (config/menu/menuConfig.ts `id` field) this user may see. Absent/undefined until the backend sends it — treated as "show everything". */
   menuIds?: string[];
-  
+  /** Y/N — whether this account is a Client account. */
+  isClient?: string | null;
+  /** The CLIENTLIST record this account maps to when isClient is "Y". */
+  clientId?: number | null;
 }
 
 export interface UserRecord {
@@ -42,6 +54,8 @@ export interface UserRecord {
   ACTIVE: string;
   PWD: string;
   ROLENAME :string
+  ISCLIENT?: string | null;
+  CLIENTID?: number | null;
   UPDATED: string | null;
   UPTIME: string | null;
 }

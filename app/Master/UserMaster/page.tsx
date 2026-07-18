@@ -11,44 +11,85 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { CustomTable, TableColumn } from "@/components/CustomTable";
 import { useRegister, useGetAllUsers, useUpdateUser, useDeleteUser } from "@/hooks/Auth/useAuth";
-import { UserRecord, UpdateUserPayload } from "@/types/Auth/Auth";
+import { UserRecord, UpdateUserPayload, RegisterPayload } from "@/types/Auth/Auth";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
 import { COLORS, FONT } from "@/utils/theme";
 import { useRole } from "@/hooks/ApiHooks/RoleMaster/useRoleMaster";
+import { useClientList } from "@/hooks/ClientMaster/useClientMaster";
 import { SelectCombobox } from "@/components/ui/SelectComboBox";
 import { NativeSelectWrapper } from "@/components/ui/NativeSelectWrapper";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
+// One shared field shape for both create and edit — every field is always
+// present as a string (never undefined) so useForm<UserForm> stays a single
+// consistent type regardless of which schema is active; only the
+// validation rules differ between create and edit below.
+interface UserForm {
+  username: string;
+  roleId: string;
+  active: "Y" | "N";
+  // Whether this account represents a client — when "Y", clientId is required.
+  isClient: "Y" | "N";
+  clientId: string;
+  // Create-mode only
+  password: string;
+  confirmPassword: string;
+  // Edit-mode only — changing the password requires the old one
+  oldPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}
+
 const userSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(5, "Password must be at least 5 characters"),
-  confirmPassword: z.string(),
   roleId : z.string().min(1, "Role is required"),
   active: z.enum(["Y", "N"], {
     error: "Active must be either 'Y' or 'N'",
   }),
+  isClient: z.enum(["Y", "N"]),
+  clientId: z.string(),
+  password: z.string().min(5, "Password must be at least 5 characters"),
+  confirmPassword: z.string(),
+  oldPassword: z.string(),
+  newPassword: z.string(),
+  confirmNewPassword: z.string(),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
+}).refine((d) => d.isClient !== "Y" || d.clientId.length > 0, {
+  message: "Client is required when Client is Yes",
+  path: ["clientId"],
 });
 
 const editSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(5, "Password must be at least 5 characters").or(z.literal("")),
-  confirmPassword: z.string(),
   roleId : z.string().min(1, "Role is required"),
   active: z.enum(["Y", "N"], {
     error: "Active must be either 'Y' or 'N'",
   }),
-}).refine((d) => d.password === d.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
+  isClient: z.enum(["Y", "N"]),
+  clientId: z.string(),
+  password: z.string(),
+  confirmPassword: z.string(),
+  oldPassword: z.string(),
+  newPassword: z.string(),
+  confirmNewPassword: z.string(),
+}).refine((d) => !d.newPassword || d.newPassword.length >= 5, {
+  message: "New password must be at least 5 characters",
+  path: ["newPassword"],
+}).refine((d) => !d.newPassword || d.oldPassword.length > 0, {
+  message: "Old password is required to set a new password",
+  path: ["oldPassword"],
+}).refine((d) => d.newPassword === d.confirmNewPassword, {
+  message: "New passwords do not match",
+  path: ["confirmNewPassword"],
+}).refine((d) => d.isClient !== "Y" || d.clientId.length > 0, {
+  message: "Client is required when Client is Yes",
+  path: ["clientId"],
 });
-
-type UserForm = z.infer<typeof userSchema>;
 
 // ─── Table columns ────────────────────────────────────────────────────────────
 
@@ -112,6 +153,16 @@ export default function UserMasterPage() {
     {label:"NO" , value :"N"},
   ]
 
+  const clientOptions = [
+    {label:"YES" , value :"Y"},
+    {label:"NO" , value :"N"},
+  ]
+
+  const { data: clients = [] } = useClientList();
+
+  const clientItems = useMemo(() => {
+    return clients.map((c: any) => ({ label: c.CLIENTNAME, value: String(c.CLIENTID) }));
+  }, [clients]);
 
   const { mutate: register, isPending: isRegistering } = useRegister();
   const { mutate: updateUser, isPending: isUpdating }  = useUpdateUser();
@@ -130,23 +181,32 @@ export default function UserMasterPage() {
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<UserForm>({
     resolver: zodResolver(isEditMode ? editSchema : userSchema),
-    defaultValues: { username: "", password: "", confirmPassword: "", roleId: "", active: "Y" },
+    defaultValues: {
+      username: "", roleId: "", active: "Y",
+      isClient: "N", clientId: "",
+      password: "", confirmPassword: "",
+      oldPassword: "", newPassword: "", confirmNewPassword: "",
+    },
   });
 
   const isPending = isRegistering || isUpdating;
+  const isClientSelected = watch("isClient") === "Y";
 
   const handleEdit = (row: UserRecord & Record<string, unknown>) => {
     setEditId(row.USERID as string);
     setEditRow(row as UserRecord);
     reset({
       username: row.USERNAME as string,
-      password: "",
-      confirmPassword: "",
       roleId: row.ROLEID != null ? String(row.ROLEID) : "",
       active: (row.ACTIVE as string) === "N" ? "N" : "Y",
+      isClient: (row.ISCLIENT as string) === "Y" ? "Y" : "N",
+      clientId: row.CLIENTID != null ? String(row.CLIENTID) : "",
+      password: "", confirmPassword: "",
+      oldPassword: "", newPassword: "", confirmNewPassword: "",
     });
   };
 
@@ -172,37 +232,55 @@ export default function UserMasterPage() {
   const handleCancel = () => {
     setEditId(null);
     setEditRow(null);
-    reset({ username: "", password: "", confirmPassword: "", roleId: "", active: "Y" });
+    reset({
+      username: "", roleId: "", active: "Y",
+      isClient: "N", clientId: "",
+      password: "", confirmPassword: "",
+      oldPassword: "", newPassword: "", confirmNewPassword: "",
+    });
   };
 
   const onSubmit = (data: UserForm) => {
-    const { confirmPassword: _, ...payload } = data;
-    console.log("triggers")
-
     if (isEditMode) {
-      const updatePayload = {
-        username: payload.username,
-        password: payload.password || editRow?.PWD || "",
-        roleId:   payload.roleId,
-        active:   payload.active,
+      // Only username/roleId/active are always sent; the password fields
+      // are only included when the user actually filled in a new one —
+      // leaving them out means the backend leaves the password untouched.
+      const updatePayload: UpdateUserPayload = {
+        username: data.username,
+        roleId:   data.roleId,
+        active:   data.active,
+        isClient: data.isClient,
+        clientId: data.isClient === "Y" ? Number(data.clientId) : null,
       };
-      console.log("[UserMaster] UPDATE payload:", updatePayload);
+
+      if (data.newPassword) {
+        updatePayload.oldPassword = data.oldPassword;
+        updatePayload.newPassword = data.newPassword;
+      }
+
       updateUser({ id: editId!, payload: updatePayload }, {
-        onSuccess: (res) => {
-          console.log("[UserMaster] UPDATE response:", res);
-          toast.success("User Updated", `"${payload.username}" updated successfully.`);
+        onSuccess: () => {
+          toast.success("User Updated", `"${data.username}" updated successfully.`);
           refetch();
           handleCancel();
         },
         onError: (err: any) => {
-          console.error("[UserMaster] UPDATE error:", err?.response ?? err);
           toast.error("Update Failed", err?.response?.data?.message || "Update failed.");
         },
       });
     } else {
-      register(payload, {
+      const registerPayload: RegisterPayload = {
+        username: data.username,
+        password: data.password,
+        roleId:   data.roleId,
+        active:   data.active,
+        isClient: data.isClient,
+        clientId: data.isClient === "Y" ? Number(data.clientId) : null,
+      };
+
+      register(registerPayload, {
         onSuccess: (res) => {
-          toast.success("User Registered", `"${res.username}" registered successfully.`);
+          toast.success("User Registered", `"${res.data.username}" registered successfully.`);
           refetch();
           reset();
         },
@@ -388,57 +466,118 @@ export default function UserMasterPage() {
                     {errors.username && <span className="um-field-error">{errors.username.message}</span>}
                   </div>
 
-                  <div className="um-field-row">
-                    <label className="um-field-label">Password *</label>
-                    <Controller
-                      name="password"
-                      control={control}
-                      render={({ field }) => (
-                        <PasswordInput
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          placeholder="Min 5 characters"
+                  {!isEditMode && (
+                    <>
+                      <div className="um-field-row">
+                        <label className="um-field-label">Password *</label>
+                        <Controller
+                          name="password"
+                          control={control}
+                          render={({ field }) => (
+                            <PasswordInput
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              placeholder="Min 5 characters"
+                            />
+                          )}
                         />
-                      )}
-                    />
-                    {errors.password && <span className="um-field-error">{errors.password.message}</span>}
-                  </div>
+                        {errors.password && <span className="um-field-error">{errors.password.message}</span>}
+                      </div>
 
-                  <div className="um-field-row">
-                    <label className="um-field-label">Confirm Password *</label>
-                    <Controller
-                      name="confirmPassword"
-                      control={control}
-                      render={({ field }) => (
-                        <PasswordInput
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          placeholder="Re-enter password"
+                      <div className="um-field-row">
+                        <label className="um-field-label">Confirm Password *</label>
+                        <Controller
+                          name="confirmPassword"
+                          control={control}
+                          render={({ field }) => (
+                            <PasswordInput
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              placeholder="Re-enter password"
+                            />
+                          )}
                         />
-                      )}
-                    />
-                    {errors.confirmPassword && <span className="um-field-error">{errors.confirmPassword.message}</span>}
-                  </div>
+                        {errors.confirmPassword && <span className="um-field-error">{errors.confirmPassword.message}</span>}
+                      </div>
+                    </>
+                  )}
+
+                  {isEditMode && (
+                    <>
+                      <Text fontSize="11px" fontWeight="700" color={COLORS.textSecondary} letterSpacing="0.05em" textTransform="uppercase" mt="2px">
+                        Change Password (optional)
+                      </Text>
+
+                      <div className="um-field-row">
+                        <label className="um-field-label">Old Password</label>
+                        <Controller
+                          name="oldPassword"
+                          control={control}
+                          render={({ field }) => (
+                            <PasswordInput
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              placeholder="Current password"
+                            />
+                          )}
+                        />
+                        {errors.oldPassword && <span className="um-field-error">{errors.oldPassword.message}</span>}
+                      </div>
+
+                      <div className="um-field-row">
+                        <label className="um-field-label">New Password</label>
+                        <Controller
+                          name="newPassword"
+                          control={control}
+                          render={({ field }) => (
+                            <PasswordInput
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              placeholder="Leave blank to keep current"
+                            />
+                          )}
+                        />
+                        {errors.newPassword && <span className="um-field-error">{errors.newPassword.message}</span>}
+                      </div>
+
+                      <div className="um-field-row">
+                        <label className="um-field-label">Confirm New Password</label>
+                        <Controller
+                          name="confirmNewPassword"
+                          control={control}
+                          render={({ field }) => (
+                            <PasswordInput
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              placeholder="Re-enter new password"
+                            />
+                          )}
+                        />
+                        {errors.confirmNewPassword && <span className="um-field-error">{errors.confirmNewPassword.message}</span>}
+                      </div>
+                    </>
+                  )}
 
                   <div className="um-field-row">
                     <label className="um-field-label">
                         Role *
                     </label>
-                    <Controller 
+                    <Controller
                        name="roleId"
                        control={control}
                        render={ ({field})=>(
-                            <SelectCombobox 
+                            <SelectCombobox
                                 value={field.value}
                                 onChange={(val)=>field.onChange(val)}
+                                editId={editId ? Number(editId) : null}
                                 items={roleItems}
                                 placeholder="Select Role"
-                             
+
                             />
                        )
 
                        }
-                      
+
                     />
                     
                
@@ -463,6 +602,47 @@ export default function UserMasterPage() {
                     />
                     {errors.active && <span className="um-field-error">{errors.active.message}</span>}
                   </div>
+
+                  <div className="um-field-row">
+                    <label className="um-field-label">
+                      Client *
+                    </label>
+                    <Controller
+                      name="isClient"
+                      control={control}
+                      render={({ field }) => (
+                        <NativeSelectWrapper
+                          value={field.value}
+                          onChange={(val) => field.onChange(val)}
+                          items={clientOptions}
+                          placeholder="Select Client"
+                        />
+                      )}
+                    />
+                    {errors.isClient && <span className="um-field-error">{errors.isClient.message}</span>}
+                  </div>
+
+                  {isClientSelected && (
+                    <div className="um-field-row">
+                      <label className="um-field-label">
+                        Client (Client Master) *
+                      </label>
+                      <Controller
+                        name="clientId"
+                        control={control}
+                        render={({ field }) => (
+                          <SelectCombobox
+                            value={field.value}
+                            onChange={(val) => field.onChange(val)}
+                            editId={editId ? Number(editId) : null}
+                            items={clientItems}
+                            placeholder="Select client"
+                          />
+                        )}
+                      />
+                      {errors.clientId && <span className="um-field-error">{errors.clientId.message}</span>}
+                    </div>
+                  )}
 
                   <HStack w="full" gap="8px">
                     <button type="submit" className="btn-primary" disabled={isPending}
