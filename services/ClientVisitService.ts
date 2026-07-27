@@ -42,9 +42,25 @@ export const createClientVisit = async (
   return response.data;
 };
 
+export interface ClientVisitFilters {
+  active?: string;
+  mobile?: string;
+  area?: string;
+  city?: string;
+  client?: string;
+  search?: string;
+}
+
 // GET ALL
-export const getAllClientVisits = async (): Promise<ApiResponse<ClientVisitRecord[]>> => {
-    const response = await axiosInstance.get<ApiResponse<ClientVisitRecord[]>>("/clientvisit");
+export const getAllClientVisits = async (
+  filters?: ClientVisitFilters
+): Promise<ApiResponse<ClientVisitRecord[]>> => {
+    const params = filters
+      ? Object.fromEntries(
+          Object.entries(filters).filter(([, v]) => v !== undefined && v !== "")
+        )
+      : undefined;
+    const response = await axiosInstance.get<ApiResponse<ClientVisitRecord[]>>("/clientvisit", { params });
     return response.data;
 };
 

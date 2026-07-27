@@ -26,6 +26,8 @@ export interface ClientVisitPayload {
   SHORTKEY?:     string | null;
   ACTIVE?:       string | null;
   STATEID?:      number | null;
+
+  CREATEDAT?: string;
 }
 
 export interface ClientVisitMediaRecord {

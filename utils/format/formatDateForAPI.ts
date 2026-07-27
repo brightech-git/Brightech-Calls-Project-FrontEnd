@@ -8,11 +8,15 @@ export const formatDateForAPI = (date: string | Date) => {
 };
 
 
-export const formatDateForShow = (date: string | Date |null) => {
+export const formatDateForShow = (date?: string | Date |null ) => {
     if(date === null) return "";
+    if(!date) return "";
+   
     const d = new Date(date);
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
+
+
     return `${dd}-${mm}-${yyyy}`;
 };

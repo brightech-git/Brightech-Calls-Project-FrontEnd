@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,6 +22,8 @@ import {
   useDeleteClientVisit,
 } from "@/hooks/ApiHooks/ClientVisit/useClientVisit";
 import { ClientVisitRecord, ClientVisitRecord_Table } from "@/types/ClientVisit/ClientVisit";
+import { formatDateForShow } from "@/utils/format/formatDateForAPI";
+import InputField from "@/components/ui/InputField";
 
 // ─── Media URL helper ──────────────────────────────────────────────────────────
 // Media paths come back server-relative (e.g. "/uploads/clientvisit/xxx.jpg"),
@@ -61,41 +63,78 @@ type ClientVisitForm = z.infer<typeof clientVisitSchema>;
 
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
-const COLUMNS: TableColumn<ClientVisitRecord_Table>[] = [
-  { key: "ID",         header: "#",           align: "center", width: "50px" },
-  { key: "COMPANYNAME", header: "Client Name", sortable: true },
-  { key: "MOBILE",     header: "Mobile",      sortable: true },
-  { key: "EMAIL",      header: "Email",       sortable: true },
-  { key: "media",      header: "Media",       align: "center", width: "80px",
-    render: (row) => (
-      <span style={{
-        display: "inline-flex", alignItems: "center", gap: 4,
-        fontSize: 11, color: COLORS.textMuted,
-      }}>
-        <ImageIcon size={13} /> {row.media?.length ?? 0}
-      </span>
-    ),
-  },
-  { key: "ACTIVE",      header: "Status",      sortable: true,
-    render: (row) => (
-      <span style={{
-        padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
-        background: row.ACTIVE === "Y" ? COLORS.successBg : COLORS.errorBg,
-        color:      row.ACTIVE === "Y" ? COLORS.success   : COLORS.error,
-      }}>
-        {row.ACTIVE === "Y" ? "Active" : "Inactive"}
-      </span>
-    ),
-  },
-];
+function buildColumns(
+  onToggleActive: (row: ClientVisitRecord_Table) => void
+): TableColumn<ClientVisitRecord_Table>[] {
+  return [
+    { key: "ID",         header: "S.NO",           align: "center", width: "50px" },
+    { key: "COMPANYNAME", header: "Client Name"},
+    { key: "MOBILE",     header: "Mobile" },
+    { key: "REMARKS",     header: "Remark" },
+    { key: "ADDRESS2",     header: "Area" },
+    { key: "ADDRESS3",     header: "City" }, 
+    { key: "EMAIL",      header: "Email" },
+    { key: "CREATEDAT" ,header : "Created" , render : (row) => (
+        <div style={{ fontSize: 12 }}>
+        {formatDateForShow(row.CREATEDAT)}
+        </div>
+      )} ,
+
+    { key: "media",      header: "Media",       align: "center", width: "80px",
+      render: (row) => (
+        <span style={{
+          display: "inline-flex", alignItems: "center", gap: 4,
+          fontSize: 11, color: COLORS.textMuted,
+        }}>
+          <ImageIcon size={13} /> {row.media?.length ?? 0}
+        </span>
+      ),
+    },
+    { key: "ACTIVE",      header: "Status",    
+      render: (row) => (
+        <span
+          onClick={(e) => { e.stopPropagation(); onToggleActive(row); }}
+          title={row.ACTIVE === "Y" ? "Click to deactivate" : "Click to activate"}
+          style={{
+            padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+            cursor: "pointer", userSelect: "none",
+            background: row.ACTIVE === "Y" ? COLORS.successBg : COLORS.errorBg,
+            color:      row.ACTIVE === "Y" ? COLORS.success   : COLORS.error,
+          }}
+        >
+          {row.ACTIVE === "Y" ? "Active" : "Inactive"}
+        </span>
+      ),
+    },
+  ];
+}
 
 // ─── Default values ───────────────────────────────────────────────────────────
+
+// ─── Filter defaults ──────────────────────────────────────────────────────────
+
+interface ClientVisitFilterState {
+  search: string;
+  mobile: string;
+  area: string;
+  city: string;
+  active: "" | "Y" | "N";
+}
+
+const FILTER_DEFAULTS: ClientVisitFilterState = {
+  search: "",
+  mobile: "",
+  area: "",
+  city: "",
+  active: "Y",
+};
 
 const DEFAULTS: ClientVisitForm = {
   COMPANYNAME: "", COMPANYID: "",  SHORTKEY: "",
   PHONE: "", MOBILE: "", EMAIL: "", ACTIVE: "Y",
   ADDRESS1: "", ADDRESS2: "", ADDRESS3: "", REMARKS: "", AREACODE: "",
-  GSTNO: "", PANNO: "", TANNO: "", TDSNO: "", TINNO: "", CSTNO: "", LOCALTAXNO: "",
+  GSTNO: "", PANNO: "",
+  //  TANNO: "", TDSNO: "", TINNO: "", CSTNO: "", LOCALTAXNO: "",
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -110,15 +149,76 @@ export default function ClientVisitMasterPage() {
   const [media, setMedia]         = useState<File[]>([]);
   const [lightbox, setLightbox]   = useState<{ items: LightboxItem[]; index: number } | null>(null);
 
-  const { data: visits = [], isLoading } = useClientVisitList();
+  // ── Filters ──
+  const [filterInputs, setFilterInputs] = useState<ClientVisitFilterState>(FILTER_DEFAULTS);
+  const [filters, setFilters]           = useState<ClientVisitFilterState>(FILTER_DEFAULTS);
 
+  // Debounce the free-text filter fields so we don't hit the API on every keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => setFilters(filterInputs), 400);
+    return () => clearTimeout(timer);
+  }, [filterInputs]);
 
-    console.log(visits,'visits')
+  const updateFilter = (key: keyof ClientVisitFilterState, value: string) =>
+    setFilterInputs((prev) => ({ ...prev, [key]: value }));
+
+  const resetFilters = () => setFilterInputs(FILTER_DEFAULTS);
+
+  const { data: visits = [], isLoading } = useClientVisitList({
+    search: filters.search || undefined,
+    mobile: filters.mobile || undefined,
+    area:   filters.area || undefined,
+    city:   filters.city || undefined,
+    active: filters.active || undefined,
+  });
+
+  console.log(visits,'visits')
+
+  visits.map((v) => console.log(formatDateForShow(v.CREATEDAT), 'created'));
 
   const createMutation = useCreateClientVisit();
   const updateMutation = useUpdateClientVisit();
   const deleteMutation = useDeleteClientVisit();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const toggleActive = (row: ClientVisitRecord_Table) => {
+    const r = row as ClientVisitRecord;
+    const nextActive = r.ACTIVE === "Y" ? "N" : "Y";
+    updateMutation.mutate(
+      {
+        id: String(r.ID),
+        payload: {
+          COMPANYNAME: r.COMPANYNAME ?? "",
+          COMPANYID:   r.COMPANYID   ?? "",
+          SHORTKEY:    r.SHORTKEY    ?? "",
+          PHONE:       r.PHONE       ?? "",
+          MOBILE:      r.MOBILE      ?? "",
+          EMAIL:       r.EMAIL       ?? "",
+          ADDRESS1:    r.ADDRESS1    ?? "",
+          ADDRESS2:    r.ADDRESS2    ?? "",
+          ADDRESS3:    r.ADDRESS3    ?? "",
+          REMARKS:     r.REMARKS     ?? "",
+          AREACODE:    r.AREACODE    ?? "",
+          GSTNO:       r.GSTNO       ?? "",
+          PANNO:       r.PANNO       ?? "",
+          ACTIVE:      nextActive,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            nextActive === "Y" ? "Visit Activated" : "Visit Deactivated",
+            `"${r.COMPANYNAME}" is now ${nextActive === "Y" ? "active" : "inactive"}.`
+          );
+        },
+        onError: (err: any) => {
+          toast.error("Update Failed", err?.response?.data?.message || "Could not change status.");
+        },
+      }
+    );
+  };
+
+  const COLUMNS = buildColumns(toggleActive);
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<ClientVisitForm>({
     resolver: zodResolver(clientVisitSchema),
@@ -146,22 +246,24 @@ export default function ClientVisitMasterPage() {
       EMAIL:       r.EMAIL       ?? "",
       ACTIVE:      r.ACTIVE === "N" ? "N" : "Y",
       ADDRESS1:    r.ADDRESS1    ?? "",
-      ADDRESS2:    r.ADDRESS2    ?? "",
-      ADDRESS3:    r.ADDRESS3    ?? "",
+      ADDRESS2:        r.ADDRESS2    ?? "",
+      ADDRESS3:        r.ADDRESS3    ?? "",
       REMARKS:     r.REMARKS     ?? "",
       AREACODE:    r.AREACODE    ?? "",
       GSTNO:       r.GSTNO       ?? "",
       PANNO:       r.PANNO       ?? "",
-      TANNO:       r.TANNO       ?? "",
-      TDSNO:       r.TDSNO       ?? "",
-      TINNO:       r.TINNO       ?? "",
-      CSTNO:       r.CSTNO       ?? "",
-      LOCALTAXNO:  r.LOCALTAXNO  ?? "",
+      // TANNO:       r.TANNO       ?? "",
+      // TDSNO:       r.TDSNO       ?? "",
+      // TINNO:       r.TINNO       ?? "",
+      // CSTNO:       r.CSTNO       ?? "",
+      // LOCALTAXNO:  r.LOCALTAXNO  ?? "",
     });
     setOpen(true);
   };
 
   const onSubmit = async (data: ClientVisitForm) => {
+    console.log(data, 'form data');
+
     try {
       if (editRow) {
         const res = await updateMutation.mutateAsync({
@@ -171,6 +273,8 @@ export default function ClientVisitMasterPage() {
         });
         toast.success("Visit Updated", `"${res.COMPANYNAME}" updated successfully.`);
       } else {
+        console.log(data, 'form data');
+  
         const res = await createMutation.mutateAsync({ payload: data, media });
         toast.success("Visit Created", `"${res.COMPANYNAME}" created successfully.`);
       }
@@ -194,16 +298,16 @@ export default function ClientVisitMasterPage() {
       ["Mobile",       r.MOBILE],
       ["Email",        r.EMAIL],
       ["Address 1",    r.ADDRESS1],
-      ["Address 2",    r.ADDRESS2],
-      ["Address 3",    r.ADDRESS3],
-      ["Area Code",    r.AREACODE],
+      ["Area",    r.ADDRESS2],
+      ["City",    r.ADDRESS3],
+      ["PINCODE",    r.AREACODE],
       ["GST No",       r.GSTNO],
       ["PAN No",       r.PANNO],
-      ["TAN No",       r.TANNO],
-      ["TDS No",       r.TDSNO],
-      ["TIN No",       r.TINNO],
-      ["CST No",       r.CSTNO],
-      ["Local Tax No", r.LOCALTAXNO],
+      // ["TAN No",       r.TANNO],
+      // ["TDS No",       r.TDSNO],
+      // ["TIN No",       r.TINNO],
+      // ["CST No",       r.CSTNO],
+      // ["Local Tax No", r.LOCALTAXNO],
       ["Remarks",      r.REMARKS],
     ];
 
@@ -287,8 +391,8 @@ export default function ClientVisitMasterPage() {
           flex: 1; min-height: 0;
         }
         @keyframes cv-slide-up {
-          from { transform: translateY(10px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
+          from { transform: translateY(10px); opaADDRESS3: 0; }
+          to   { transform: translateY(0);    opaADDRESS3: 1; }
         }
         .cv-modal-head {
           padding: 10px 14px 8px;
@@ -357,7 +461,7 @@ export default function ClientVisitMasterPage() {
           transition: background 0.15s; font-family: inherit;
         }
         .cv-btn-primary:hover { background: ${COLORS.btnPrimaryHover}; }
-        .cv-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cv-btn-primary:disabled { opaADDRESS3: 0.5; cursor: not-allowed; }
         .cv-btn-secondary {
           display: inline-flex; align-items: center; gap: 6px;
           padding: 0 16px; height: 34px; border-radius: ${RADIUS.md};
@@ -375,35 +479,125 @@ export default function ClientVisitMasterPage() {
           transition: background 0.15s, color 0.15s;
         }
         .cv-close-btn:hover { background: ${COLORS.errorBg}; color: ${COLORS.error}; }
-        .cv-modal-box input, .cv-modal-box textarea, .cv-modal-box select {
+        .cv-modal-box input, .cv-modal-box textADDRESS2, .cv-modal-box select {
           background: ${COLORS.inputBg} !important;
           border: 1px solid ${COLORS.inputBorder} !important;
           color: ${COLORS.inputText} !important;
         }
         .cv-modal-box input::placeholder { color: ${COLORS.inputPlaceholder} !important; }
+        .cv-filter-input {
+          height: 34px; padding: 0 10px; border-radius: ${RADIUS.md};
+          border: 1px solid #d1d5db; background: #ffffff;
+          font-size: 12px; color: ${COLORS.textPrimary};
+          font-family: inherit; outline: none; min-width: 140px;
+        }
+        .cv-filter-input:focus { border-color: ${COLORS.inputBorderFocus}; }
         .cv-modal-box input:focus {
           border-color: ${COLORS.inputBorderFocus} !important;
           box-shadow: 0 0 0 2px rgba(107,114,128,0.15) !important;
         }
       `}</style>
 
+      {/* Filters */}
+      <div
+        style={{
+          display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center",
+          marginBottom: 10, fontFamily: FONT.family,
+          background : '#FFF',
+          padding:8,
+          justifyContent :"space-between"
+        }}
+      > 
+      <div style={{display : "flex" , gap:8}}>
+       
+          <div style={{display:'flex' , gap:4}}>
+            <InputField
+              label="Search"
+              placeholder="Search by name..."
+              value={filterInputs.search}
+              onChange={(e) => updateFilter("search", e.target.value)}
+            />
+
+            <InputField
+              label="Mobile"
+              placeholder="Enter mobile number"
+              value={filterInputs.mobile}
+              onChange={(e) => updateFilter("mobile", e.target.value)}
+            />
+
+            <InputField
+              label="Area"
+              placeholder="Enter area"
+              value={filterInputs.area}
+              onChange={(e) => updateFilter("area", e.target.value)}
+            />
+
+            <InputField
+              label="City"
+              placeholder="Enter city"
+              value={filterInputs.city}
+              onChange={(e) => updateFilter("city", e.target.value)}
+            />
+          </div>
+          <div>
+            <label style={{ color: '#374151', fontSize:'13px',
+            fontWeight: 600,
+            }}> Active 
+            </label>
+            <select
+              className="cv-filter-input"
+              value={filterInputs.active}
+              onChange={(e) => updateFilter("active", e.target.value)}
+            >
+              <option value="">All Status</option>
+              <option value="Y">Active</option>
+              <option value="N">Inactive</option>
+            </select>
+          </div>
+   
+           
+            {(filterInputs.search || filterInputs.mobile || filterInputs.area || filterInputs.city || filterInputs.active) && (
+            <div style={{display : "flex" , flexDirection : "column"}}>
+               <label style={{
+              color: '#374151', fontSize: '13px',
+              fontWeight: 600,
+            }}> Clear
+            </label>
+              <button type="button" className="cv-btn-secondary" onClick={resetFilters}>
+                Clear Filters
+              </button>
+            </div>
+            )}
+        
+        
+        </div>
+
+        <div>
+          <button className="cv-btn-primary" onClick={openCreate}>
+            <Plus size={13} /> Add Client Visit
+          </button>
+        </div>
+      </div>
+
       {/* Table */}
       <CustomTable
-        title="All Client Visits"
+        // title="All Client Visits"
         columns={COLUMNS}
         data={visits as ClientVisitRecord_Table[] || []}
         rowKey="ID"
         isLoading={isLoading}
         onEdit={openEdit}
-        onDelete={(row) => setDeleteRow(row as ClientVisitRecord)}
+        // onDelete={(row) => setDeleteRow(row as ClientVisitRecord)}
         expandedRowRender={renderExpandedRow}
-        searchPlaceholder="Search by name, GST, mobile..."
+        // searchPlaceholder="Search by name, GST, mobile..."
         emptyMessage="No client visits found."
-        toolbarRight={
-          <button className="cv-btn-primary" onClick={openCreate}>
-            <Plus size={13} /> Add Client Visit
-          </button>
-        }
+        // toolbarRight={
+        //   <button className="cv-btn-primary" onClick={openCreate}>
+        //     <Plus size={13} /> Add Client Visit
+        //   </button>
+        // }
+        showSearch = {false}
+
       />
 
       {/* Modal */}
@@ -474,13 +668,14 @@ export default function ClientVisitMasterPage() {
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="e.g. B"
                           maxWidth="100%"
+                          max={3}
                         />
                       )}
                     />
                   </div>
 
-                  <div className="cv-field-row">
-                    <label className="cv-field-label">Phone</label>
+                  {/* <div className="cv-field-row">
+                    <label className="cv-field-label">Mobile</label>
                     <Controller
                       name="PHONE"
                       control={control}
@@ -491,10 +686,12 @@ export default function ClientVisitMasterPage() {
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="e.g. 04422334455"
                           maxWidth="100%"
+                          max={9999999999}
+                          type="number"
                         />
                       )}
                     />
-                  </div>
+                  </div> */}
 
                   <div className="cv-field-row">
                     <label className="cv-field-label">Mobile *</label>
@@ -509,6 +706,8 @@ export default function ClientVisitMasterPage() {
                           placeholder="10-digit mobile"
                           inputModeType="mobile"
                           maxWidth="100%"
+                          max={9999999999}
+                          type="number"
                         />
                       )}
                     />
@@ -528,6 +727,8 @@ export default function ClientVisitMasterPage() {
                           placeholder="email@example.com"
                           inputModeType="email"
                           maxWidth="100%"
+                          
+                          
                         />
                       )}
                     />
@@ -591,7 +792,7 @@ export default function ClientVisitMasterPage() {
                   </div>
 
                   <div className="cv-field-row">
-                    <label className="cv-field-label">Address 2</label>
+                    <label className="cv-field-label">AREA</label>
                     <Controller
                       name="ADDRESS2"
                       control={control}
@@ -600,7 +801,7 @@ export default function ClientVisitMasterPage() {
                           value={field.value}
                           field="ADDRESS2"
                           onChange={(_, value) => field.onChange(value)}
-                          placeholder="Area"
+                          placeholder="ADDRESS2"
                           maxWidth="100%"
                         />
                       )}
@@ -608,7 +809,7 @@ export default function ClientVisitMasterPage() {
                   </div>
 
                   <div className="cv-field-row">
-                    <label className="cv-field-label">Address 3</label>
+                    <label className="cv-field-label">CITY</label>
                     <Controller
                       name="ADDRESS3"
                       control={control}
@@ -617,7 +818,7 @@ export default function ClientVisitMasterPage() {
                           value={field.value}
                           field="ADDRESS3"
                           onChange={(_, value) => field.onChange(value)}
-                          placeholder="City"
+                          placeholder="ADDRESS3"
                           maxWidth="100%"
                         />
                       )}
@@ -625,7 +826,7 @@ export default function ClientVisitMasterPage() {
                   </div>
 
                   <div className="cv-field-row">
-                    <label className="cv-field-label">Area Code</label>
+                    <label className="cv-field-label">ADDRESS2 AREACODE</label>
                     <Controller
                       name="AREACODE"
                       control={control}
@@ -634,7 +835,7 @@ export default function ClientVisitMasterPage() {
                           value={field.value}
                           field="AREACODE"
                           onChange={(_, value) => field.onChange(value)}
-                          placeholder="PIN code"
+                          placeholder="PIN AREACODE"
                           maxWidth="100%"
                         />
                       )}
@@ -682,7 +883,7 @@ export default function ClientVisitMasterPage() {
                     />
                   </div>
 
-                  <div className="cv-field-row">
+                  {/* <div className="cv-field-row">
                     <label className="cv-field-label">TAN No</label>
                     <Controller
                       name="TANNO"
@@ -766,7 +967,7 @@ export default function ClientVisitMasterPage() {
                         />
                       )}
                     />
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="cv-section-label">Visit Media</div>

@@ -121,6 +121,7 @@ export interface CustomTableProps<T extends Record<string, unknown>> {
    * rendering whatever this returns. Expansion state is managed internally.
    */
   expandedRowRender?: (row: T) => React.ReactNode;
+  showSearch?:boolean
 }
 
 // ─── Status badge coloring ────────────────────────────────────────────────────
@@ -215,6 +216,7 @@ export function CustomTable<T extends Record<string, unknown>>({
   title,
   toolbarRight,
   expandedRowRender,
+  showSearch = true,
 }: CustomTableProps<T>) {
   // ── State ──
   const [search, setSearch] = useState("");
@@ -419,28 +421,32 @@ export function CustomTable<T extends Record<string, unknown>>({
               </Text>
             )}
             {/* Search */}
-            <Box position="relative">
-              <Box
-                position="absolute"
-                left="10px"
-                top="50%"
-                transform="translateY(-50%)"
-                color={COLORS.textMuted}
-                pointerEvents="none"
-              >
-                <Search size={13} />
+            {showSearch && 
+            
+              <Box position="relative">
+                <Box
+                  position="absolute"
+                  left="10px"
+                  top="50%"
+                  transform="translateY(-50%)"
+                  color={COLORS.textMuted}
+                  pointerEvents="none"
+                >
+                  <Search size={13} />
+                </Box>
+                <input
+                  type="text"
+                  className="ct-search"
+                  placeholder={searchPlaceholder}
+                  value={search}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                />
               </Box>
-              <input
-                type="text"
-                className="ct-search"
-                placeholder={searchPlaceholder}
-                value={search}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-              />
-            </Box>
+              }
+         
           </HStack>
 
           <HStack gap="8px">
