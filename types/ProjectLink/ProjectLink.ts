@@ -22,6 +22,7 @@ export interface ProjectLinkRecord {
   url?: string ;
   userName?: string | null;
   password?: string | null;
+  authPassword?:string;
   status?: string | null;
   type?: string | null;
   active?: boolean;

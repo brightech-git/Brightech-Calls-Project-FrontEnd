@@ -46,6 +46,7 @@ const projectLinkSchema = z.object({
   url: z.string().optional(),
   userName: z.string().optional(),
   password: z.string().optional(),
+  authPassword: z.string().optional(),
   status: z.string().optional(),
   type: z.string().optional(),
   active: z.boolean(),
@@ -94,6 +95,7 @@ const DEFAULTS: ProjectLinkForm = {
   url: "",
   userName: "",
   password: "",
+  authPassword: "",
   status: "L",
   type: "W",
   active: true,
@@ -125,8 +127,18 @@ const COLUMNS: TableColumn<ProjectLinkRecord_Table>[] = [
   },
   { key: "userName", header: "User Name",  },
   { key: "password", header: "Password",  },
-  { key: "status", header: "Status",  },
-  { key: "type", header: "Type",  },
+  { key: "authPassword", header: "Auth Password",  },
+  // { key: "status", header: "Status",  },
+  { key: "type", header: "Type", render : (row)=>{
+    switch(row.type){
+      case "W" : return "website"
+      case "M" : return "mobile"
+      case "D" : return "desktop"
+      default : return row.type
+
+    }
+  
+  }  },
   {
     key: "active",
     header: "Active",
@@ -241,6 +253,7 @@ export default function ProjectLinkPage() {
       url: r.url ?? "",
       userName: r.userName ?? "",
       password: r.password ?? "",
+      authPassword: r.authPassword ?? "",
       status: r.status ?? "",
       type: r.type ?? "",
       active: r.active ?? true,
@@ -260,6 +273,7 @@ export default function ProjectLinkPage() {
       url: data.url,
       userName: data.userName,
       password: data.password,
+      authPassword :data.authPassword,
       status: data.status,
       type: data.type,
       active: data.active,
@@ -737,6 +751,22 @@ export default function ProjectLinkPage() {
                           value={field.value}
                           onChange={(e) => field.onChange(e.target.value)}
                           placeholder="Enter password"
+                          size="xs"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="pl-field-row">
+                    <label className="pl-field-label">Auth Password</label>
+                    <Controller
+                      name="authPassword"
+                      control={control}
+                      render={({ field }) => (
+                        <PasswordInput
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          placeholder="Enter authorization password"
                           size="xs"
                         />
                       )}

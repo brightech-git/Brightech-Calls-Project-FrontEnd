@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Database, UserCheck, Users, Briefcase,
-  FileBarChart, ShieldCheck, KeyRound,
+  FileBarChart, ShieldCheck, KeyRound, Server,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -30,6 +30,7 @@ export const menuConfig: MenuEntryConfig[] = [
       { id: "company-master", label: "Company Master", href: "/Master/CompanyMaster", icon: Users },
       { id: "client-master", label: "Client Master", href: "/Master/ClientMaster", icon: Briefcase },
       { id: "client-visit-master", label: "Client Visit Master", href: "/Master/ClientVisitMaster", icon: Briefcase },
+      { id: "client-server-master", label: "Client Servers", href: "/Master/ClientServerMaster", icon: Server },
     ],
   },
   {
