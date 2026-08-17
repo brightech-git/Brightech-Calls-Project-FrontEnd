@@ -58,9 +58,29 @@ const TypeCollections = [
 ]
 
 const ProjectStatuses = [
-  {label:"Live",value:"A"},
-  {label:"Test",value:"I"},
+  {label:"Live",value:"L"},
+  {label:"Test",value:"T"},
 ]
+
+const ActiveFilterOptions = [
+  { label: "Active", value: "true" },
+  { label: "Inactive", value: "false" },
+  { label: "All", value: "" },
+];
+
+interface ProjectLinkFilterState {
+  active: string;
+  clientId: string;
+  projectTypeId: string;
+  deviceType: string;
+}
+
+const FILTER_DEFAULTS: ProjectLinkFilterState = {
+  active: "true",
+  clientId: "",
+  projectTypeId: "",
+  deviceType: "",
+};
 
 type ProjectLinkForm = z.infer<typeof projectLinkSchema>;
 
@@ -74,7 +94,7 @@ const DEFAULTS: ProjectLinkForm = {
   url: "",
   userName: "",
   password: "",
-  status: "",
+  status: "L",
   type: "W",
   active: true,
 };
@@ -86,8 +106,8 @@ const DEFAULTS: ProjectLinkForm = {
 const COLUMNS: TableColumn<ProjectLinkRecord_Table>[] = [
   { key: "linkId", header: "ID",  width: "70px", align: "center" },
   {
-    key: "company", header: "Company", 
-    render: (row) => row?.CLIENTNAME ?? row.clientId ?? "—",
+    key: "company", header: "Client Name", 
+    render: (row) => row?.clientName ?? row.clientId ?? "—",
   },
   {
     key: "projectType", header: "Project Type", 
@@ -129,7 +149,7 @@ const COLUMNS: TableColumn<ProjectLinkRecord_Table>[] = [
 
 const EXPORT_COLUMNS: ExportColumn<ProjectLinkRecord_Table>[] = [
   { key: "linkId", label: "ID" },
-  // { key: "company", label: "Company", exportValue: (_, row) => row.client?.CLIENTNAME ?? "—" },
+  { key: "Client Name", label: "Company", exportValue: (_, row) => row?.clientName ?? row.clientId ?? "-"},
   { key: "projectType", label: "Project Type", exportValue: (_, row) => row.projectTypeName ?? "—" },
   { key: "url", label: "URL" },
   { key: "userName", label: "User Name" },
@@ -158,14 +178,25 @@ export default function ProjectLinkPage() {
   const [deleteRow, setDeleteRow] =
     useState<ProjectLinkRecord | null>(null);
 
+  const [filterInputs, setFilterInputs] =
+    useState<ProjectLinkFilterState>(FILTER_DEFAULTS);
+
+  const updateFilter = (key: keyof ProjectLinkFilterState, value: string) =>
+    setFilterInputs((prev) => ({ ...prev, [key]: value }));
+
+  const resetFilters = () => setFilterInputs(FILTER_DEFAULTS);
+
   const { data: clients = [] } = useClientList();
   const { data: projectTypes = [] } = useProjectTypeList();
-  const { data: projectLinks = [], isLoading } = useProjectLinkList();
+  const { data: projectLinks = [], isLoading } = useProjectLinkList({
+    active: filterInputs.active === "" ? undefined : filterInputs.active === "true",
+    clientId: filterInputs.clientId ? Number(filterInputs.clientId) : undefined,
+    projectTypeId: filterInputs.projectTypeId ? Number(filterInputs.projectTypeId) : undefined,
+    deviceType: filterInputs.deviceType || undefined,
+  });
 
-  console.log(projectLinks,'projectLinks')
   const clientItems = clients.map((c) => ({ label: c.CLIENTNAME, value: String(c.CLIENTID) }));
 
-  console.log(clientItems,'clientItems')
   const projectTypeItems = projectTypes.map((p) => ({ label: p.projectTypeName, value: String(p.projectTypeId) }));
 
   const createMutation = useCreateProjectLink();
@@ -481,12 +512,23 @@ export default function ProjectLinkPage() {
 
           cursor: pointer;
         }
+
+        .pl-filter-field {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .pl-filter-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: ${COLORS.textSecondary};
+        }
       `}</style>
 
       {/* Table */}
 
       <CustomTable
-        title="All Project Links"
         columns={COLUMNS}
         data={projectLinks as ProjectLinkRecord_Table[]}
         rowKey="linkId"
@@ -495,11 +537,66 @@ export default function ProjectLinkPage() {
         onDelete={(row) =>
           setDeleteRow(row as ProjectLinkRecord)
         }
-        searchPlaceholder="Search project link..."
         emptyMessage="No project links found."
-        
+        showSearch={false}
+
         toolbarRight={
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, flexWrap: "wrap" }}>
+            <div className="pl-filter-field">
+              <label className="pl-filter-label">Client</label>
+              <SelectCombobox
+                value={filterInputs.clientId || undefined}
+                onChange={(val) => updateFilter("clientId", val)}
+                items={clientItems}
+                placeholder="All clients"
+                maxWidth="150px"
+              />
+            </div>
+
+            <div className="pl-filter-field">
+              <label className="pl-filter-label">Project Type</label>
+              <SelectCombobox
+                value={filterInputs.projectTypeId || undefined}
+                onChange={(val) => updateFilter("projectTypeId", val)}
+                items={projectTypeItems}
+                placeholder="All types"
+                maxWidth="150px"
+              />
+            </div>
+
+            <div className="pl-filter-field">
+              <label className="pl-filter-label">Device Type</label>
+              <NativeSelectWrapper
+                value={filterInputs.deviceType}
+                onChange={(e) => updateFilter("deviceType", e.target.value)}
+                items={[{ label: "All Devices", value: "" }, ...TypeCollections]}
+                maxWidth="120px"
+              />
+            </div>
+
+            <div className="pl-filter-field">
+              <label className="pl-filter-label">Status</label>
+              <NativeSelectWrapper
+                value={filterInputs.active}
+                onChange={(e) => updateFilter("active", e.target.value)}
+                items={ActiveFilterOptions}
+                maxWidth="110px"
+              />
+            </div>
+
+            {(filterInputs.clientId ||
+              filterInputs.projectTypeId ||
+              filterInputs.deviceType ||
+              filterInputs.active !== FILTER_DEFAULTS.active) && (
+              <button
+                type="button"
+                className="pl-btn-secondary"
+                onClick={resetFilters}
+              >
+                Clear
+              </button>
+            )}
+
             <DataExport
               data={projectLinks as ProjectLinkRecord_Table[]}
               columns={EXPORT_COLUMNS}

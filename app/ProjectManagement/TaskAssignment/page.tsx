@@ -17,6 +17,7 @@ import { MediaLightbox, LightboxItem } from "@/components/ui/MediaLightbox";
 
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
+import { useEnterNavigation } from "@/components/form/useEnterNavigation";
 
 import { COLORS, FONT, RADIUS } from "@/utils/theme";
 
@@ -39,6 +40,7 @@ import {
   CallsBookingRecord,
   CallsBookingListItem_Table,
 } from "@/types/TaskAssignment/TaskAssignment";
+import { NativeSelectWrapper } from "@/components/ui/NativeSelectWrapper";
 
 // ─────────────────────────────────────────────
 // Schema
@@ -67,6 +69,7 @@ type CallsBookingForm = z.infer<typeof callsBookingSchema>;
 const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
   { key: "tktId",       header: "Ticket ID",   sortable: true, width: "90px" },
   { key: "clientName",  header: "Client",      sortable: true, render: (row) => (row.clientName as string) || "-" },
+  { key: "clientMobile",  header: "Mobile",      render: (row) => (row.clientMobile as string) || "-" },
   { key: "projectName", header: "Project",     sortable: true },
   { key: "moduleName",  header: "Module",      sortable: true },
   { key: "assignedUsers", header: "Staff",     sortable: true },
@@ -76,11 +79,8 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
     header: "Status",
     sortable: true,
     render: (row) => {
-      const s = row.status as string;
-      const bg = s === "C" || s === "COMPLETED" ? COLORS.successBg : s === "X" || s === "CANCELLED" ? COLORS.errorBg : COLORS.warningBg;
-      const color = s === "C" || s === "COMPLETED" ? COLORS.success : s === "X" || s === "CANCELLED" ? COLORS.error : COLORS.warning;
-      const label = s === "O" ? "Open" : s === "I" || s === "INPROGRESS" ? "In Progress" : s === "C" || s === "COMPLETED" ? "Completed" : s === "X" || s === "CANCELLED" ? "Cancelled" : s;
-      return <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: bg, color }}>{label}</span>;
+      const status = row.status === "P" ? "PENDING" :row.status === "C" ? "COMPLETED" : "BOTH";
+      return <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11}}>{status}</span>;
     },
   },
   {
@@ -109,7 +109,7 @@ const DEFAULTS: CallsBookingForm = {
   moduleName:    "",
   remark:        "",
   assignedUsers: "",
-  status:        "O",
+  status:        "P",
 };
 
 // ─────────────────────────────────────────────
@@ -209,6 +209,12 @@ export default function CallsBookingPage() {
     defaultValues: DEFAULTS,
   });
 
+  // Enter-to-next-field navigation for the Add/Edit Booking form.
+  const { register: registerField, focusNext } = useEnterNavigation(
+    ["clientId", "projectId", "moduleId", "assignedUsers", "status", "remark"],
+    () => handleSubmit(onSubmit)()
+  );
+
   const watchedProjectId = useWatch({ control, name: "projectId" });
   const watchedModuleId  = useWatch({ control, name: "moduleId" });
 
@@ -234,11 +240,35 @@ export default function CallsBookingPage() {
   const staffItems = staffList.map((s) => ({ label: s.USERNAME ?? "", value: String(s.USERID) }));
 
   const statusItems = [
-    { label: "Open",        value: "O" },
-    { label: "In Progress", value: "I" },
-    { label: "Completed",   value: "C" },
-    { label: "Cancelled",   value: "X" },
+    { label: "Pending",        value: "P" },
+    { label: "Completed", value: "C" },
+    { label: "Both",   value: "B" },
   ];
+
+  // ── List filters (toolbar) ──
+  // Staff filter defaults to the logged-in user's own id so the list
+  // opens scoped to "my bookings"; "All Staff" clears it back to everyone.
+  const staffFilterItems  = [{ label: "All Staff",   value: "" }, ...staffItems];
+  const clientFilterItems = [{ label: "All Clients", value: "" }, ...clientItems];
+
+  const [filterUserId, setFilterUserId] = useState<string>(
+    typeof window !== "undefined" ? localStorage.getItem("userId") || "" : ""
+  );
+  const [filterClientId, setFilterClientId] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("P");
+
+  const filterStaffName  = staffList.find((s) => String(s.USERID) === filterUserId)?.USERNAME;
+  const filterClientName = clients.find((c) => String(c.CLIENTID) === filterClientId)?.CLIENTNAME;
+
+  const filteredBookings = bookings.filter((row) => {
+    if (filterUserId && filterStaffName) {
+      const assigned = String(row.assignedUsers ?? "").split(",").map((n) => n.trim());
+      if (!assigned.includes(filterStaffName)) return false;
+    }
+    if (filterClientId && filterClientName && row.clientName !== filterClientName) return false;
+    if (filterStatus && filterStatus !== "B" && row.status !== filterStatus) return false;
+    return true;
+  });
 
   // ─────────────────────────
 
@@ -278,7 +308,7 @@ export default function CallsBookingPage() {
         moduleName:    r.moduleName   || "",
         remark:        r.remark       || "",
         assignedUsers: r.assignedUsers || "",
-        status:        r.status       || "O",
+        status:        r.status       || "",
         active:        r.active === "N" ? "N" : "Y",
       });
 
@@ -895,7 +925,7 @@ export default function CallsBookingPage() {
         title="All Calls Bookings"
         columns={COLUMNS}
         data={
-          bookings as CallsBookingListItem_Table[]
+          filteredBookings as CallsBookingListItem_Table[]
         }
         rowKey="sno"
         isLoading={isLoading}
@@ -913,14 +943,42 @@ export default function CallsBookingPage() {
         searchPlaceholder="Search ticket, project, module..."
         emptyMessage="No bookings found."
         toolbarRight={
-          <button
-            className="cb-btn-primary"
-            onClick={openCreate}
-          >
-            <Plus size={13} />
-            Add Booking
-          </button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <SelectCombobox
+              value={filterUserId || undefined}
+              onChange={setFilterUserId}
+              items={staffFilterItems}
+              placeholder="Filter by staff"
+              maxWidth="150px"
+              size="xs"
+            />
+
+            <SelectCombobox
+              value={filterClientId || undefined}
+              onChange={setFilterClientId}
+              items={clientFilterItems}
+              placeholder="Filter by client"
+              maxWidth="150px"
+              size="xs"
+            />
+
+            <NativeSelectWrapper
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              items={statusItems}
+              maxWidth="120px"
+            />
+
+            <button
+              className="cb-btn-primary"
+              onClick={openCreate}
+            >
+              <Plus size={13} />
+              Add Booking
+            </button>
+          </div>
         }
+
       />
 
       {/* Modal */}
@@ -978,8 +1036,10 @@ export default function CallsBookingPage() {
                       control={control}
                       render={({ field }) => (
                         <SelectCombobox
+                          ref={registerField("clientId")}
                           value={field.value ? String(field.value) : undefined}
                           onChange={(val) => field.onChange(val ? Number(val) : 0)}
+                          onEnter={() => focusNext("clientId")}
                           editId={editRow?.sno ?? null}
                           items={clientItems}
                           placeholder="Select client"
@@ -998,8 +1058,10 @@ export default function CallsBookingPage() {
                       control={control}
                       render={({ field }) => (
                         <SelectCombobox
+                          ref={registerField("projectId")}
                           value={field.value || undefined}
                           onChange={(val) => field.onChange(val)}
+                          onEnter={() => focusNext("projectId")}
                           editId={editRow?.sno ?? null}
                           items={projectItems}
                           placeholder="Select project"
@@ -1017,8 +1079,10 @@ export default function CallsBookingPage() {
                       control={control}
                       render={({ field }) => (
                         <SelectCombobox
+                          ref={registerField("moduleId")}
                           value={field.value || undefined}
                           onChange={(val) => field.onChange(val)}
+                          onEnter={() => focusNext("moduleId")}
                           editId={editRow?.sno ?? null}
                           items={moduleItems}
                           placeholder="Select module"
@@ -1042,8 +1106,10 @@ export default function CallsBookingPage() {
                       control={control}
                       render={({ field }) => (
                         <MultiSelectCombobox
+                          ref={registerField("assignedUsers")}
                           value={field.value ? field.value.split(",").filter(Boolean) : []}
                           onChange={(vals) => field.onChange(vals.join(","))}
+                          onEnter={() => focusNext("assignedUsers")}
                           editId={editRow?.sno ?? null}
                           items={staffItems}
                           placeholder="Select staff"
@@ -1061,28 +1127,22 @@ export default function CallsBookingPage() {
                       control={control}
                       render={({ field }) => (
                         <>
-                          <input
-                            {...field}
-                            list="cb-status-suggestions"
-                            placeholder="Type or pick a status"
-                            style={{
-                              height: 32,
-                              padding: "0 10px",
-                              borderRadius: RADIUS.md,
-                              border: `1px solid ${COLORS.cardBorder}`,
-                              fontSize: 12,
-                              fontFamily: FONT.family,
-                              textTransform: "uppercase",
-                              color: COLORS.textPrimary,
-                              background: COLORS.cardBg,
+                         
+                          <NativeSelectWrapper
+                            ref={registerField("status")}
+                            value={field.value ?? ""}
+                            onChange={(e) => {
+                              field.onChange(e);
                             }}
-                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                            onEnter={() => focusNext("status")}
+                            items={statusItems}
+                            css ={{
+                              border:"1px solid #DDD",
+                              bg :"#EEE",
+                              color : "#222"
+                            }}
+
                           />
-                          <datalist id="cb-status-suggestions">
-                            {statusItems.map((s) => (
-                              <option key={s.value} value={s.value} />
-                            ))}
-                          </datalist>
                         </>
                       )}
                     />
@@ -1125,9 +1185,11 @@ export default function CallsBookingPage() {
                       control={control}
                       render={({ field }) => (
                         <TextareaField
+                          inputRef={registerField("remark")}
                           value={field.value}
                           field="remark"
                           onChange={(_, value) => field.onChange(value)}
+                          onEnter={() => focusNext("remark")}
                           placeholder="Enter remarks"
                           mode="inline"
                         />

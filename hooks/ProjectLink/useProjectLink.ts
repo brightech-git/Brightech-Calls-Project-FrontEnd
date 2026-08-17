@@ -18,15 +18,16 @@ import {
 
 import {
   ProjectLinkPayload,
+  ProjectLinkFilters,
 } from "@/types/ProjectLink/ProjectLink";
 
 const PROJECT_LINK_KEY = ["project-link-list"];
 
 // GET ALL
-export const useProjectLinkList = (active?: boolean) =>
+export const useProjectLinkList = (filters?: ProjectLinkFilters) =>
   useQuery({
-    queryKey: [...PROJECT_LINK_KEY, active ?? "all"],
-    queryFn: () => getAllProjectLinks(active),
+    queryKey: [...PROJECT_LINK_KEY, filters ?? {}],
+    queryFn: () => getAllProjectLinks(filters),
   });
 
 // GET BY ID

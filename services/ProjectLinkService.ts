@@ -7,6 +7,7 @@ import { axiosInstance } from "@/api/axiosInstance";
 import {
   ProjectLinkPayload,
   ProjectLinkRecord,
+  ProjectLinkFilters,
 } from "@/types/ProjectLink/ProjectLink";
 
 interface ApiResponse<T> {
@@ -29,11 +30,18 @@ export const createProjectLink = async (
 
 // GET ALL
 export const getAllProjectLinks = async (
-  active?: boolean
+  filters?: ProjectLinkFilters
 ): Promise<ProjectLinkRecord[]> => {
   const response = await axiosInstance.get<ApiResponse<ProjectLinkRecord[]>>(
     "/project-links",
-    { params: active !== undefined ? { active } : undefined }
+    {
+      params: {
+        active: filters?.active,
+        clientId: filters?.clientId,
+        projectTypeId: filters?.projectTypeId,
+        deviceType: filters?.deviceType,
+      },
+    }
   );
 
   return response.data.data;

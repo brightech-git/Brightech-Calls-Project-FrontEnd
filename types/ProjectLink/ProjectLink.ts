@@ -16,7 +16,7 @@ export interface ProjectLinkPayload {
 export interface ProjectLinkRecord {
   linkId: number;
  clientId: number;
-  CLIENTNAME?: string | null;
+  clientName?: string | null;
   projectTypeId: number;
    projectTypeName?: string | null 
   url?: string ;
@@ -28,3 +28,10 @@ export interface ProjectLinkRecord {
 }
 
 export type ProjectLinkRecord_Table = ProjectLinkRecord & Record<string, unknown>;
+
+export interface ProjectLinkFilters {
+  active?: boolean;
+  clientId?: number;
+  projectTypeId?: number;
+  deviceType?: string;
+}

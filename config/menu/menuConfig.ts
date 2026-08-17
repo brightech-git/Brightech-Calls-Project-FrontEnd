@@ -38,7 +38,7 @@ export const menuConfig: MenuEntryConfig[] = [
       { id: "project-master", label: "Project Master", href: "/ProjectManagement/ProjectMaster", icon: Briefcase },
       { id: "project-type-master", label: "Project Type Master", href: "/ProjectManagement/ProjectTypeMaster", icon: Briefcase },
       { id: "module-master", label: "Module Master", href: "/ProjectManagement/ModuleMaster", icon: Briefcase },
-      { id: "task-assignment", label: "Task Assignment", href: "/ProjectManagement/TaskAssignment", icon: Briefcase },
+      { id: "task-assignment", label: "Calls Booking", href: "/ProjectManagement/TaskAssignment", icon: Briefcase },
       { id: "call-status", label: "Call Status", href: "/ProjectManagement/CallStatus", icon: Briefcase },
       { id: "project-links", label: "Project Links", href: "/ProjectManagement/ProjectLink", icon: Briefcase },
     ],
