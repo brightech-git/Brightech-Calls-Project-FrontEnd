@@ -14,6 +14,7 @@ import {
 } from "react";
 import Handsontable from "handsontable";
 import type { ColumnSettings } from "handsontable/settings";
+import { COLORS, FONT } from "@/utils/theme";
 
 registerAllModules();
 
@@ -180,13 +181,13 @@ function PaginationBar({
         minWidth: 30,
         height: 30,
         padding: "0 6px",
-        fontSize: 12,
-        fontWeight: 500,
+        fontSize: FONT.size.xs,
+        fontWeight: FONT.weight.medium,
         borderRadius: 6,
-        border: "0.5px solid #d0d5dd",
+        border: `0.5px solid ${COLORS.gray300}`,
         cursor: "pointer",
         background: "#fff",
-        color: "#344054",
+        color: COLORS.textSecondary,
         fontFamily: "inherit",
         transition: "background 0.1s",
     };
@@ -206,28 +207,28 @@ function PaginationBar({
         >
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 {showTotalCount && (
-                    <span style={{ fontSize: 12, color: "#667085" }}>
+                    <span style={{ fontSize: FONT.size.xs, color: COLORS.textMuted }}>
                         Showing{" "}
-                        <strong style={{ color: "#344054" }}>
+                        <strong style={{ color: COLORS.textSecondary }}>
                             {startIdx}–{endIdx}
                         </strong>{" "}
-                        of <strong style={{ color: "#344054" }}>{totalRows}</strong> rows
+                        of <strong style={{ color: COLORS.textSecondary }}>{totalRows}</strong> rows
                     </span>
                 )}
                 {showPageSizeSelector && (
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 12, color: "#667085" }}>Rows</span>
+                        <span style={{ fontSize: FONT.size.xs, color: COLORS.textMuted }}>Rows</span>
                         <select
                             value={pageSize}
                             onChange={(e) => onPageSizeChange(Number(e.target.value))}
                             style={{
                                 height: 28,
-                                fontSize: 12,
-                                border: "0.5px solid #d0d5dd",
+                                fontSize: FONT.size.xs,
+                                border: `0.5px solid ${COLORS.gray300}`,
                                 borderRadius: 5,
                                 padding: "0 6px",
                                 background: "#fff",
-                                color: "#344054",
+                                color: COLORS.textSecondary,
                                 cursor: "pointer",
                                 fontFamily: "inherit",
                             }}
@@ -255,7 +256,7 @@ function PaginationBar({
                         n < 0 ? (
                             <span
                                 key={`ellipsis-${i}`}
-                                style={{ fontSize: 12, color: "#98a2b3", padding: "0 2px" }}
+                                style={{ fontSize: FONT.size.xs, color: COLORS.gray300, padding: "0 2px" }}
                             >
                                 …
                             </span>
@@ -265,9 +266,9 @@ function PaginationBar({
                                 onClick={() => onPageChange(n)}
                                 style={{
                                     ...btnBase,
-                                    background: currentPage === n ? "#1d4ed8" : "#fff",
-                                    color: currentPage === n ? "#fff" : "#344054",
-                                    borderColor: currentPage === n ? "#1d4ed8" : "#d0d5dd",
+                                    background: currentPage === n ? COLORS.primary : "#fff",
+                                    color: currentPage === n ? "#fff" : COLORS.textSecondary,
+                                    borderColor: currentPage === n ? COLORS.primary : COLORS.gray300,
                                 }}
                             >
                                 {n}
@@ -496,11 +497,11 @@ export default function DataTable({
             if (!isTotalsRow) return;
 
             const bg ="#a50808";
-            const color = totals?.color ?? "#222";
+            const color = totals?.color ?? COLORS.textPrimary;
             TD.style.backgroundColor = bg;
             TD.style.color = color;
-            TD.style.fontWeight = "700";
-            TD.style.fontSize = "12px";
+            TD.style.fontWeight = String(FONT.weight.bold);
+            TD.style.fontSize = FONT.size.xs;
             TD.style.borderTop = "2px solid #c5cfe8";
         },
         [isTotalsEnabled, data.length, hotData, totals]
@@ -527,10 +528,10 @@ export default function DataTable({
                 row === hotData.length - 1 &&
                 (hotData[row] as Record<string, unknown>)?.[TOTALS_SENTINEL];
             if (!isTotalsRow) return;
-            TH.style.background = totals?.bg ?? "#f0f4ff";
-            TH.style.color = totals?.color ?? "#1e3a5f";
-            TH.style.fontWeight = "700";
-            TH.style.fontSize = "10px";
+            TH.style.background = totals?.bg ?? COLORS.primaryLight;
+            TH.style.color = totals?.color ?? COLORS.primary;
+            TH.style.fontWeight = String(FONT.weight.bold);
+            TH.style.fontSize = FONT.size.xs;
             TH.style.borderTop = "2px solid #c5cfe8";
             TH.innerHTML = "Σ";
         },
@@ -621,7 +622,7 @@ export default function DataTable({
                 fontFamily:
                     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 background: "#fff",
-                border: "1px solid #e4e7ec",
+                border: `1px solid ${COLORS.gray200}`,
                 borderRadius: 12,
                 overflow: "hidden",
                 boxShadow:
@@ -632,8 +633,8 @@ export default function DataTable({
             <div
                 style={{
                     padding: "12px 16px",
-                    borderBottom: "1px solid #f2f4f7",
-                    background: "#fcfcfd",
+                    borderBottom: `1px solid ${COLORS.gray100}`,
+                    background: COLORS.gray50,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
@@ -642,16 +643,16 @@ export default function DataTable({
                 }}
             >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: "#101828" }}>
+                    <span style={{ fontSize: FONT.size.md, fontWeight: FONT.weight.semibold, color: COLORS.textPrimary }}>
                         {title}
                     </span>
                     <span
                         style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "#1d4ed8",
-                            background: "#eff6ff",
-                            border: "1px solid #bfdbfe",
+                            fontSize: FONT.size.xs,
+                            fontWeight: FONT.weight.semibold,
+                            color: COLORS.info,
+                            background: COLORS.infoBg,
+                            border: `1px solid ${COLORS.infoBg}`,
                             borderRadius: 99,
                             padding: "1px 8px",
                         }}
@@ -676,7 +677,7 @@ export default function DataTable({
                                     left: 8,
                                     top: "50%",
                                     transform: "translateY(-50%)",
-                                    color: "#98a2b3",
+                                    color: COLORS.gray300,
                                     pointerEvents: "none",
                                 }}
                                 width="13"
@@ -698,19 +699,19 @@ export default function DataTable({
                                     paddingRight: 10,
                                     height: 32,
                                     width: 170,
-                                    fontSize: 12,
-                                    border: "0.5px solid #d0d5dd",
+                                    fontSize: FONT.size.xs,
+                                    border: `0.5px solid ${COLORS.gray300}`,
                                     borderRadius: 6,
                                     outline: "none",
                                     background: "#fff",
-                                    color: "#101828",
+                                    color: COLORS.textPrimary,
                                     fontFamily: "inherit",
                                 }}
                             />
                         </div>
                     )}
 
-                    <div style={{ width: 1, height: 22, background: "#e4e7ec" }} />
+                    <div style={{ width: 1, height: 22, background: COLORS.gray200 }} />
 
                     {showRowControls && (
                         <>
@@ -807,15 +808,15 @@ export default function DataTable({
             <style>{`
         .dt-wrapper .handsontable th {
           background: #dadafc !important;
-          color: #111 !important;
-          font-size: 10px !important;
-          font-weight: 600 !important;
+          color: ${COLORS.textPrimary} !important;
+          font-size: ${FONT.size.xs} !important;
+          font-weight: ${FONT.weight.semibold} !important;
           border-color: #BBB !important;
         }
-      
+
         .dt-wrapper .handsontable td {
-          font-size: 12px !important;
-          color: #222 !important;
+          font-size: ${FONT.size.sm} !important;
+          color: ${COLORS.textSecondary} !important;
           border-color: #DDD !important;
           padding:0px auto !important;
         }
@@ -829,21 +830,21 @@ export default function DataTable({
           background: #eff6ff !important;
         }
         .dt-search-result {
-          background: #fef9c3 !important;
-          color: #713f12 !important;
-          font-weight: 700 !important;
+          background: ${COLORS.warningBg} !important;
+          color: ${COLORS.warning} !important;
+          font-weight: ${FONT.weight.bold} !important;
         }
         .dt-wrapper .handsontable .htDropdownMenu,
         .dt-wrapper .handsontable .htContextMenu {
           border-radius: 8px !important;
-          border: 1px solid #e4e7ec !important;
+          border: 1px solid ${COLORS.gray200} !important;
           box-shadow: 0 6px 20px rgba(16,24,40,0.1) !important;
         }
         .dt-wrapper .handsontable .columnSorting.ascending::after {
-          border-bottom-color: #1d4ed8 !important;
+          border-bottom-color: ${COLORS.info} !important;
         }
         .dt-wrapper .handsontable .columnSorting.descending::after {
-          border-top-color: #1d4ed8 !important;
+          border-top-color: ${COLORS.info} !important;
         }
         .dt-wrapper ::-webkit-scrollbar { width: 7px; height: 7px; }
         .dt-wrapper ::-webkit-scrollbar-track { background: #f1f3f9; border-radius: 4px; }
@@ -868,9 +869,9 @@ function ToolbarBtn({
     variant?: "default" | "primary" | "danger";
 }) {
     const styles: Record<string, React.CSSProperties> = {
-        default: { background: "#fff", border: "0.5px solid #d0d5dd", color: "#344054" },
-        primary: { background: "#1d4ed8", border: "1px solid #1d4ed8", color: "#fff" },
-        danger: { background: "#fff", border: "0.5px solid #fda29b", color: "#b42318" },
+        default: { background: "#fff", border: `0.5px solid ${COLORS.gray300}`, color: COLORS.textSecondary },
+        primary: { background: COLORS.primary, border: `1px solid ${COLORS.primary}`, color: "#fff" },
+        danger: { background: "#fff", border: `0.5px solid ${COLORS.error}`, color: COLORS.error },
     };
 
     const icons = {
@@ -888,8 +889,8 @@ function ToolbarBtn({
                 gap: 5,
                 height: 32,
                 padding: "0 11px",
-                fontSize: 12,
-                fontWeight: 500,
+                fontSize: FONT.size.xs,
+                fontWeight: FONT.weight.medium,
                 borderRadius: 6,
                 cursor: "pointer",
                 fontFamily: "inherit",

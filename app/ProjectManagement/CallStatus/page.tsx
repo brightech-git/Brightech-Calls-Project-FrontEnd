@@ -53,7 +53,7 @@ const statusBadge = (label?: string | null) => {
   const bg    = s === "CLOSED"  ? COLORS.errorBg   : s === "PROCESS" ? COLORS.warningBg : COLORS.successBg;
   const color = s === "CLOSED"  ? COLORS.error      : s === "PROCESS" ? COLORS.warning    : COLORS.success;
   return (
-    <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: bg, color }}>
+    <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: FONT.size.xs, fontWeight: 600, background: bg, color }}>
       {s}
     </span>
   );
@@ -72,7 +72,7 @@ const COLUMNS: TableColumn<CallStatusListItem_Table>[] = [
     key: "lastStatus",
     header: "Last Status",
     sortable: true,
-    render: (row) => (row.lastStatus ? statusBadge(row.lastStatus as string) : <span style={{ color: COLORS.textMuted, fontSize: 12 }}>No status yet</span>),
+    render: (row) => (row.lastStatus ? statusBadge(row.lastStatus as string) : <span style={{ color: COLORS.textMuted, fontSize: FONT.size.sm }}>No status yet</span>),
   },
 ];
 
@@ -94,7 +94,7 @@ function MediaTile({ m, idx, onOpen }: { m: { mediaUrl?: string | null; mediaTyp
       ) : type.startsWith("VIDEO") ? (
         <video src={mediaUrl(m.mediaUrl)} style={{ width: "100%", height: "100%", objectFit: "cover" }} muted />
       ) : (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: 10, color: COLORS.textSecondary }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: FONT.size.xs, color: COLORS.textSecondary }}>
           File
         </div>
       )}
@@ -337,24 +337,24 @@ function CallStatusPageInner() {
                 <div className="cs-section-label">Status History</div>
 
                 {sortedStatuses.length === 0 ? (
-                  <div style={{ padding: 16, color: COLORS.textMuted, fontSize: 12 }}>No status updates yet.</div>
+                  <div style={{ padding: 16, color: COLORS.textMuted, fontSize: FONT.size.sm }}>No status updates yet.</div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {sortedStatuses.map((s) => (
                       <div key={s.sno} className="cs-history-card">
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                           {statusBadge(s.STATUS)}
-                          <span style={{ fontSize: 11, color: COLORS.textMuted }}>
+                          <span style={{ fontSize: FONT.size.xs, color: COLORS.textMuted }}>
                             {s.UPDATED ? new Date(s.UPDATED).toLocaleString() : "—"}
                           </span>
                         </div>
 
-                        <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 4 }}>
+                        <div style={{ fontSize: FONT.size.sm, color: COLORS.textSecondary, marginBottom: 4 }}>
                           By <b style={{ color: COLORS.textPrimary }}>{s.userName ?? s.userId ?? "—"}</b>
                         </div>
 
                         {s.remark && (
-                          <div style={{ fontSize: 12, color: COLORS.textPrimary, marginBottom: 6 }}>{s.remark}</div>
+                          <div style={{ fontSize: FONT.size.sm, color: COLORS.textPrimary, marginBottom: 6 }}>{s.remark}</div>
                         )}
 
                         {((s.media && s.media.length > 0) || s.IMAGE) && (() => {
@@ -413,7 +413,7 @@ function CallStatusPageInner() {
                               padding: "0 10px",
                               borderRadius: RADIUS.md,
                               border: `1px solid ${COLORS.cardBorder}`,
-                              fontSize: 12,
+                              fontSize: FONT.size.sm,
                               fontFamily: FONT.family,
                               textTransform: "uppercase",
                               color: COLORS.textPrimary,

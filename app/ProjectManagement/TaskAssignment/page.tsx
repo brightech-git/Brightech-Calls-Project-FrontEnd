@@ -80,14 +80,14 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
     sortable: true,
     render: (row) => {
       const status = row.status === "P" ? "PENDING" :row.status === "C" ? "COMPLETED" : "BOTH";
-      return <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11}}>{status}</span>;
+      return <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: FONT.size.xs}}>{status}</span>;
     },
   },
   {
     key: "active",
     header: "Active",
     render: (row) => (
-      <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+      <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: FONT.size.xs, fontWeight: 600,
         background: row.active === "Y" ? COLORS.successBg : COLORS.errorBg,
         color: row.active === "Y" ? COLORS.success : COLORS.error,
       }}>
@@ -572,12 +572,12 @@ export default function CallsBookingPage() {
                               href={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
                               target="_blank"
                               rel="noreferrer"
-                              style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 90, fontSize: 11, color: COLORS.textSecondary }}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 90, fontSize: FONT.size.xs, color: COLORS.textSecondary }}
                             >
                               Open file
                             </a>
                           )}
-                          <div style={{ fontSize: 10, padding: 4, color: m.active === false ? COLORS.textMuted : COLORS.textSecondary, textAlign: "center" }}>
+                          <div style={{ fontSize: FONT.size.xs, padding: 4, color: m.active === false ? COLORS.textMuted : COLORS.textSecondary, textAlign: "center" }}>
                             {m.active === false ? "Inactive" : "Active"}
                           </div>
                         </div>
@@ -590,9 +590,9 @@ export default function CallsBookingPage() {
                 <div className="cb-detail-section-label">Call Status History</div>
 
                 {statusHistoryLoading ? (
-                  <div style={{ padding: 16, color: COLORS.textMuted, fontSize: 12 }}>Loading...</div>
+                  <div style={{ padding: 16, color: COLORS.textMuted, fontSize: FONT.size.sm }}>Loading...</div>
                 ) : statusHistory.length === 0 ? (
-                  <div style={{ padding: 16, color: COLORS.textMuted, fontSize: 12 }}>No status updates yet.</div>
+                  <div style={{ padding: 16, color: COLORS.textMuted, fontSize: FONT.size.sm }}>No status updates yet.</div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {statusHistory.map((s) => {
@@ -611,20 +611,20 @@ export default function CallsBookingPage() {
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                            <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: bg, color }}>
+                            <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: FONT.size.xs, fontWeight: 600, background: bg, color }}>
                               {label}
                             </span>
-                            <span style={{ fontSize: 11, color: COLORS.textMuted }}>
+                            <span style={{ fontSize: FONT.size.xs, color: COLORS.textMuted }}>
                               {s.UPDATED ? new Date(s.UPDATED).toLocaleString() : "—"}
                             </span>
                           </div>
 
-                          <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 4 }}>
+                          <div style={{ fontSize: FONT.size.sm, color: COLORS.textSecondary, marginBottom: 4 }}>
                             By <b style={{ color: COLORS.textPrimary }}>{s.userName ?? s.userId ?? "—"}</b>
                           </div>
 
                           {s.remark && (
-                            <div style={{ fontSize: 12, color: COLORS.textPrimary, marginBottom: 6 }}>{s.remark}</div>
+                            <div style={{ fontSize: FONT.size.sm, color: COLORS.textPrimary, marginBottom: 6 }}>{s.remark}</div>
                           )}
 
                           {((s.media && s.media.length > 0) || s.IMAGE) && (() => {
@@ -655,7 +655,7 @@ export default function CallsBookingPage() {
                                         href={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
                                         target="_blank"
                                         rel="noreferrer"
-                                        style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 90, fontSize: 11, color: COLORS.textSecondary }}
+                                        style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 90, fontSize: FONT.size.xs, color: COLORS.textSecondary }}
                                       >
                                         Open file
                                       </a>
@@ -842,7 +842,7 @@ export default function CallsBookingPage() {
         }
 
         .cb-field-label {
-          font-size: 12px;
+          font-size: 16px;
           font-weight: 600;
           color: ${COLORS.textSecondary};
         }
@@ -1044,7 +1044,9 @@ export default function CallsBookingPage() {
                           items={clientItems}
                           placeholder="Select client"
                           maxWidth="100%"
+                          size="md"
                           disable={isClientUser}
+                          fontSize="sm"
                         />
                       )}
                     />
@@ -1066,6 +1068,8 @@ export default function CallsBookingPage() {
                           items={projectItems}
                           placeholder="Select project"
                           maxWidth="100%"
+size="md"
+ fontSize="sm"
                         />
                       )}
                     />
@@ -1087,6 +1091,8 @@ export default function CallsBookingPage() {
                           items={moduleItems}
                           placeholder="Select module"
                           maxWidth="100%"
+size="md"
+ fontSize="sm"
                         />
                       )}
                     />
@@ -1114,6 +1120,8 @@ export default function CallsBookingPage() {
                           items={staffItems}
                           placeholder="Select staff"
                           maxWidth="100%"
+size="md"
+ fontSize="sm"
                         />
                       )}
                     />
@@ -1139,7 +1147,8 @@ export default function CallsBookingPage() {
                             css ={{
                               border:"1px solid #DDD",
                               bg :"#EEE",
-                              color : "#222"
+                              color : "#222",
+                              fontSize :"14px"
                             }}
 
                           />

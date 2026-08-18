@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef ,useState } from "react";
+import React, { useLayoutEffect, useRef ,useState } from "react";
 import { Input, InputGroup, Button, Box, Image as ChakraImage } from "@chakra-ui/react";
 import { capitalizeText } from "@/utils/capitalize/capitalizeText";
 import { ICONS_MAP } from "../icon/iconsMap";
@@ -102,6 +102,14 @@ export function CapitalizedInput<T>({
 }: CapitalizedInputProps<T>) {
  
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const internalRef = useRef<HTMLInputElement>(null);
+
+    // Case-transforming (uppercase/lowercase) the value forces React to
+    // reassign the DOM node's .value on every keystroke, which resets the
+    // caret to the end - that's why typing mid-text kept bouncing to the
+    // last position. Capture where the caret was and restore it after the
+    // re-render.
+    const cursorPositionRef = useRef<number | null>(null);
 
     const [focusedValue, setFocusedValue] = useState<string | undefined>(undefined);
 const isFocused = focusedValue !== undefined;
@@ -225,6 +233,8 @@ const isFocused = focusedValue !== undefined;
    const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let inputValue = e.target.value;
 
+    cursorPositionRef.current = e.target.selectionStart;
+
     const mode = inputModeType || type;
 
     /* ================== MODE VALIDATIONS ================== */
@@ -341,6 +351,16 @@ const isFocused = focusedValue !== undefined;
         onKeyDown?.(e);
     };
 
+    useLayoutEffect(() => {
+        const pos = cursorPositionRef.current;
+        if (pos === null) return;
+
+        const el = internalRef.current;
+        if (el && document.activeElement === el) {
+            el.setSelectionRange(pos, pos);
+        }
+    }, [value, focusedValue]);
+
     const formatDecimalOnBlur = (val: string, scale: number) => {
         if (!val || isNaN(Number(val))) return val;
         if (!allowFocus) return val;
@@ -380,6 +400,8 @@ const isFocused = focusedValue !== undefined;
                     onBlur?.();
                 }}
                 ref={(el) => {
+                    internalRef.current = el;
+
                     if (inputRef) {
                         if (typeof inputRef === 'function') {
                             inputRef(el);

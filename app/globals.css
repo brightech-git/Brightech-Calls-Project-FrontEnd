@@ -1,16 +1,16 @@
 :root {
-  --bg: #111827;
+  --bg: #0b2d5c;
   --surface: #ffffff;
-  --border: #dbeafe;
-  --primary: #111827;
-  --primary-hover: #1f2937;
-  --primary-light: #f3f4f6;
-  --secondary: #3b82f6;
-  --secondary-hover: #2563eb;
-  --secondary-light: #eff6ff;
-  --text-main: #3b82f6;
-  --text-muted: #64748b;
-  --text-faint: #93c5fd;
+  --border: #e5e7eb;
+  --primary: #0b2d5c;
+  --primary-hover: #082347;
+  --primary-light: #eaf0f9;
+  --secondary: #0b2d5c;
+  --secondary-hover: #082347;
+  --secondary-light: #eaf0f9;
+  --text-main: #0a0a0a;
+  --text-muted: #4b5563;
+  --text-faint: #9ca3af;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -19,8 +19,9 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background: var(--surface);
   color: var(--text-main);
   font-family: var(--font-sans, var(--font-dm-sans), var(--font-inter), 'DM Sans', 'Inter', Arial, sans-serif);
+  font-size: 15px;
   -webkit-font-smoothing: antialiased;
 }

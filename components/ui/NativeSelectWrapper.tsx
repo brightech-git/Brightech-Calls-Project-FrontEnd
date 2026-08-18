@@ -3,6 +3,7 @@
 import React, { forwardRef } from "react";
 import { NativeSelect } from "@chakra-ui/react";
 import { For } from "@chakra-ui/react";
+import { FONT } from "@/utils/theme";
 
 export type SelectItem = {
     label: string;
@@ -39,7 +40,7 @@ export const NativeSelectWrapper = forwardRef<
             placeholder = "Select",
             size = "xs",
             minW = "90px",
-            fontSize = "10px",
+            fontSize = FONT.size.sm,
             disabled = false,
             onEnter,
             onClick,

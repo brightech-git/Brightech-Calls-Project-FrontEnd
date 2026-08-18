@@ -59,7 +59,7 @@ const COLUMNS: TableColumn<ClientRecord_Table>[] = [
   { key: "ACTIVE",     header: "Status",      sortable: true,
     render: (row) => (
       <span style={{
-        padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+        padding: "2px 10px", borderRadius: 20, fontSize: FONT.size.xs, fontWeight: 600,
         background: row.ACTIVE === "Y" ? COLORS.successBg : COLORS.errorBg,
         color:      row.ACTIVE === "Y" ? COLORS.success   : COLORS.error,
       }}>
@@ -136,10 +136,12 @@ export default function ClientMasterPage() {
     try {
       const userId = Number(localStorage.getItem("userId") || 0);
       if (editRow) {
+        console.log(data,editRow ,userId ,'updatePayload')
         const payload = { ...data, CLIENTID: editRow.CLIENTID, USERID: userId };
         const res = await updateMutation.mutateAsync({ id: String(editRow.CLIENTID), payload });
         toast.success("Client Updated", `"${res.CLIENTNAME}" updated successfully.`);
       } else {
+
         const res = await createMutation.mutateAsync({ ...data, USERID: userId });
         toast.success("Client Created", `"${res.CLIENTNAME}" created successfully.`);
       }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { Input, Textarea } from "@chakra-ui/react";
 import { Dialog } from "@chakra-ui/react";
 import { capitalizeText } from "@/utils/capitalize/capitalizeText";
@@ -48,13 +48,31 @@ export function TextareaField<T>({
     const internalRef = useRef<HTMLTextAreaElement>(null); // 🔥 NEW: Internal ref for dialog mode
     const dialogTextareaRef = useRef<HTMLTextAreaElement>(null); // 🔥 NEW: Ref for dialog textarea
 
+    // Uppercasing the value forces React to reassign the DOM node's
+    // .value on every keystroke, which resets the caret to the end -
+    // that's why typing mid-text kept bouncing to the last position.
+    // Capture where the caret was and restore it after the re-render.
+    const cursorPositionRef = useRef<number | null>(null);
+
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         let val = e.target.value;
 
         if (max && val.length > max) return;
 
+        cursorPositionRef.current = e.target.selectionStart;
+
         onChange(field, isCapitalized ? capitalizeText(val) : val);
     };
+
+    useLayoutEffect(() => {
+        const pos = cursorPositionRef.current;
+        if (pos === null) return;
+
+        const el = mode === "dialog" ? dialogTextareaRef.current : internalRef.current;
+        if (el && document.activeElement === el) {
+            el.setSelectionRange(pos, pos);
+        }
+    }, [value, mode]);
 
     // 🔥 NEW: Combine refs helper function
     const combineRefs = (el: HTMLTextAreaElement | null) => {
@@ -151,7 +169,7 @@ export function TextareaField<T>({
 
                     <Dialog.Body p={2} gap={0}>
                         <Textarea
-                            
+                            ref={dialogTextareaRef}
                             value={value}
                             autoFocus
                             rows={rows}

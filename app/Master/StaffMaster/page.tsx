@@ -61,7 +61,7 @@ const COLUMNS: TableColumn<StaffRecord_Table>[] = [
     render: (row) => (
       <span style={{
         padding: "2px 10px", borderRadius: 20,
-        fontSize: 11, fontWeight: 600,
+        fontSize: FONT.size.xs, fontWeight: 600,
         background: row.ACTIVE === "Y" ? COLORS.successBg : COLORS.errorBg,
         color:      row.ACTIVE === "Y" ? COLORS.success   : COLORS.error,
       }}>

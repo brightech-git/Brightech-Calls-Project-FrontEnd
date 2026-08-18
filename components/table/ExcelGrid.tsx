@@ -2,6 +2,7 @@ import React, {
     useState, useRef, useCallback, useMemo, useEffect, memo,
 } from 'react';
 import { SwitchInput } from '@/components/ui/SwitchInput';
+import { COLORS, FONT } from '@/utils/theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -424,17 +425,17 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     const maxH = maxVisibleRows * ROW_H + 38;
 
     const S = useMemo(() => ({
-        root: { fontFamily: 'inherit', fontSize: 12 } as React.CSSProperties,
+        root: { fontFamily: 'inherit', fontSize: FONT.size.sm } as React.CSSProperties,
         toolbar: {
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '6px 10px',
-            background: '#f8f9fa',
-            border: '1px solid #dee2e6',
+            background: COLORS.gray50,
+            border: `1px solid ${COLORS.gray200}`,
             borderBottom: 'none',
             borderRadius: '6px 6px 0 0',
         } as React.CSSProperties,
         wrap: {
-            border: '1px solid #dee2e6',
+            border: `1px solid ${COLORS.gray200}`,
             borderTop: 'none',
             borderRadius: '0 0 6px 6px',
             overflow: 'hidden',
@@ -452,38 +453,38 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         th: {
             position: 'sticky' as const, top: 0, zIndex: 10,
             background: '#f7e0d1',
-            fontSize: 11, fontWeight: 600, color: '#495057',
+            fontSize: FONT.size.xs, fontWeight: FONT.weight.semibold, color: COLORS.textSecondary,
             padding: '5px 5px',
-            borderBottom: '2px solid #dee2e6',
-            borderRight: '1px solid #e9ecef',
+            borderBottom: `2px solid ${COLORS.gray200}`,
+            borderRight: `1px solid ${COLORS.gray100}`,
             textAlign: 'left' as const,
             whiteSpace: 'nowrap' as const,
             userSelect: 'none' as const,
         },
         td: {
-            borderBottom: '1px solid #e9ecef',
-            borderRight: '1px solid #e9ecef',
+            borderBottom: `1px solid ${COLORS.gray100}`,
+            borderRight: `1px solid ${COLORS.gray100}`,
             padding: 0,
             position: 'relative' as const,
             verticalAlign: 'middle' as const,
             height: ROW_H,
         },
         statusBar: {
-            padding: '3px 10px', fontSize: 10, color: '#868e96',
-            background: '#f8f9fa', borderTop: '1px solid #dee2e6',
+            padding: '3px 10px', fontSize: FONT.size.xs, color: COLORS.textMuted,
+            background: COLORS.gray50, borderTop: `1px solid ${COLORS.gray200}`,
             display: 'flex', alignItems: 'center',
         } as React.CSSProperties,
         tfootTd: {
-            padding: '4px 5px', fontSize: 11, fontWeight: 600,
+            padding: '4px 5px', fontSize: FONT.size.xs, fontWeight: FONT.weight.semibold,
             background: accentColor, color: 'white',
             borderRight: '1px solid rgba(255,255,255,0.2)',
         } as React.CSSProperties,
         addBtn: {
             display: 'inline-flex', alignItems: 'center', gap: 4,
-            padding: '3px 10px', fontSize: 11, borderRadius: 4,
+            padding: '3px 10px', fontSize: FONT.size.xs, borderRadius: 4,
             cursor: 'pointer', fontFamily: 'inherit',
-            border: '1px solid #ced4da',
-            background: 'white', color: '#495057',
+            border: `1px solid ${COLORS.gray300}`,
+            background: 'white', color: COLORS.textSecondary,
         } as React.CSSProperties,
     }), [accentColor, maxH]);
 
@@ -553,8 +554,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                 {isError && (
                     <div style={{
                         position: 'absolute', bottom: '100%', left: 0,
-                        background: '#c0392b', color: 'white',
-                        fontSize: 10, padding: '2px 6px', borderRadius: 3,
+                        background: COLORS.error, color: 'white',
+                        fontSize: FONT.size.xs, padding: '2px 6px', borderRadius: 3,
                         zIndex: 10, whiteSpace: 'nowrap', pointerEvents: 'none',
                     }}>
                         {errors[k]}
@@ -579,7 +580,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         const cells = () => (
             <>
                 {/* Row number */}
-                <td style={{ ...S.td, width: 28, textAlign: 'center', fontSize: 10, color: '#adb5bd' }}>
+                <td style={{ ...S.td, width: 28, textAlign: 'center', fontSize: FONT.size.xs, color: COLORS.gray300 }}>
                     {ri + 1}
                 </td>
 
@@ -594,14 +595,14 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                                 <button
                                     onClick={() => onRowDuplicate?.(ri)}
                                     title="Duplicate row"
-                                    style={{ padding: '1px 5px', fontSize: 10, borderRadius: 3, cursor: 'pointer', border: '1px solid #ced4da', background: 'white', color: '#495057' }}
+                                    style={{ padding: '1px 5px', fontSize: FONT.size.xs, borderRadius: 3, cursor: 'pointer', border: `1px solid ${COLORS.gray300}`, background: 'white', color: COLORS.textSecondary }}
                                 >⧉</button>
                             )}
                             {showDeleteRow && (
                                 <button
                                     onClick={() => onRowDelete?.(ri)}
                                     title="Delete row"
-                                    style={{ padding: '1px 5px', fontSize: 10, borderRadius: 3, cursor: 'pointer', border: '1px solid #c0392b', background: '#c0392b', color: 'white' }}
+                                    style={{ padding: '1px 5px', fontSize: FONT.size.xs, borderRadius: 3, cursor: 'pointer', border: `1px solid ${COLORS.error}`, background: COLORS.error, color: 'white' }}
                                 >✕</button>
                             )}
                         </div>
@@ -644,7 +645,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
             {(title || showAddRow) && (
                 <div style={S.toolbar}>
                     {title && (
-                        <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>{title}</span>
+                        <span style={{ flex: 1, fontWeight: FONT.weight.semibold, fontSize: FONT.size.sm }}>{title}</span>
                     )}
                     {showAddRow && (
                         <button style={S.addBtn} onClick={onRowAdd}>
@@ -678,7 +679,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                                         textAlign: 'center',
                                     }}>
                                         {col.label}
-                                        {col.required && <span style={{ color: '#e03131', marginLeft: 2 }}>*</span>}
+                                        {col.required && <span style={{ color: COLORS.error, marginLeft: 2 }}>*</span>}
                                     </th>
                                 ))}
                                 {(showDeleteRow || showDuplicateRow) && (
@@ -704,8 +705,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                                         style={{
                                             padding: 20,
                                             textAlign: 'center',
-                                            fontSize: 11,
-                                            color: '#adb5bd'
+                                            fontSize: FONT.size.xs,
+                                            color: COLORS.gray300
                                         }}
                                     >
                                         No rows yet — click "+ Add Row" to begin

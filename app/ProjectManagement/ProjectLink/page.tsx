@@ -145,7 +145,7 @@ const COLUMNS: TableColumn<ProjectLinkRecord_Table>[] = [
     
     render: (row) => (
       <span style={{
-        padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+        padding: "2px 10px", borderRadius: 20, fontSize: FONT.size.xs, fontWeight: 600,
         background: row.active ? COLORS.successBg : COLORS.errorBg,
         color:      row.active ? COLORS.success   : COLORS.error,
       }}>

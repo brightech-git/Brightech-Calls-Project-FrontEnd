@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { PlusCircle, Edit2, Save, XCircle, Trash2, RefreshCcw } from "lucide-react";
+import { COLORS, FONT } from "@/utils/theme";
 
 
 interface Column {
@@ -106,7 +107,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     return (
         <Box
             borderWidth="1px"
-            borderColor={theme?.colors?.borderColor || "#CBD5E0"}
+            borderColor={theme?.colors?.borderColor || COLORS.gray300}
             borderRadius="md"
             overflow="hidden"
             bg="white"
@@ -134,7 +135,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                             
                            
                         }}>
-                            <th style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: 11, fontWeight: 700, color: "#4A5568", padding: "5px 3px" })}>
+                            <th style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: FONT.size.xs, fontWeight: FONT.weight.bold, color: COLORS.textSecondary, padding: "5px 3px" })}>
                                 S.NO
                             </th>
                             {tableCols.map(col => {
@@ -144,34 +145,34 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                     <th
                                         key={col.key}
                                         style={getCellStyle(col, {
-                                            fontSize: 11,
-                                            fontWeight: 700,
-                                            color: "#4A5568",
+                                            fontSize: FONT.size.xs,
+                                            fontWeight: FONT.weight.bold,
+                                            color: COLORS.textSecondary,
                                             padding: "5px 3px",
                                             textAlign: "center",   // 👈 add this
-                                         
+
                                         })}
                                     >
                                         {col.label}
                                         {fld?.isRequired && (
-                                            <span style={{ color: "#E53E3E", marginLeft: 2 }}>*</span>
+                                            <span style={{ color: COLORS.error, marginLeft: 2 }}>*</span>
                                         )}
                                     </th>
                                 );
                             })}
-                            <th style={getCellStyle({ key: "__actions", label: "ACT", align: "center" }, { fontSize: 11, fontWeight: 700, color: "#4A5568", padding: "5px 3px" ,width:'50px' })}>
+                            <th style={getCellStyle({ key: "__actions", label: "ACT", align: "center" }, { fontSize: FONT.size.xs, fontWeight: FONT.weight.bold, color: COLORS.textSecondary, padding: "5px 3px" ,width:'50px' })}>
                                 {localEditId ? (
                                     <button
                                         onClick={resetForm}
                                         title="Cancel Edit"
                                         style={{
-                                            fontSize: 11,
-                                            color: "#E53E3E",
+                                            fontSize: FONT.size.xs,
+                                            color: COLORS.error,
                                             background: "none",
                                             border: "none",
                                             cursor: "pointer",
-                                            fontWeight: 700,
-                                        
+                                            fontWeight: FONT.weight.bold,
+
                                         }}
                                     >
                                        <XCircle size={14}/>
@@ -189,11 +190,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                 backgroundColor: localEditId ? "#EBF8FF" : "#FAFAFA",
                                 borderBottom: "2px solid #CBD5E0",
                             }}>
-                                <td style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: 11 })}>
+                                <td style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: FONT.size.xs })}>
                                     {localEditId ? (
-                                        <span style={{ color: "#3182CE", fontWeight: 900, fontSize: 13 }}>✎</span>
+                                        <span style={{ color: COLORS.primary, fontWeight: 900, fontSize: FONT.size.sm }}>✎</span>
                                     ) : (
-                                        <span style={{ color: "#A0AEC0", fontSize: 11 }}>{rows.length + 1}</span>
+                                        <span style={{ color: COLORS.gray300, fontSize: FONT.size.xs }}>{rows.length + 1}</span>
                                     )}
                                 </td>
 
@@ -205,8 +206,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                             key={col.key}
                                             style={{
                                                 ...getCellStyle(col),
-                                                backgroundColor: hasErr ? "#FFF5F5" : undefined,
-                                                outline: hasErr ? "1px solid #FC8181" : undefined,
+                                                backgroundColor: hasErr ? COLORS.errorBg : undefined,
+                                                outline: hasErr ? `1px solid ${COLORS.error}` : undefined,
                                                 position: "relative",
                                             }}
                                             title={hasErr ? errors[col.key] : undefined}
@@ -226,13 +227,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                         style={{
                                             width: "100%",
                                             height: 22,
-                                            background: localEditId ? "#3182CE" : "#38A169",
+                                            background: localEditId ? COLORS.primary : COLORS.success,
                                             color: "white",
                                             border: "none",
                                             borderRadius: 4,
                                             cursor: isSubmitting ? "not-allowed" : "pointer",
-                                            fontSize: 12,
-                                            fontWeight: 700,
+                                            fontSize: FONT.size.xs,
+                                            fontWeight: FONT.weight.bold,
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
@@ -257,8 +258,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                     style={{
                                         textAlign: "center",
                                         padding: "14px",
-                                        fontSize: 11,
-                                        color: "#A0AEC0"
+                                        fontSize: FONT.size.xs,
+                                        color: COLORS.gray300
                                     }}
                                 >
                                     No items added yet — fill the form above and click + ADD
@@ -272,17 +273,17 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                 key={row.__rowId || idx}
                                 style={{
                                     backgroundColor: row.__rowId === localEditId
-                                        ? "#BEE3F8"
+                                        ? COLORS.primaryLight
                                         : idx % 2 === 0 ? stripedBg : "white",
-                                    borderBottom: "1px solid #E2E8F0",
+                                    borderBottom: `1px solid ${COLORS.gray200}`,
                                     transition: "background-color 0.15s",
                                 }}
                             >
-                                <td style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: 12, color: "#718096" })}>
+                                <td style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: FONT.size.sm, color: COLORS.textMuted })}>
                                     {idx + 1}
                                 </td>
                                 {tableCols.map(col => (
-                                    <td key={col.key} style={getCellStyle(col, { fontSize: 12, color: "#1A202C", whiteSpace: "nowrap" })}>
+                                    <td key={col.key} style={getCellStyle(col, { fontSize: FONT.size.sm, color: COLORS.textPrimary, whiteSpace: "nowrap" })}>
                                         {getCellValue(col, row)}
                                     </td>
                                 ))}
@@ -296,7 +297,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                             title="Edit"
                                             style={{
                                                 padding: 2,
-                                                color: "#3182CE",
+                                                color: COLORS.primary,
                                                 background: "none",
                                                 border: "none",
                                                 cursor: "pointer"
@@ -312,7 +313,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                             title="Delete"
                                             style={{
                                                 padding: 2,
-                                                color: "#E53E3E",
+                                                color: COLORS.error,
                                                 background: "none",
                                                 border: "none",
                                                 cursor: "pointer"
@@ -332,11 +333,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                             
                             <tr   style={{ backgroundColor: totalBG ??"#A0AEC0" , color:totalColor ?? "black" }}>
                                 
-                                <td style={getCellStyle({ key: "__sno", label: "#", align: "left" }, { fontSize: 13, fontWeight: 600,})}>
+                                <td style={getCellStyle({ key: "__sno", label: "#", align: "left" }, { fontSize: FONT.size.sm, fontWeight: FONT.weight.semibold,})}>
                                     TOTAL
                                 </td>
                                 {tableCols.map(col => (
-                                    <td key={col.key} style={getCellStyle(col, { fontSize: 13, fontWeight: 600})}>
+                                    <td key={col.key} style={getCellStyle(col, { fontSize: FONT.size.sm, fontWeight: FONT.weight.semibold})}>
                                         {formatTotal(totals?.[col.key], col.decimalScale)}
                                     </td>
                                 ))}

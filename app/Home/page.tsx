@@ -6,7 +6,7 @@ import {  ChevronRightCircle } from "lucide-react";
 
 import { CustomTable, TableColumn } from "@/components/CustomTable";
 import { usePageHeader } from "@/context/PageHeaderContext";
-import { COLORS } from "@/utils/theme";
+import { COLORS, FONT } from "@/utils/theme";
 
 import { useMyTasks } from "@/hooks/TaskAssignment/useTaskAssignment";
 import { CallsBookingRecord_Table } from "@/types/TaskAssignment/TaskAssignment";
@@ -33,7 +33,7 @@ const COLUMNS: TableColumn<CallsBookingRecord_Table>[] = [
       const bg = s === "C" || s === "COMPLETED" ? COLORS.successBg : s === "X" || s === "CANCELLED" ? COLORS.errorBg : COLORS.warningBg;
       const color = s === "C" || s === "COMPLETED" ? COLORS.success : s === "X" || s === "CANCELLED" ? COLORS.error : COLORS.warning;
       const label = s === "O" ? "Open" : s === "I" || s === "INPROGRESS" ? "In Progress" : s === "C" || s === "COMPLETED" ? "Completed" : s === "X" || s === "CANCELLED" ? "Cancelled" : s || "—";
-      return <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: bg, color }}>{label}</span>;
+      return <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: FONT.size.xs, fontWeight: 600, background: bg, color }}>{label}</span>;
     },
   },
 ];

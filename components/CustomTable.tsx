@@ -56,7 +56,7 @@ import {
   ChevronRightCircle,
 } from "lucide-react";
 import { useState, useMemo, useCallback, Fragment } from "react";
-import { COLORS, FONT } from "@/utils/theme";
+import { COLORS, FONT, RADIUS } from "@/utils/theme";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -127,23 +127,23 @@ export interface CustomTableProps<T extends Record<string, unknown>> {
 // ─── Status badge coloring ────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  active:    { bg: "#dcfce7", color: "#16a34a" },
-  inactive:  { bg: "#fee2e2", color: "#ef4444" },
-  pending:   { bg: "#fef9c3", color: "#b45309" },
-  approved:  { bg: "#dcfce7", color: "#16a34a" },
-  rejected:  { bg: "#fee2e2", color: "#ef4444" },
-  cancelled: { bg: "#fee2e2", color: "#ef4444" },
-  draft:     { bg: "#f1f5f9", color: "#64748b" },
-  paid:      { bg: "#dcfce7", color: "#16a34a" },
-  unpaid:    { bg: "#fee2e2", color: "#ef4444" },
-  processing:{ bg: "#fef9c3", color: "#b45309" },
-  y:         { bg: "#dcfce7", color: "#16a34a" },
-  n:         { bg: "#fee2e2", color: "#ef4444" },
+  active:    { bg: COLORS.successBg, color: COLORS.success },
+  inactive:  { bg: COLORS.errorBg, color: COLORS.error },
+  pending:   { bg: COLORS.warningBg, color: COLORS.warning },
+  approved:  { bg: COLORS.successBg, color: COLORS.success },
+  rejected:  { bg: COLORS.errorBg, color: COLORS.error },
+  cancelled: { bg: COLORS.errorBg, color: COLORS.error },
+  draft:     { bg: COLORS.gray100, color: COLORS.textMuted },
+  paid:      { bg: COLORS.successBg, color: COLORS.success },
+  unpaid:    { bg: COLORS.errorBg, color: COLORS.error },
+  processing:{ bg: COLORS.warningBg, color: COLORS.warning },
+  y:         { bg: COLORS.successBg, color: COLORS.success },
+  n:         { bg: COLORS.errorBg, color: COLORS.error },
 };
 
 function StatusBadge({ value }: { value: string }) {
   const key = String(value).toLowerCase();
-  const style = STATUS_COLORS[key] ?? { bg: "#f1f5f9", color: "#64748b" };
+  const style = STATUS_COLORS[key] ?? { bg: COLORS.gray100, color: COLORS.textMuted };
   return (
     <Badge
       px="9px"
@@ -151,8 +151,8 @@ function StatusBadge({ value }: { value: string }) {
       borderRadius="20px"
       bg={style.bg}
       color={style.color}
-      fontSize="11px"
-      fontWeight="600"
+      fontSize={FONT.size.xs}
+      fontWeight={FONT.weight.semibold}
       letterSpacing="0.02em"
     >
       {String(value)}
@@ -163,19 +163,19 @@ function StatusBadge({ value }: { value: string }) {
 // ─── Sort icon ────────────────────────────────────────────────────────────────
 
 function SortIcon({ dir }: { dir: SortDir }) {
-  if (dir === "asc")  return <ChevronUp size={13}  color="#3b82f6" />;
-  if (dir === "desc") return <ChevronDown size={13} color="#3b82f6" />;
-  return <ChevronsUpDown size={13} color="#bfdbfe" />;
+  if (dir === "asc")  return <ChevronUp size={13}  color={COLORS.primary} />;
+  if (dir === "desc") return <ChevronDown size={13} color={COLORS.primary} />;
+  return <ChevronsUpDown size={13} color={COLORS.primaryLight} />;
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function SkeletonRow({ cols }: { cols: number }) {
   return (
-    <Box as="tr" borderTop="1px solid #f3f4f6">
+    <Box as="tr" borderTop={`1px solid ${COLORS.gray100}`}>
       {Array.from({ length: cols }).map((_, i) => (
         <Box as="td" key={i} px="16px" py="11px">
-          <Box h="12px" borderRadius="6px" bg="#e5e7eb"
+          <Box h="12px" borderRadius={RADIUS.sm} bg={COLORS.gray200}
             w={i === 0 ? "60%" : i % 2 === 0 ? "80%" : "50%"}
             style={{ animation: "pulse 1.5s ease-in-out infinite" }} 
             />
@@ -348,60 +348,60 @@ export function CustomTable<T extends Record<string, unknown>>({
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         .ct-table { width: 100%; border-collapse: collapse; }
         .ct-th {
-          font-size: 10px; font-weight: 700; letter-spacing: 0.09em;
+          font-size: ${FONT.size.xs}; font-weight: ${FONT.weight.bold}; letter-spacing: 0.09em;
           text-transform: uppercase; color: ${COLORS.textSecondary};
           padding: 10px 16px; text-align: left; white-space: nowrap;
-          border-bottom: 1px solid #e5e7eb; background: #f9fafb;
+          border-bottom: 1px solid ${COLORS.gray200}; background: ${COLORS.gray50};
           position: sticky; top: 0; z-index: 1;
         }
         .ct-th.sortable { cursor: pointer; user-select: none; }
         .ct-th.sortable:hover { color: ${COLORS.textPrimary}; }
         .ct-th.active { color: ${COLORS.textPrimary}; }
         .ct-td {
-          font-size: 13px; color: ${COLORS.textSecondary};
-          padding: 10px 16px; border-top: 1px solid #f3f4f6;
+          font-size: ${FONT.size.sm}; color: ${COLORS.textSecondary};
+          padding: 10px 16px; border-top: 1px solid ${COLORS.gray100};
           vertical-align: middle; white-space: nowrap;
         }
-        .ct-td.primary { color: ${COLORS.textPrimary}; font-weight: 600; }
-        .ct-tr:hover .ct-td { background: #f9fafb; }
+        .ct-td.primary { color: ${COLORS.textPrimary}; font-weight: ${FONT.weight.semibold}; }
+        .ct-tr:hover .ct-td { background: ${COLORS.gray50}; }
         .ct-actions-btn {
           display: inline-flex; align-items: center; justify-content: center;
           width: 28px; height: 28px; border-radius: 7px; border: none;
           cursor: pointer; transition: background 0.15s, color 0.15s;
           background: transparent; color: ${COLORS.textMuted};
         }
-        .ct-actions-btn:hover { background: #f3f4f6; color: ${COLORS.textPrimary}; }
-        .ct-actions-btn.delete:hover { background: #fee2e2; color: #ef4444; }
-        .ct-actions-btn.edit:hover   { background: #f3f4f6; color: ${COLORS.textPrimary}; }
+        .ct-actions-btn:hover { background: ${COLORS.gray100}; color: ${COLORS.textPrimary}; }
+        .ct-actions-btn.delete:hover { background: ${COLORS.errorBg}; color: ${COLORS.error}; }
+        .ct-actions-btn.edit:hover   { background: ${COLORS.gray100}; color: ${COLORS.textPrimary}; }
         .ct-page-btn {
           min-width: 30px; height: 30px; border-radius: 7px;
           border: 1px solid transparent; background: transparent;
-          color: ${COLORS.textSecondary}; font-size: 12px; font-family: inherit;
+          color: ${COLORS.textSecondary}; font-size: ${FONT.size.xs}; font-family: inherit;
           cursor: pointer; display: inline-flex; align-items: center;
           justify-content: center; transition: background 0.15s, color 0.15s; padding: 0 6px;
         }
-        .ct-page-btn:hover:not(:disabled) { background: #f3f4f6; color: ${COLORS.textPrimary}; }
-        .ct-page-btn.active { background: ${COLORS.primary}; color: #fff; border-color: ${COLORS.primary}; font-weight: 600; }
+        .ct-page-btn:hover:not(:disabled) { background: ${COLORS.gray100}; color: ${COLORS.textPrimary}; }
+        .ct-page-btn.active { background: ${COLORS.primary}; color: #fff; border-color: ${COLORS.primary}; font-weight: ${FONT.weight.semibold}; }
         .ct-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
         .ct-search {
-          background: #ffffff; border: 1px solid #d1d5db; border-radius: 8px;
-          color: ${COLORS.textPrimary}; font-size: 13px; padding: 0 12px 0 34px;
+          background: #ffffff; border: 1px solid ${COLORS.inputBorder}; border-radius: ${RADIUS.md};
+          color: ${COLORS.textPrimary}; font-size: ${FONT.size.sm}; padding: 0 12px 0 34px;
           height: 34px; outline: none; width: 220px;
           transition: border-color 0.15s; font-family: inherit;
         }
         .ct-search::placeholder { color: ${COLORS.textMuted}; }
         .ct-search:focus { border-color: ${COLORS.textSecondary}; }
         .ct-size-select {
-          background: #ffffff; border: 1px solid #d1d5db; border-radius: 7px;
-          color: ${COLORS.textSecondary}; font-size: 12px; padding: 4px 8px;
+          background: #ffffff; border: 1px solid ${COLORS.inputBorder}; border-radius: 7px;
+          color: ${COLORS.textSecondary}; font-size: ${FONT.size.xs}; padding: 4px 8px;
           outline: none; cursor: pointer; font-family: inherit;
         }
         .ct-size-select option { background: #ffffff; }
       `}</style>
 
-      <Box bg="#ffffff" border="1px solid #e5e7eb" borderRadius="12px"
+      <Box bg={COLORS.cardBg} border={`1px solid ${COLORS.cardBorder}`} borderRadius={RADIUS.lg}
         fontFamily={FONT.family}
-        boxShadow="0 1px 4px rgba(0,0,0,0.06)"
+        boxShadow={`0 1px 4px ${COLORS.cardShadow}`}
         display="flex" flexDirection="column"
         minH="480px"
       >
@@ -409,14 +409,14 @@ export function CustomTable<T extends Record<string, unknown>>({
         <HStack
           px="16px"
           py="12px"
-          borderBottom="1px solid #e5e7eb"
+          borderBottom={`1px solid ${COLORS.cardBorder}`}
           justify="space-between"
           flexWrap="wrap"
           gap="8px"
         >
           <HStack gap="8px">
             {title && (
-              <Text fontSize="13.5px" fontWeight="700" color={COLORS.textPrimary} mr="4px">
+              <Text fontSize={FONT.size.md} fontWeight={FONT.weight.bold} color={COLORS.textPrimary} mr="4px">
                 {title}
               </Text>
             )}
@@ -459,12 +459,12 @@ export function CustomTable<T extends Record<string, unknown>>({
 
         {/* ── Bulk selection banner ── */}
         {selected.size > 0 && !bulkActionSlot && (
-          <HStack px="16px" py="8px" bg="#eff6ff" borderBottom="1px solid #dbeafe" gap="8px">
-            <Text fontSize="12px" color="#1d4ed8" fontWeight="500">
+          <HStack px="16px" py="8px" bg={COLORS.infoBg} borderBottom={`1px solid ${COLORS.infoBg}`} gap="8px">
+            <Text fontSize={FONT.size.xs} color={COLORS.info} fontWeight={FONT.weight.medium}>
               {selected.size} row{selected.size > 1 ? "s" : ""} selected
             </Text>
             <button type="button"
-              style={{ fontSize: 11, color: "#64748b", cursor: "pointer", background: "transparent", border: "none" }}
+              style={{ fontSize: FONT.size.xs, color: COLORS.textMuted, cursor: "pointer", background: "transparent", border: "none" }}
               onClick={clearSelection}>Clear</button>
           </HStack>
         )}
@@ -482,9 +482,9 @@ export function CustomTable<T extends Record<string, unknown>>({
                     >
                       <Checkbox.HiddenInput />
                       <Checkbox.Control w="15px" h="15px" borderRadius="4px" border="1px solid"
-                        borderColor={allPageSelected ? "#3b82f6" : "#bfdbfe"}
-                        bg={allPageSelected ? "#dbeafe" : "transparent"}>
-                        <Checkbox.Indicator color="#3b82f6" />
+                        borderColor={allPageSelected ? COLORS.primary : COLORS.primaryLight}
+                        bg={allPageSelected ? COLORS.primaryLight : "transparent"}>
+                        <Checkbox.Indicator color={COLORS.primary} />
                       </Checkbox.Control>
                     </Checkbox.Root>
                   </Box>
@@ -543,7 +543,7 @@ export function CustomTable<T extends Record<string, unknown>>({
                   <td colSpan={colCount} style={{ padding: "48px 0", textAlign: "center" }}>
                     <VStack gap="8px" color={COLORS.textMuted}>
                       <Inbox size={32} strokeWidth={1.2} />
-                      <Text fontSize="13px">{emptyMessage}</Text>
+                      <Text fontSize={FONT.size.sm}>{emptyMessage}</Text>
                     </VStack>
                   </td>
                 </Box>
@@ -556,7 +556,7 @@ export function CustomTable<T extends Record<string, unknown>>({
                       <Box
                         as="tr"
                         className="ct-tr"
-                        bg={isSelected ? "#eff6ff" : "transparent"}
+                        bg={isSelected ? COLORS.infoBg : "transparent"}
                       >
                         {selectable && (
                           <Box as="td" className="ct-td" textAlign="center">
@@ -566,9 +566,9 @@ export function CustomTable<T extends Record<string, unknown>>({
                             >
                               <Checkbox.HiddenInput />
                               <Checkbox.Control w="15px" h="15px" borderRadius="4px" border="1px solid"
-                                borderColor={isSelected ? "#3b82f6" : "#bfdbfe"}
-                                bg={isSelected ? "#dbeafe" : "transparent"}>
-                                <Checkbox.Indicator color="#3b82f6" />
+                                borderColor={isSelected ? COLORS.primary : COLORS.primaryLight}
+                                bg={isSelected ? COLORS.primaryLight : "transparent"}>
+                                <Checkbox.Indicator color={COLORS.primary} />
                               </Checkbox.Control>
                             </Checkbox.Root>
                           </Box>
@@ -583,7 +583,7 @@ export function CustomTable<T extends Record<string, unknown>>({
                                   className="ct-actions-btn"
                                   title={isExpanded ? "Hide details" : "Show details"}
                                   onClick={() => toggleExpanded(row)}
-                                  style={isExpanded ? { background: "#f3f4f6", color: COLORS.textPrimary } : undefined}
+                                  style={isExpanded ? { background: COLORS.gray100, color: COLORS.textPrimary } : undefined}
                                 >
                                   <ChevronRightCircle size={20} />
                                 </button>
@@ -630,8 +630,8 @@ export function CustomTable<T extends Record<string, unknown>>({
 
                       {expandedRowRender && isExpanded && (
                         <Box as="tr" className="ct-expanded-row">
-                          <td colSpan={colCount} style={{ padding: 0, borderTop: "1px solid #f3f4f6" }}>
-                            <Box bg="#f9fafb" px="16px" py="14px">
+                          <td colSpan={colCount} style={{ padding: 0, borderTop: `1px solid ${COLORS.gray100}` }}>
+                            <Box bg={COLORS.gray50} px="16px" py="14px">
                               {expandedRowRender(row)}
                             </Box>
                           </td>
@@ -649,14 +649,14 @@ export function CustomTable<T extends Record<string, unknown>>({
         <HStack
           px="16px"
           py="10px"
-          borderTop="1px solid #e5e7eb"
+          borderTop={`1px solid ${COLORS.cardBorder}`}
           justify="space-between"
           flexWrap="wrap"
           gap="8px"
         >
           {/* Row count + page size */}
           <HStack gap="10px">
-            <Text fontSize="12px" color={COLORS.textSecondary}>
+            <Text fontSize={FONT.size.xs} color={COLORS.textSecondary}>
               {sorted.length === 0
                 ? "0 records"
                 : `${(safePage - 1) * pageSize + 1}–${Math.min(
@@ -703,7 +703,7 @@ export function CustomTable<T extends Record<string, unknown>>({
               <>
                 <button className="ct-page-btn" onClick={() => setPage(1)}>1</button>
                 {pageWindow[0] > 2 && (
-                  <span style={{ fontSize: 12, color: COLORS.textMuted, padding: "0 2px" }}>…</span>
+                  <span style={{ fontSize: FONT.size.xs, color: COLORS.textMuted, padding: "0 2px" }}>…</span>
                 )}
               </>
             )}
@@ -721,7 +721,7 @@ export function CustomTable<T extends Record<string, unknown>>({
             {pageWindow[pageWindow.length - 1] < totalPages && (
               <>
                 {pageWindow[pageWindow.length - 1] < totalPages - 1 && (
-                  <span style={{ fontSize: 12, color: COLORS.textMuted, padding: "0 2px" }}>…</span>
+                  <span style={{ fontSize: FONT.size.xs, color: COLORS.textMuted, padding: "0 2px" }}>…</span>
                 )}
                 <button className="ct-page-btn" onClick={() => setPage(totalPages)}>
                   {totalPages}

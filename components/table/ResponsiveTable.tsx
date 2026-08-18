@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { COLORS, FONT } from '@/utils/theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -239,30 +240,30 @@ export const ExcelTable: React.FC<ExcelTableProps> = ({
     // ─── Inline styles ────────────────────────────────────────────────────────────
 
     const S = {
-        root: { fontFamily: 'inherit', fontSize: 13 } as React.CSSProperties,
+        root: { fontFamily: 'inherit', fontSize: FONT.size.sm } as React.CSSProperties,
         toolbar: {
             display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
-            background: '#f8f9fa', border: '1px solid #dee2e6',
+            background: COLORS.gray50, border: `1px solid ${COLORS.gray200}`,
             borderBottom: 'none', borderRadius: '6px 6px 0 0',
         } as React.CSSProperties,
         wrap: {
-            border: '1px solid #dee2e6', borderTop: 'none',
+            border: `1px solid ${COLORS.gray200}`, borderTop: 'none',
             borderRadius: '0 0 6px 6px', overflow: 'hidden',
         } as React.CSSProperties,
         th: {
             position: 'sticky' as const, top: 0, zIndex: 5,
-            background: '#f1f3f5', fontSize: 11, fontWeight: 600,
-            color: '#495057', padding: '6px 6px',
-            borderBottom: '2px solid #dee2e6', borderRight: '1px solid #e9ecef',
+            background: COLORS.gray100, fontSize: FONT.size.xs, fontWeight: FONT.weight.semibold,
+            color: COLORS.textSecondary, padding: '6px 6px',
+            borderBottom: `2px solid ${COLORS.gray200}`, borderRight: `1px solid ${COLORS.gray100}`,
             textAlign: 'left' as const, whiteSpace: 'nowrap' as const, userSelect: 'none' as const,
         },
         td: {
-            borderBottom: '1px solid #e9ecef', borderRight: '1px solid #e9ecef',
+            borderBottom: `1px solid ${COLORS.gray100}`, borderRight: `1px solid ${COLORS.gray100}`,
             padding: 0, position: 'relative' as const, verticalAlign: 'middle' as const,
         },
         statusBar: {
-            padding: '4px 10px', fontSize: 11, color: '#868e96',
-            background: '#f8f9fa', borderTop: '1px solid #dee2e6',
+            padding: '4px 10px', fontSize: FONT.size.xs, color: COLORS.textMuted,
+            background: COLORS.gray50, borderTop: `1px solid ${COLORS.gray200}`,
             display: 'flex', gap: 12, alignItems: 'center',
         } as React.CSSProperties,
         tfootRow: {
@@ -270,18 +271,18 @@ export const ExcelTable: React.FC<ExcelTableProps> = ({
             borderTop: `2px solid ${accentColor}`,
         } as React.CSSProperties,
         tfootTd: {
-            padding: '5px 6px', fontSize: 12, fontWeight: 600,
+            padding: '5px 6px', fontSize: FONT.size.xs, fontWeight: FONT.weight.semibold,
         } as React.CSSProperties,
     };
 
     function btnStyle(): React.CSSProperties {
         return {
             display: 'inline-flex', alignItems: 'center', gap: 5,
-            padding: '4px 10px', fontSize: 12, borderRadius: 4, cursor: 'pointer',
+            padding: '4px 10px', fontSize: FONT.size.xs, borderRadius: 4, cursor: 'pointer',
             fontFamily: 'inherit',
-            border: '1px solid #ced4da',
+            border: `1px solid ${COLORS.gray300}`,
             background: 'white',
-            color: '#495057',
+            color: COLORS.textSecondary,
         };
     }
 
@@ -310,9 +311,9 @@ export const ExcelTable: React.FC<ExcelTableProps> = ({
     }: Parameters<NonNullable<ExcelTableProps['renderRow']>>[0]) => {
         return (
             <tr key={row.__id} style={{ background: bg }}>
-                <td style={{ ...S.td, width: 36, textAlign: 'center', fontSize: 11, color: '#adb5bd' }}>
+                <td style={{ ...S.td, width: 36, textAlign: 'center', fontSize: FONT.size.xs, color: COLORS.gray300 }}>
                     {isLastRow && isEdit
-                        ? <span style={{ color: accentColor, fontWeight: 700 }}>+</span>
+                        ? <span style={{ color: accentColor, fontWeight: FONT.weight.bold }}>+</span>
                         : ri + 1}
                 </td>
 
@@ -335,9 +336,9 @@ export const ExcelTable: React.FC<ExcelTableProps> = ({
                                     display: 'flex',
                                     alignItems: 'center',
                                     padding: '0 6px',
-                                    fontSize: 12,
+                                    fontSize: FONT.size.xs,
                                     textAlign: col.align || 'left',
-                                    color: col.computed ? '#868e96' : 'inherit',
+                                    color: col.computed ? COLORS.textMuted : 'inherit',
                                 }}>
                                     {col.type === 'number' && val !== '' ? formatNum(val, col.decimalScale) : val}
                                 </div>
@@ -350,8 +351,8 @@ export const ExcelTable: React.FC<ExcelTableProps> = ({
                         height: 32,
                         border: 'none',
                         outline: 'none',
-                        background: hasErr ? '#fff5f5' : 'transparent',
-                        fontSize: 12,
+                        background: hasErr ? COLORS.errorBg : 'transparent',
+                        fontSize: FONT.size.xs,
                         padding: '0 6px',
                         fontFamily: 'inherit',
                         color: 'inherit',
@@ -387,9 +388,9 @@ export const ExcelTable: React.FC<ExcelTableProps> = ({
                                             position: 'absolute',
                                             bottom: '100%',
                                             left: 0,
-                                            background: '#c0392b',
+                                            background: COLORS.error,
                                             color: 'white',
-                                            fontSize: 10,
+                                            fontSize: FONT.size.xs,
                                             padding: '2px 6px',
                                             borderRadius: 3,
                                             zIndex: 20,
@@ -415,9 +416,9 @@ export const ExcelTable: React.FC<ExcelTableProps> = ({
                                             position: 'absolute',
                                             bottom: '100%',
                                             left: 0,
-                                            background: '#c0392b',
+                                            background: COLORS.error,
                                             color: 'white',
-                                            fontSize: 10,
+                                            fontSize: FONT.size.xs,
                                             padding: '2px 6px',
                                             borderRadius: 3,
                                             zIndex: 20,
@@ -440,12 +441,12 @@ export const ExcelTable: React.FC<ExcelTableProps> = ({
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 padding: '2px 7px',
-                                fontSize: 11,
+                                fontSize: FONT.size.xs,
                                 borderRadius: 4,
                                 cursor: 'pointer',
                                 fontFamily: 'inherit',
-                                border: '1px solid #c0392b',
-                                background: '#c0392b',
+                                border: `1px solid ${COLORS.error}`,
+                                background: COLORS.error,
                                 color: 'white',
                             }}
                             onClick={onDeleteRow}
@@ -467,7 +468,7 @@ export const ExcelTable: React.FC<ExcelTableProps> = ({
         <div style={S.root}>
             {/* Toolbar - No Save/Edit buttons */}
             <div style={S.toolbar}>
-                <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>{title}</span>
+                <span style={{ flex: 1, fontWeight: FONT.weight.semibold, fontSize: FONT.size.sm }}>{title}</span>
                 <button style={btnStyle()} onClick={handleAddRow}>+ Add Row</button>
             </div>
 
@@ -490,7 +491,7 @@ export const ExcelTable: React.FC<ExcelTableProps> = ({
                                         }}
                                     >
                                         {col.label}
-                                        {col.required && <span style={{ color: '#e03131', marginLeft: 2 }}>*</span>}
+                                        {col.required && <span style={{ color: COLORS.error, marginLeft: 2 }}>*</span>}
                                     </th>
                                 ))}
                                 {editMode && (
@@ -524,7 +525,7 @@ export const ExcelTable: React.FC<ExcelTableProps> = ({
                                 <tr>
                                     <td
                                         colSpan={columns.length + (editMode ? 2 : 1)}
-                                        style={{ padding: 20, textAlign: 'center', fontSize: 12, color: '#adb5bd' }}
+                                        style={{ padding: 20, textAlign: 'center', fontSize: FONT.size.xs, color: COLORS.gray300 }}
                                     >
                                         No rows yet — click "+ Add Row" or press Enter to begin
                                     </td>

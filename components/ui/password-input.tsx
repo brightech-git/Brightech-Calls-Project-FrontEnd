@@ -10,6 +10,7 @@ import {
     Progress,
 } from "@chakra-ui/react";
 import { FiMenu, FiEye, FiEyeOff } from "react-icons/fi";
+import { COLORS } from "@/utils/theme";
 
 export interface PasswordInputProps
     extends React.ComponentProps<typeof Input> { }
@@ -47,7 +48,7 @@ export const PasswordInput = React.forwardRef<
                 top="50%"
                 transform="translateY(-50%)"
                 onClick={() => setShow(!show)}
-                color={"#111"}
+                color={COLORS.textPrimary}
 
             >
                 {show ? <FiEye /> : <FiEyeOff />}

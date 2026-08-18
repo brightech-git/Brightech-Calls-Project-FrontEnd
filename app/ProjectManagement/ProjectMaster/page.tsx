@@ -60,7 +60,7 @@ const COLUMNS: TableColumn<ProjectRecord_Table>[] = [
     sortable: true,
     render: (row) => (
       <span style={{
-        padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+        padding: "2px 10px", borderRadius: 20, fontSize: FONT.size.xs, fontWeight: 600,
         background: row.active === "Y" ? COLORS.successBg : COLORS.errorBg,
         color:      row.active === "Y" ? COLORS.success   : COLORS.error,
       }}>

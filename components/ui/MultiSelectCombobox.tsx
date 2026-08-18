@@ -209,6 +209,7 @@ export const MultiSelectCombobox = forwardRef<
                                             display="flex"
                                             alignItems="center"
                                             gap="2"
+                                            justifyContent={"flex-start"}
                                         >
                                             <Checkbox.Root
                                                 checked={value.includes(

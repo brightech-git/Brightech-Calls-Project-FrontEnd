@@ -3,23 +3,27 @@
 // Change values here to update the entire app
 // ============================================
 
-// ===== TEXT (slate, tinted toward the brand blue for a more
-// professional/readable feel than flat neutral gray) =====
-const TEXT_PRIMARY = "#1b2499";
-const TEXT_SECONDARY = "#111";
-const TEXT_MUTED = "#333";
-const TEXT_DISABLED = "#444";
-const TEXT_INVERSE = "#DEDEDE";
+// ===== TEXT (black-based scale for clear, readable body copy) =====
+const TEXT_PRIMARY = "#0a0a0a";
+const TEXT_SECONDARY = "#1a1a1a";
+const TEXT_MUTED = "#4b5563";
+const TEXT_DISABLED = "#9ca3af";
+const TEXT_INVERSE = "#E5E7EB";
 const TEXT_WHITE = "#FFF"
+
+// ===== BRAND NAVY =====
+const NAVY = "#0b2d5c";
+const NAVY_HOVER = "#082347";
+const NAVY_LIGHT = "#eaf0f9";
 
 export const COLORS = {
   // ===== BRAND =====
-  primary:            "#FFFFFF",
-  primaryHover:       "#DDDDDD",
-  primaryLight:       "#f3f4f6",
-  secondary:          "#216fec",
-  secondaryHover:     "#073eb6",
-  secondaryLight:     "#eff6ff",
+  primary:            NAVY,
+  primaryHover:       NAVY_HOVER,
+  primaryLight:       NAVY_LIGHT,
+  secondary:          NAVY,
+  secondaryHover:     NAVY_HOVER,
+  secondaryLight:     NAVY_LIGHT,
 
   // ===== SHELL (Sidebar + Topbar share these) =====
   shellBg:            "#03163d",
@@ -95,29 +99,41 @@ export const COLORS = {
   // ===== INPUT =====
   inputBg:           "#ffffff",
   inputBorder:       "#d1d5db",
-  inputBorderFocus:  TEXT_SECONDARY,
+  inputBorderFocus:  NAVY,
   inputPlaceholder:  TEXT_MUTED,
   inputText:         TEXT_PRIMARY,
 
   // ===== BUTTON =====
-  btnPrimaryBg:       "#111827",
+  btnPrimaryBg:       NAVY,
   btnPrimaryText:     "#ffffff",
-  btnPrimaryHover:    "#1f2937",
+  btnPrimaryHover:    NAVY_HOVER,
   btnSecondaryBg:     "#ffffff",
-  btnSecondaryText:   TEXT_SECONDARY,
+  btnSecondaryText:   NAVY,
   btnSecondaryBorder: "#d1d5db",
-  btnSecondaryHover:  "#f3f4f6",
+  btnSecondaryHover:  NAVY_LIGHT,
+
+  // ===== LINK =====
+  link:       NAVY,
+  linkHover:  NAVY_HOVER,
 };
 
+// Medium, readable sizing — one notch up across the board from the old
+// 10–18px scale, which read as cramped/too-small throughout the app.
 export const FONT = {
   family: "'DM Sans', 'Inter', sans-serif",
   size: {
-    xs:  "10px",
-    sm:  "11px",
-    md:  "13px",
-    lg:  "14px",
-    xl:  "16px",
-    xxl: "18px",
+    xs:  "12px",
+    sm:  "13px",
+    md:  "15px",
+    lg:  "16px",
+    xl:  "18px",
+    xxl: "22px",
+  },
+  weight: {
+    regular:  400,
+    medium:   500,
+    semibold: 600,
+    bold:     700,
   },
 };
 
