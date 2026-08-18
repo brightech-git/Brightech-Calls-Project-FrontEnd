@@ -12,7 +12,7 @@ const TEXT_INVERSE = "#E5E7EB";
 const TEXT_WHITE = "#FFF"
 
 // ===== BRAND NAVY =====
-const NAVY = "#0b2d5c";
+const NAVY = "#0f3569";
 const NAVY_HOVER = "#082347";
 const NAVY_LIGHT = "#eaf0f9";
 

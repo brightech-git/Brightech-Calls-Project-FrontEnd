@@ -25,6 +25,7 @@ import {
   CallStatusListItem_Table,
   CallStatusRecord,
 } from "@/types/CallStatus/CallStatus";
+import { NativeSelectWrapper } from "@/components/ui/NativeSelectWrapper";
 
 // ─────────────────────────────────────────────
 // Schema — Add Status form
@@ -227,30 +228,30 @@ function CallStatusPageInner() {
           .cs-head { padding: 10px 14px; border-bottom: 1px solid ${COLORS.cardBorder};
             display: flex; align-items: center; justify-content: space-between;
             background: ${COLORS.gray50}; border-radius: ${RADIUS.xl} ${RADIUS.xl} 0 0; }
-          .cs-title { font-size: 13px; font-weight: 700; color: ${COLORS.textPrimary}; }
-          .cs-sub   { font-size: 11px; color: ${COLORS.textMuted}; margin-top: 2px; }
+          .cs-title { font-size: 18px; font-weight: 700; color: ${COLORS.textPrimary}; }
+          .cs-sub   { font-size: 14px; color: ${COLORS.textMuted}; margin-top: 2px; }
           .cs-body  { padding: 16px; }
           .cs-head-actions { display: flex; align-items: center; gap: 8px; }
           .cs-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 12px; }
-          .cs-row { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px solid ${COLORS.cardBorder}; font-size: 13px; }
+          .cs-row { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px solid ${COLORS.cardBorder}; font-size: 16px; }
           .cs-row:last-child { border-bottom: none; }
-          .cs-label { width: 120px; font-weight: 600; color: ${COLORS.textSecondary}; flex-shrink: 0; font-size: 12px; }
+          .cs-label { width: 120px; font-weight: 600; color: ${COLORS.textSecondary}; flex-shrink: 0; font-size: 14px; }
           .cs-val   { color: ${COLORS.textPrimary}; }
-          .cs-section-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+          .cs-section-label { font-size: 14px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
             color: ${COLORS.textMuted}; padding-bottom: 4px; border-bottom: 1px solid ${COLORS.cardBorder}; margin: 16px 0 8px; }
           .cs-media-grid { display: flex; flex-wrap: wrap; gap: 8px; }
           .cs-back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; height: 32px;
             border-radius: ${RADIUS.md}; border: 1px solid ${COLORS.cardBorder}; background: ${COLORS.cardBg};
-            color: ${COLORS.textSecondary}; font-size: 12px; cursor: pointer; font-family: ${FONT.family}; }
+            color: ${COLORS.textSecondary}; font-size: 14px; cursor: pointer; font-family: ${FONT.family}; }
           .cs-back-btn:hover { background: ${COLORS.gray50}; }
           .cs-btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; height: 32px;
             border-radius: ${RADIUS.md}; border: none; background: ${COLORS.btnPrimaryBg}; color: ${COLORS.btnPrimaryText};
-            font-size: 12px; font-weight: 600; cursor: pointer; }
+            font-size: 14px; font-weight: 600; cursor: pointer; }
           .cs-btn-primary:hover:not(:disabled) { background: ${COLORS.btnPrimaryHover}; }
           .cs-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
           .cs-btn-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; height: 34px;
             border-radius: ${RADIUS.md}; border: 1px solid ${COLORS.cardBorder}; background: ${COLORS.cardBg};
-            color: ${COLORS.textSecondary}; font-size: 12px; cursor: pointer; }
+            color: ${COLORS.textSecondary}; font-size: 14px; cursor: pointer; }
           .cs-history-card { border: 1px solid ${COLORS.cardBorder}; border-radius: ${RADIUS.md}; padding: 10px; background: ${COLORS.cardBg}; }
           .cs-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex;
             align-items: flex-start; justify-content: center; z-index: 1000; padding: 20px 16px; overflow-y: auto; }
@@ -262,8 +263,8 @@ function CallStatusPageInner() {
           .cs-modal-footer { padding: 8px 14px; border-top: 1px solid ${COLORS.cardBorder}; display: flex;
             justify-content: flex-end; gap: 8px; background: ${COLORS.gray50}; border-radius: 0 0 ${RADIUS.xl} ${RADIUS.xl}; }
           .cs-field-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
-          .cs-field-label { font-size: 12px; font-weight: 600; color: ${COLORS.textSecondary}; }
-          .cs-field-error { font-size: 11px; color: ${COLORS.error}; }
+          .cs-field-label { font-size: 14px; font-weight: 600; color: ${COLORS.textSecondary}; }
+          .cs-field-error { font-size: 14px; color: ${COLORS.error}; }
           .cs-close-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid ${COLORS.cardBorder};
             background: ${COLORS.cardBg}; cursor: pointer; }
         `}</style>
@@ -404,28 +405,21 @@ function CallStatusPageInner() {
                       control={control}
                       render={({ field }) => (
                         <>
-                          <input
-                            {...field}
-                            list="cs-status-suggestions"
-                            placeholder="Type or pick a status"
-                            style={{
-                              height: 32,
-                              padding: "0 10px",
-                              borderRadius: RADIUS.md,
-                              border: `1px solid ${COLORS.cardBorder}`,
-                              fontSize: FONT.size.sm,
-                              fontFamily: FONT.family,
-                              textTransform: "uppercase",
-                              color: COLORS.textPrimary,
-                              background: COLORS.cardBg,
-                            }}
+                          
+
+                          <NativeSelectWrapper 
+
+                            value = {field.value}
                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                            items={STATUS_ITEMS}
+                            css={{
+                              fontSize:"14px",
+                              background : "#ddd",
+                              color : "#222"
+
+                            }}
+                            minW="150px"
                           />
-                          <datalist id="cs-status-suggestions">
-                            {STATUS_ITEMS.map((s) => (
-                              <option key={s.value} value={s.value} />
-                            ))}
-                          </datalist>
                         </>
                       )}
                     />

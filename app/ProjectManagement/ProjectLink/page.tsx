@@ -415,7 +415,7 @@ export default function ProjectLinkPage() {
         }
 
         .pl-modal-sub {
-          font-size: 11px;
+          font-size: 14px;
           color: ${COLORS.textMuted};
           margin-top: 2px;
         }
@@ -437,13 +437,13 @@ export default function ProjectLinkPage() {
         }
 
         .pl-field-label {
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 600;
           color: ${COLORS.textSecondary};
         }
 
         .pl-field-error {
-          font-size: 11px;
+          font-size: 14px;
           color: ${COLORS.error};
         }
 
@@ -477,7 +477,7 @@ export default function ProjectLinkPage() {
 
           color: ${COLORS.btnPrimaryText};
 
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 600;
 
           cursor: pointer;
@@ -508,7 +508,7 @@ export default function ProjectLinkPage() {
 
           color: ${COLORS.btnSecondaryText};
 
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 500;
 
           cursor: pointer;
@@ -534,14 +534,97 @@ export default function ProjectLinkPage() {
         }
 
         .pl-filter-label {
-          font-size: 11px;
+          font-size: 14px;
           font-weight: 600;
           color: ${COLORS.textSecondary};
         }
       `}</style>
 
       {/* Table */}
+      <div style={{display:"flex" ,flexDirection:"row" , justifyContent:"space-between", alignItems:"center"}}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div>
+            Manage Project Links
+          </div>
+          <div style={{ color: COLORS.textSecondary, marginBottom: 8 }}>
+            Total Links: <span style={{ color: COLORS.textPrimary, fontWeight: 600 }}>{projectLinks.length}</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 8, flexWrap: "wrap" }}>
+          <div className="pl-filter-field">
+            <label className="pl-filter-label">Client</label>
+            <SelectCombobox
+              value={filterInputs.clientId || undefined}
+              onChange={(val) => updateFilter("clientId", val)}
+              items={clientItems}
+              placeholder="All clients"
+              maxWidth="150px"
+            />
+          </div>
 
+          <div className="pl-filter-field">
+            <label className="pl-filter-label">Project Type</label>
+            <SelectCombobox
+              value={filterInputs.projectTypeId || undefined}
+              onChange={(val) => updateFilter("projectTypeId", val)}
+              items={projectTypeItems}
+              placeholder="All types"
+              maxWidth="150px"
+            />
+          </div>
+
+          <div className="pl-filter-field">
+            <label className="pl-filter-label">Device Type</label>
+            <NativeSelectWrapper
+              value={filterInputs.deviceType}
+              onChange={(e) => updateFilter("deviceType", e.target.value)}
+              items={[{ label: "All Devices", value: "" }, ...TypeCollections]}
+              maxWidth="120px"
+            />
+          </div>
+
+          <div className="pl-filter-field">
+            <label className="pl-filter-label">Status</label>
+            <NativeSelectWrapper
+              value={filterInputs.active}
+              onChange={(e) => updateFilter("active", e.target.value)}
+              items={ActiveFilterOptions}
+              maxWidth="110px"
+            />
+          </div>
+
+          {(filterInputs.clientId ||
+            filterInputs.projectTypeId ||
+            filterInputs.deviceType ||
+            filterInputs.active !== FILTER_DEFAULTS.active) && (
+              <button
+                type="button"
+                className="pl-btn-secondary"
+                onClick={resetFilters}
+              >
+                Clear
+              </button>
+            )}
+
+          <DataExport
+            data={projectLinks as ProjectLinkRecord_Table[]}
+            columns={EXPORT_COLUMNS}
+            filename="project-links"
+            title="Project Links"
+            showButtons={["excel", "pdf", "print"]}
+            buttonSize="sm"
+          />
+          <button
+            className="pl-btn-primary"
+            onClick={openCreate}
+          >
+            <Plus size={13} />
+            Add Project Link
+          </button>
+        </div>
+      </div>
+     
+     
       <CustomTable
         columns={COLUMNS}
         data={projectLinks as ProjectLinkRecord_Table[]}
@@ -554,80 +637,7 @@ export default function ProjectLinkPage() {
         emptyMessage="No project links found."
         showSearch={false}
 
-        toolbarRight={
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, flexWrap: "wrap" }}>
-            <div className="pl-filter-field">
-              <label className="pl-filter-label">Client</label>
-              <SelectCombobox
-                value={filterInputs.clientId || undefined}
-                onChange={(val) => updateFilter("clientId", val)}
-                items={clientItems}
-                placeholder="All clients"
-                maxWidth="150px"
-              />
-            </div>
-
-            <div className="pl-filter-field">
-              <label className="pl-filter-label">Project Type</label>
-              <SelectCombobox
-                value={filterInputs.projectTypeId || undefined}
-                onChange={(val) => updateFilter("projectTypeId", val)}
-                items={projectTypeItems}
-                placeholder="All types"
-                maxWidth="150px"
-              />
-            </div>
-
-            <div className="pl-filter-field">
-              <label className="pl-filter-label">Device Type</label>
-              <NativeSelectWrapper
-                value={filterInputs.deviceType}
-                onChange={(e) => updateFilter("deviceType", e.target.value)}
-                items={[{ label: "All Devices", value: "" }, ...TypeCollections]}
-                maxWidth="120px"
-              />
-            </div>
-
-            <div className="pl-filter-field">
-              <label className="pl-filter-label">Status</label>
-              <NativeSelectWrapper
-                value={filterInputs.active}
-                onChange={(e) => updateFilter("active", e.target.value)}
-                items={ActiveFilterOptions}
-                maxWidth="110px"
-              />
-            </div>
-
-            {(filterInputs.clientId ||
-              filterInputs.projectTypeId ||
-              filterInputs.deviceType ||
-              filterInputs.active !== FILTER_DEFAULTS.active) && (
-              <button
-                type="button"
-                className="pl-btn-secondary"
-                onClick={resetFilters}
-              >
-                Clear
-              </button>
-            )}
-
-            <DataExport
-              data={projectLinks as ProjectLinkRecord_Table[]}
-              columns={EXPORT_COLUMNS}
-              filename="project-links"
-              title="Project Links"
-              showButtons={["excel", "pdf", "print"]}
-              buttonSize="sm"
-            />
-            <button
-              className="pl-btn-primary"
-              onClick={openCreate}
-            >
-              <Plus size={13} />
-              Add Project Link
-            </button>
-          </div>
-        }
+        
       />
 
       {/* Modal */}

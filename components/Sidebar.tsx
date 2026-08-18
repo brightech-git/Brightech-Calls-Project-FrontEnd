@@ -91,8 +91,11 @@ function getLoggedUser() {
   if (typeof window === "undefined") return { name: "User", role: "" };
   try {
     const stored = localStorage.getItem("user");
+    console.log(stored,'stored')
     if (!stored) return { name: "User", role: "" };
-    const data = JSON.parse(stored);
+    const {data} = JSON.parse(stored);
+    console.log(data,'datadata')
+
     return {
       name: data.staffName || data.username || "User",
       role: data.role || "",
@@ -105,6 +108,8 @@ function getLoggedUser() {
 function SidebarBody({ onNavigate, collapsed, onToggleCollapse }: { onNavigate?: () => void; collapsed?: boolean; onToggleCollapse?: () => void }) {
   const pathname = usePathname();
   const user = getLoggedUser();
+
+  console.log(user ,'userDetails');
   const { accessibleMenu } = useAccessibleMenu();
   const menuItems = toNavItems(accessibleMenu);
 
