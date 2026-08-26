@@ -86,6 +86,8 @@ export interface CallsBookingListItem {
   assignedUsers?: string | null;
   status?: string | null;
   active?: string | null;
+  remark?:string;
+  statusRemark?:string;
 }
 
 export type CallsBookingListItem_Table =

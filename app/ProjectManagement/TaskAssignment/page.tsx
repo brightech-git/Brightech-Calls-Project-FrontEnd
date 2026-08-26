@@ -28,6 +28,8 @@ import {
   useDeleteCallsBooking,
   useGetCallsBookingById,
 } from "@/hooks/TaskAssignment/useTaskAssignment";
+
+import { useCreateCallStatus } from "@/hooks/CallStatus/useCallStatus";
 import { getCallsBookingById } from "@/services/TaskAssignmentService";
 import { useCompanyList } from "@/hooks/CompanyMaster/useCompanyMaster";
 import { useClientList }  from "@/hooks/ClientMaster/useClientMaster";
@@ -41,10 +43,30 @@ import {
   CallsBookingListItem_Table,
 } from "@/types/TaskAssignment/TaskAssignment";
 import { NativeSelectWrapper } from "@/components/ui/NativeSelectWrapper";
-
+import { ResolveImage } from "@/utils/format/resolveImage";
+import { Text } from "@chakra-ui/react";
 // ─────────────────────────────────────────────
 // Schema
 // ─────────────────────────────────────────────
+
+
+const statusSchema = z.object({
+  STATUS: z.string().min(1, "Status is required"),
+  remark: z.string().optional(),
+});
+
+type StatusForm = z.infer<typeof statusSchema>;
+
+const DEFAULTS_STATUS: StatusForm = {
+  STATUS: "OPEN",
+  remark: "",
+};
+
+const STATUS_ITEMS = [
+  { label: "Open", value: "OPEN" },
+  { label: "Process", value: "PROCESS" },
+  { label: "Closed", value: "CLOSED" },
+];
 
 const callsBookingSchema = z.object({
   clientId:      z.number().min(1, "Client is required"),
@@ -67,9 +89,75 @@ type CallsBookingForm = z.infer<typeof callsBookingSchema>;
 // ─────────────────────────────────────────────
 
 const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
-  { key: "tktId",       header: "Ticket ID",   sortable: true, width: "90px" },
+  { key: "tktId",       header: "ID",   sortable: true, width: "10px" },
   { key: "clientName",  header: "Client",      sortable: true, render: (row) => (row.clientName as string) || "-" },
   { key: "clientMobile",  header: "Mobile",      render: (row) => (row.clientMobile as string) || "-" },
+  {
+    key: "remark",
+    header: "Remark",
+    width: "100px",
+    render: (row) => (
+      <div
+        style={{
+          width: "150px",
+          whiteSpace: "normal",
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+          lineHeight: "18px",
+        }}
+      >
+        {row.remark}
+      </div>
+    ),
+  },
+  { key: "bookingMedia", header: "Calls Media", render: (row) => {
+    const image = typeof row?.bookingMedia === "string"
+      ? JSON.parse(row.bookingMedia)
+      :[];
+    console.log(image,'mediaimage');
+    return image?.length > 0 ? image.map((i:any)=>{
+
+      if (i.MEDIA_TYPE === "IMAGE"){
+        return <img src={ResolveImage(i.MEDIA_URL)}  alt="image" />
+      }
+      else{
+        return <video src={ResolveImage(i.MEDIA_URL)} autoPlay/>
+      }
+    })  : ""
+   }},
+
+  {
+    key: "statusRemark", header: "Status Remark", render: (row) => (
+      <div
+        style={{
+          width: "150px",
+          whiteSpace: "normal",
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+          lineHeight: "18px",
+        }}
+      >
+        {row.statusRemark}
+      </div>
+    ),
+},
+  {
+    key: "statusMedia", header: "Status Media", render: (row) => {
+      const image = typeof row?.bookingMedia === "string"
+        ? JSON.parse(row.bookingMedia)
+        : [];
+      console.log(image, 'mediaimage');
+      return image?.length > 0 ? image.map((i: any) => {
+
+        if (i.MEDIA_TYPE === "IMAGE") {
+          return <img src={ResolveImage(i.MEDIA_URL)} alt="image" />
+        }
+        else {
+          return <video src={ResolveImage(i.MEDIA_URL)} autoPlay />
+        }
+      }) : ""
+    }
+},
   { key: "projectName", header: "Project",     sortable: true },
   { key: "moduleName",  header: "Module",      sortable: true },
   { key: "assignedUsers", header: "Staff",     sortable: true },
@@ -128,6 +216,8 @@ export default function CallsBookingPage() {
   const [open, setOpen] =
     useState(false);
 
+  const [addOpen, setAddOpen] = useState(false);
+
   const [editRow, setEditRow] =
     useState<CallsBookingRecord | null>(
       null
@@ -141,11 +231,15 @@ export default function CallsBookingPage() {
   const [media, setMedia] =
     useState<MediaItem[]>([]);
 
+  const [statusMedia ,setStatusMedia] = useState<MediaItem[]>([])
+
   const [editLoading, setEditLoading] =
     useState(false);
 
   const [viewId, setViewId] =
     useState<string | null>(null);
+
+  const [tokenId ,setTokenId] =useState<number|null>();
 
   const [lightbox, setLightbox] =
     useState<{ items: LightboxItem[]; index: number } | null>(null);
@@ -188,6 +282,8 @@ export default function CallsBookingPage() {
   const createMutation =
     useCreateCallsBooking();
 
+     const createStatusMutation = useCreateCallStatus();
+
   const updateMutation =
     useUpdateCallsBooking();
 
@@ -208,6 +304,16 @@ export default function CallsBookingPage() {
     resolver: zodResolver(callsBookingSchema),
     defaultValues: DEFAULTS,
   });
+
+    const {
+      control:statusControl,
+      handleSubmit:statusSubmit,
+      reset:statusReset,
+      formState: { errors:statusError },
+    } = useForm<StatusForm>({
+      resolver: zodResolver(statusSchema),
+      defaultValues: DEFAULTS,
+    });
 
   // Enter-to-next-field navigation for the Add/Edit Booking form.
   const { register: registerField, focusNext } = useEnterNavigation(
@@ -424,6 +530,37 @@ export default function CallsBookingPage() {
     }
   };
 
+
+    const onStatusSubmit = async (values: StatusForm) => {
+      
+      if(!tokenId) return "";
+      console.log(tokenId , values ,'payloadstatus');
+  
+      try {
+        await createStatusMutation.mutateAsync({
+          payload: {
+            tktId: tokenId,
+            STATUS: values.STATUS,
+            remark: values.remark,
+          },
+          media: media.map((m) => m.file).filter(Boolean) as File[],
+        });
+  
+        toast.success("Status Added", "Call status entry created successfully.");
+        setAddOpen(false);
+        statusReset(DEFAULTS_STATUS);
+        setMedia((prev) => {
+          revokeMediaItems(prev);
+          return [];
+        });
+      } catch (err: any) {
+        toast.error(
+          "Save Failed",
+          err?.response?.data?.message || err?.message || "Failed to save status."
+        );
+      }
+    };
+
   // ─────────────────────────
 
   const confirmDelete = () => {
@@ -483,6 +620,12 @@ export default function CallsBookingPage() {
             display: flex; gap: 8px; padding: 8px 0;
             border-bottom: 1px solid ${COLORS.cardBorder}; font-size: 13px;
           }
+               .cs-modal-box { background: ${COLORS.cardBg}; border: 1px solid ${COLORS.cardBorder}; border-radius: ${RADIUS.xl};
+                        width: 100%; max-width: 640px; display: flex; flex-direction: column; font-family: ${FONT.family};
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.16); }
+          .callstatus-head { display:flex; flexDirection:row; padding: 10px 14px; border-bottom: 1px solid ${COLORS.cardBorder};
+            display: flex; align-items: center; justify-content: space-between;
+            background: ${COLORS.gray50}; border-radius: ${RADIUS.xl} ${RADIUS.xl} 0 0; }
           .cb-detail-row:last-child { border-bottom: none; }
           .cb-detail-label { width: 140px; font-weight: 600; color: ${COLORS.textSecondary}; flex-shrink: 0; font-size: 12px; }
           .cb-detail-val   { color: ${COLORS.textPrimary}; }
@@ -503,6 +646,8 @@ export default function CallsBookingPage() {
             color: ${COLORS.textSecondary}; font-size: 12px; cursor: pointer;
             font-family: ${FONT.family};
           }
+              .callstatus-modal-footer { padding: 8px 14px; border-top: 1px solid ${COLORS.cardBorder}; display: flex;
+                        justify-content: flex-end; gap: 8px; background: ${COLORS.gray50}; border-radius: 0 0 ${RADIUS.xl} ${RADIUS.xl}; }
           .cb-back-btn:hover { background: ${COLORS.gray50}; }
         `}</style>
 
@@ -556,14 +701,14 @@ export default function CallsBookingPage() {
                         <div key={idx} className="cb-media-tile">
                           {type.startsWith("IMAGE") ? (
                             <img
-                              src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
+                              src={ResolveImage(m.mediaUrl)}
                               alt={`media-${idx}`}
                               onClick={() => setLightbox({ items: v.media as LightboxItem[], index: idx })}
                               style={{ width: "100%", height: 90, objectFit: "cover", cursor: "pointer" }}
                             />
                           ) : type.startsWith("VIDEO") ? (
                             <video
-                              src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
+                              src={ResolveImage(m.mediaUrl)}
                               controls
                               style={{ width: "100%", height: 90, objectFit: "cover" }}
                             />
@@ -684,6 +829,7 @@ export default function CallsBookingPage() {
             index={lightbox.index}
             onClose={() => setLightbox(null)}
             onIndexChange={(i) => setLightbox((prev) => (prev ? { ...prev, index: i } : prev))}
+            
           />
         )}
       </>
@@ -917,6 +1063,26 @@ export default function CallsBookingPage() {
 
           cursor: pointer;
         }
+          
+          .cs-btn-primary:hover:not(:disabled) { background: ${COLORS.btnPrimaryHover}; }
+          .cs-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+          .cs-btn-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; height: 34px;
+            border-radius: ${RADIUS.md}; border: 1px solid ${COLORS.cardBorder}; background: ${COLORS.cardBg};
+            color: ${COLORS.textSecondary}; font-size: 14px; cursor: pointer; }
+           .cs-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex;
+                      align-items: flex-start; justify-content: center; z-index: 1000; padding: 20px 16px; overflow-y: auto; }
+                    .cs-modal-box { background: ${COLORS.cardBg}; border: 1px solid ${COLORS.cardBorder}; border-radius: ${RADIUS.xl};
+                      width: 100%; max-width: 640px; display: flex; flex-direction: column; font-family: ${FONT.family};
+                      box-shadow: 0 8px 32px rgba(0,0,0,0.16); }
+                    .cs-modal-box form { display: flex; flex-direction: column; }
+                    .cs-modal-body { padding: 14px 16px; }
+                    .cs-modal-footer { padding: 8px 14px; border-top: 1px solid ${COLORS.cardBorder}; display: flex;
+                      justify-content: flex-end; gap: 8px; background: ${COLORS.gray50}; border-radius: 0 0 ${RADIUS.xl} ${RADIUS.xl}; }
+                    .cs-field-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+                    .cs-field-label { font-size: 14px; font-weight: 600; color: ${COLORS.textSecondary}; }
+                    .cs-field-error { font-size: 14px; color: ${COLORS.error}; }
+                    .cs-close-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid ${COLORS.cardBorder};
+                      background: ${COLORS.cardBg}; cursor: pointer; }
       `}</style>
 
       {/* Table */}
@@ -939,6 +1105,19 @@ export default function CallsBookingPage() {
             icon: <Eye size={13} />,
             onClick: openView,
           },
+          {
+            label: "View Details",
+            icon: <Plus size={13} />,
+            onClick:  (row) => {
+              statusReset(DEFAULTS_STATUS);
+                setMedia((prev) => {
+                  revokeMediaItems(prev);
+                  return [];
+                });
+                setTokenId(row.tktId);
+                setAddOpen(true);
+              }
+          },
         ]}
         searchPlaceholder="Search ticket, project, module..."
         emptyMessage="No bookings found."
@@ -950,24 +1129,37 @@ export default function CallsBookingPage() {
               items={staffFilterItems}
               placeholder="Filter by staff"
               maxWidth="150px"
-              size="xs"
+              size="sm"
+              label="select staff"
+              fontSize="sm"
             />
-
+            <div className=" w-[300px]">
             <SelectCombobox
               value={filterClientId || undefined}
               onChange={setFilterClientId}
               items={clientFilterItems}
               placeholder="Filter by client"
-              maxWidth="150px"
-              size="xs"
+              maxWidth="250px"
+              minWidth= "200px"
+              size="sm"
+              label="select client"
+              fontSize="sm"
             />
+            </div>
+            
+            <div className="flex flex-col">
+              <Text fontSize={"sm"}> Select status </Text>
+              <NativeSelectWrapper
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                items={statusItems}
+                maxWidth="120px"
+                css={{bg:"#FFF" , border:"1px solid #DDD"}}
+                
 
-            <NativeSelectWrapper
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              items={statusItems}
-              maxWidth="120px"
-            />
+              />
+            </div>
+           
 
             <button
               className="cb-btn-primary"
@@ -1253,6 +1445,93 @@ size="md"
           </div>
         </div>
       )}
+
+          {/* Add Status Modal */}
+              {addOpen && (
+                <div className="cs-overlay" onClick={(e) => e.target === e.currentTarget && setAddOpen(false)}>
+                  <div className="cs-modal-box">
+                    <div className="callstatus-head" style={{display:"flex" , padding:"10px", justifyContent:"space-between" ,alignItems:"center"}}>
+                      <div >
+                        <div className="cs-title">Add Status</div>
+                        <div className="cs-sub">Ticket:</div>
+                      </div>
+                      <button className="cs-close-btn" onClick={() => setAddOpen(false)}>✕</button>
+                    </div>
+      
+                  <form onSubmit={statusSubmit(onStatusSubmit)}>
+                      <div className="cs-modal-body">
+                        <div className="cs-field-row">
+                          <label className="cs-field-label">Status *</label>
+                          <Controller
+                            name="STATUS"
+                            control={statusControl}
+                            render={({ field }) => (
+                              <>
+                                
+      
+                                <NativeSelectWrapper 
+      
+                                  value = {field.value}
+                                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                  items={STATUS_ITEMS}
+                                  css={{
+                                    fontSize:"14px",
+                                    background : "#ddd",
+                                    color : "#222"
+      
+                                  }}
+                                  minW="150px"
+                                />
+                              </>
+                            )}
+                          />
+                  {statusError.STATUS && <span className="cs-field-error">{statusError.STATUS.message}</span>}
+                        </div>
+      
+                        <div className="cs-field-row">
+                          <label className="cs-field-label">Remark</label>
+                          <Controller
+                            name="remark"
+                            control={statusControl}
+                            render={({ field }) => (
+                              <TextareaField
+                                value={field.value}
+                                field="remark"
+                                onChange={(_, value) => field.onChange(value)}
+                                placeholder="Enter remark"
+                                mode="inline"
+                                rows={3}
+                              />
+                            )}
+                          />
+                          {errors.remark && <span className="cs-field-error">{errors.remark.message}</span>}
+                        </div>
+      
+                        <div className="cs-field-row">
+                          <label className="cs-field-label">Media (image/video)</label>
+                          <MediaManager
+                            value={statusMedia}
+                            onChange={setStatusMedia}
+                            accept="image/*,video/*"
+                            maxFiles={10}
+                            onError={(msg) => toast.error("Error", msg)}
+                          />
+                        </div>
+                      </div>
+      
+                      <div className="callstatus-modal-footer" style={{display:"flex" , alignItems:"center" , justifyContent:"end"}}>
+                        <button type="button" className="cs-btn-secondary" onClick={() => setAddOpen(false)}>
+                          Cancel
+                        </button>
+                <button type="submit" className="cb-btn-primary" disabled={createStatusMutation.isPending}>
+                          <Pencil size={12} />
+                          {createStatusMutation.isPending ? "Saving..." : "Save Status"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
 
       {/* Delete Confirm */}
 

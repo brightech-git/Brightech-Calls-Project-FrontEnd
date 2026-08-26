@@ -22,8 +22,10 @@ type SelectComboboxProps = {
     ref?: React.Ref<HTMLInputElement>;
     onBlur?:()=>void,
     maxWidth?: string;
+    minWidth?:string;
     fontSize?:string;
-    size?:"xs"|"sm"|"md"|"lg"
+    size?:"xs"|"sm"|"md"|"lg",
+    listFontSize?: "xs" | "sm" | "md" | "lg",
 };
 
 export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(({
@@ -39,8 +41,10 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
     onKeyDown, // Receive the onKeyDown from EnterWrapperon
     onBlur,
     maxWidth,
+    minWidth,
     size="xs",
-    fontSize="2xs"
+    fontSize="xs",
+    listFontSize= "xs"
 
 }, ref) => {
     const { contains } = useFilter({ sensitivity: "base" });
@@ -154,7 +158,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
     };
 
     return (
-        <Field.Root maxW={maxWidth}>
+        <Field.Root maxW={maxWidth} minWidth={minWidth} >
             {label && <Field.Label fontSize={fontSize} >{label}</Field.Label>}
 
             <Combobox.Root
@@ -221,7 +225,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                                     <Combobox.Item
                                         key={item.value}
                                         item={item}
-                                        fontSize={fontSize}
+                                        fontSize={listFontSize}
                                         textTransform="uppercase"
                                 
                                     >

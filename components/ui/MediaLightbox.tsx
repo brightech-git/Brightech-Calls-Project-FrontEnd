@@ -10,6 +10,7 @@
 import { useEffect } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { COLORS, RADIUS, FONT } from "@/utils/theme";
+import { ResolveImage } from "@/utils/format/resolveImage";
 
 export interface LightboxItem {
   mediaUrl?: string | null;
@@ -29,7 +30,7 @@ export function MediaLightbox({
   index,
   onClose,
   onIndexChange,
-  baseUrl,
+  baseUrl ,
 }: MediaLightboxProps) {
 
   const count = items.length;
@@ -53,7 +54,7 @@ export function MediaLightbox({
   const base = baseUrl ?? process.env.NEXT_PUBLIC_IMAGE_URL ?? "";
   const item = items[index];
   const type = (item.mediaType ?? "").toUpperCase();
-  const url = `${base}${item.mediaUrl ?? ""}`;
+  const url = ResolveImage(item.mediaUrl)
 
   const navBtnStyle = (side: "left" | "right"): React.CSSProperties => ({
     position: "fixed",
