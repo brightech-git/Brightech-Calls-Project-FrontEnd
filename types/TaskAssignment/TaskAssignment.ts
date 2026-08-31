@@ -93,3 +93,13 @@ export interface CallsBookingListItem {
 export type CallsBookingListItem_Table =
   CallsBookingListItem &
   Record<string, unknown>;
+
+// Query params accepted by GET /callsbooking. fromDate/toDate are optional,
+// date-only (yyyy-MM-dd), inclusive range filters on TKTDATE. For "As On"
+// (a single day) pass the same value for both fromDate and toDate.
+export interface CallsBookingListParams {
+  page?: number;
+  size?: number;
+  fromDate?: string | null;
+  toDate?: string | null;
+}

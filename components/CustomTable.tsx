@@ -352,14 +352,14 @@ export function CustomTable<T extends Record<string, unknown>>({
           text-transform: uppercase; color: ${COLORS.textSecondary};
           padding: 10px 16px; text-align: left; white-space: nowrap;
           border-bottom: 1px solid ${COLORS.gray200}; background: ${COLORS.gray50};
-          position: sticky; top: 0; z-index: 1;
+          position: sticky; top: 0; z-index: 0;
         }
         .ct-th.sortable { cursor: pointer; user-select: none; }
         .ct-th.sortable:hover { color: ${COLORS.textPrimary}; }
         .ct-th.active { color: ${COLORS.textPrimary}; }
         .ct-td {
           font-size: ${FONT.size.sm}; color: ${COLORS.textSecondary};
-          padding: 10px 16px; border-top: 1px solid ${COLORS.gray100};
+          padding: 10px 14px; border-top: 1px solid ${COLORS.gray100};
           vertical-align: middle; white-space: nowrap;
         }
         .ct-td.primary { color: ${COLORS.textPrimary}; font-weight: ${FONT.weight.semibold}; }
@@ -576,7 +576,7 @@ export function CustomTable<T extends Record<string, unknown>>({
 
                         {hasActions && (
                           <Box as="td" className="ct-td" style={{ textAlign: "left" }}>
-                            <HStack gap="4px" justify="flex-start">
+                            <HStack gap="1px" justify="flex-start">
                               {expandedRowRender && (
                                 <button
                                   type="button"

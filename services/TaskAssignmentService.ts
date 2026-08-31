@@ -6,6 +6,7 @@ import { axiosInstance } from "@/api/axiosInstance";
 
 import {
   CallsBookingListItem,
+  CallsBookingListParams,
   CallsBookingMediaMeta,
   CallsBookingPayload,
   CallsBookingRecord,
@@ -56,7 +57,7 @@ export const createCallsBooking = async (
 // is at response.data.data, not response.data. Unwrapped here so callers
 // can use the real PagedResponse shape (pagedBookings.content) directly.
 export const getAllCallsBookings = async (
-  params?: PageParams
+  params?: CallsBookingListParams
 ): Promise<PagedResponse<CallsBookingListItem>> => {
   const response =
     await axiosInstance.get<
@@ -65,6 +66,11 @@ export const getAllCallsBookings = async (
       params: {
         page: params?.page ?? 0,
         size: params?.size ?? 100,
+        // Omitted (not sent as empty string) when unset, so the backend's
+        // @RequestParam(required = false) LocalDate stays null instead of
+        // failing to parse "".
+        ...(params?.fromDate ? { fromDate: params.fromDate } : {}),
+        ...(params?.toDate ? { toDate: params.toDate } : {}),
       },
     });
   return response.data.data;

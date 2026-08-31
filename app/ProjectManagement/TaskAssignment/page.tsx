@@ -14,6 +14,7 @@ import { TextareaField } from "@/components/ui/CapitalizesTextArea";
 import { SwitchInput } from "@/components/ui/SwitchInput";
 import { MediaManager, MediaItem, revokeMediaItems, makeExistingMediaItem } from "@/components/ui/MediaManager";
 import { MediaLightbox, LightboxItem } from "@/components/ui/MediaLightbox";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
@@ -89,9 +90,10 @@ type CallsBookingForm = z.infer<typeof callsBookingSchema>;
 // ─────────────────────────────────────────────
 
 const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
-  { key: "tktId",       header: "ID",   sortable: true, width: "10px" },
-  { key: "clientName",  header: "Client",      sortable: true, render: (row) => (row.clientName as string) || "-" },
-  { key: "clientMobile",  header: "Mobile",      render: (row) => (row.clientMobile as string) || "-" },
+  {key:"sno" , header :"Sno" ,render :(row,index)=> (index+1) },
+  // { key: "tktId",       header: "ID",   sortable: true, width: "10px" },
+  
+
   {
     key: "remark",
     header: "Remark",
@@ -99,7 +101,7 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
     render: (row) => (
       <div
         style={{
-          width: "150px",
+          width: "400px",
           whiteSpace: "normal",
           overflowWrap: "anywhere",
           wordBreak: "break-word",
@@ -110,27 +112,27 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
       </div>
     ),
   },
-  { key: "bookingMedia", header: "Calls Media", render: (row) => {
-    const image = typeof row?.bookingMedia === "string"
-      ? JSON.parse(row.bookingMedia)
-      :[];
-    console.log(image,'mediaimage');
-    return image?.length > 0 ? image.map((i:any)=>{
+  // { key: "bookingMedia", header: "Calls Media", render: (row) => {
+  //   const image = typeof row?.bookingMedia === "string"
+  //     ? JSON.parse(row.bookingMedia)
+  //     :[];
+  //   console.log(image,'mediaimage');
+  //   return image?.length > 0 ? image.map((i:any)=>{
 
-      if (i.MEDIA_TYPE === "IMAGE"){
-        return <img src={ResolveImage(i.MEDIA_URL)}  alt="image" />
-      }
-      else{
-        return <video src={ResolveImage(i.MEDIA_URL)} autoPlay/>
-      }
-    })  : ""
-   }},
+  //     if (i.MEDIA_TYPE === "IMAGE"){
+  //       return <img src={ResolveImage(i.MEDIA_URL)}  alt="image" />
+  //     }
+  //     else{
+  //       return <video src={ResolveImage(i.MEDIA_URL)} autoPlay/>
+  //     }
+  //   })  : ""
+  //  }},
 
   {
     key: "statusRemark", header: "Status Remark", render: (row) => (
       <div
         style={{
-          width: "150px",
+          width: "300px",
           whiteSpace: "normal",
           overflowWrap: "anywhere",
           wordBreak: "break-word",
@@ -141,23 +143,25 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
       </div>
     ),
 },
-  {
-    key: "statusMedia", header: "Status Media", render: (row) => {
-      const image = typeof row?.bookingMedia === "string"
-        ? JSON.parse(row.bookingMedia)
-        : [];
-      console.log(image, 'mediaimage');
-      return image?.length > 0 ? image.map((i: any) => {
+//   {
+//     key: "statusMedia", header: "Status Media", render: (row) => {
+//       const image = typeof row?.bookingMedia === "string"
+//         ? JSON.parse(row.bookingMedia)
+//         : [];
+//       console.log(image, 'mediaimage');
+//       return image?.length > 0 ? image.map((i: any) => {
 
-        if (i.MEDIA_TYPE === "IMAGE") {
-          return <img src={ResolveImage(i.MEDIA_URL)} alt="image" />
-        }
-        else {
-          return <video src={ResolveImage(i.MEDIA_URL)} autoPlay />
-        }
-      }) : ""
-    }
-},
+//         if (i.MEDIA_TYPE === "IMAGE") {
+//           return <img src={ResolveImage(i.MEDIA_URL)} alt="image" />
+//         }
+//         else {
+//           return <video src={ResolveImage(i.MEDIA_URL)} autoPlay />
+//         }
+//       }) : ""
+//     }
+// },
+  { key: "clientMobile", header: "Mobile", render: (row) => (row.clientMobile as string) || "-" },
+  { key: "clientName",  header: "Client",      sortable: true, render: (row) => (row.clientName as string) || "-" },
   { key: "projectName", header: "Project",     sortable: true },
   { key: "moduleName",  header: "Module",      sortable: true },
   { key: "assignedUsers", header: "Staff",     sortable: true },
@@ -244,6 +248,20 @@ export default function CallsBookingPage() {
   const [lightbox, setLightbox] =
     useState<{ items: LightboxItem[]; index: number } | null>(null);
 
+  // ── Date filter (toolbar) ──
+  // "As On" shows a single date and filters bookings ticketed on exactly
+  // that day (fromDate === toDate). Turned off, From Date / To Date pick a
+  // range. Both are sent to the server (GET /callsbooking?fromDate=&toDate=)
+  // so the filter — and the summary tiles below — reflect the whole
+  // matching dataset, not just the currently loaded page.
+  const [asOn, setAsOn] = useState(false);
+  const [asOnDate, setAsOnDate] = useState<string>("");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+
+  const effectiveFromDate = asOn ? (asOnDate || undefined) : (fromDate || undefined);
+  const effectiveToDate   = asOn ? (asOnDate || undefined) : (toDate || undefined);
+
   // CLIENT-ACCOUNT SCOPING - WHEN THE LOGGED-IN USER IS A CLIENT (isClient
   // "Y" IN localStorage, SET AT LOGIN), THE CLIENT FIELD IS PRESET TO THEIR
   // OWN CLIENTID AND LOCKED SO THEY CAN'T PICK/SEE ANY OTHER CLIENT'S NAME.
@@ -264,7 +282,10 @@ export default function CallsBookingPage() {
   const {
     data: pagedBookings,
     isLoading,
-  } = useCallsBookingList();
+  } = useCallsBookingList({
+    fromDate: effectiveFromDate,
+    toDate: effectiveToDate,
+  });
 
   const bookings = pagedBookings?.content ?? [];
 
@@ -375,6 +396,14 @@ export default function CallsBookingPage() {
     if (filterStatus && filterStatus !== "B" && row.status !== filterStatus) return false;
     return true;
   });
+
+  // ── Summary counts (Total / Completed / Processing) ──
+  // Reflects whatever is currently in filteredBookings — i.e. the date
+  // range/As On filter (server-side) plus the staff/client/status filters
+  // (client-side) applied on top of it.
+  const summaryTotal = filteredBookings.length;
+  const summaryCompleted = filteredBookings.filter((row) => row.status === "C").length;
+  const summaryProcessing = filteredBookings.filter((row) => row.status === "P").length;
 
   // ─────────────────────────
 
@@ -1084,11 +1113,155 @@ export default function CallsBookingPage() {
                     .cs-close-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid ${COLORS.cardBorder};
                       background: ${COLORS.cardBg}; cursor: pointer; }
       `}</style>
+      <div style={{fontSize:"18px" , fontWeight:600 , background:"#FFF" , borderRadius : "10px" , padding :"10px" , textAlign:"center", marginBottom:"10px"}}>
+        All Calls Bookings
+      </div>
+
+      {/* Summary tiles */}
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          marginBottom: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        {[
+          { label: "Total Listed", value: summaryTotal, bg: COLORS.gray50, color: COLORS.textPrimary },
+          { label: "Completed",    value: summaryCompleted, bg: COLORS.successBg, color: COLORS.success },
+          { label: "Processing",   value: summaryProcessing, bg: COLORS.warningBg, color: COLORS.warning },
+        ].map((tile) => (
+          <div
+            key={tile.label}
+            style={{
+              flex: "1 1 160px",
+              minWidth: 160,
+              background: tile.bg,
+              border: `1px solid ${COLORS.cardBorder}`,
+              borderRadius: RADIUS.lg,
+              padding: "10px 16px",
+            }}
+          >
+            <div style={{ fontSize: FONT.size.xs, color: COLORS.textMuted, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              {tile.label}
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: tile.color, marginTop: 2 }}>
+              {tile.value}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* Table */}
+      <div style={{ display: "flex", gap: 8, background : "#FFF", alignItems: "flex-end", flexWrap: "wrap" , borderRadius : "10px" , marginBottom: "10px" , padding:"10px"}}>
+       
+        <div className="flex flex-col">
+          <Text fontSize={"sm"}>As On</Text>
+          <SwitchInput
+            value={asOn}
+            onChange={(val) => {
+              setAsOn(val);
+              // Switching modes clears the other mode's values so a
+              // stale date can't silently keep filtering underneath.
+              if (val) {
+                setFromDate("");
+                setToDate("");
+              } else {
+                setAsOnDate("");
+              }
+            }}
+            trueValue={true}
+            falseValue={false}
+            labels={{ on: "On", off: "Off" }}
+            size="sm"
+          />
+        </div>
+
+        {asOn ? (
+          <div className="flex flex-col">
+            <Text fontSize={"sm"}>Date</Text>
+            <DatePickerInput
+              value={asOnDate || null}
+              onChange={setAsOnDate}
+              placeholder="Select date"
+              maxWidth="150px"
+            />
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col">
+              <Text fontSize={"sm"}>From Date</Text>
+              <DatePickerInput
+                value={fromDate || null}
+                onChange={setFromDate}
+                placeholder="From date"
+                maxDate={toDate || undefined}
+                maxWidth="150px"
+              />
+            </div>
+            <div className="flex flex-col">
+              <Text fontSize={"sm"}>To Date</Text>
+              <DatePickerInput
+                value={toDate || null}
+                onChange={setToDate}
+                placeholder="To date"
+                minDate={fromDate || undefined}
+                maxWidth="150px"
+              />
+            </div>
+          </>
+        )}
+
+        <SelectCombobox
+          value={filterUserId || undefined}
+          onChange={setFilterUserId}
+          items={staffFilterItems}
+          placeholder="Filter by staff"
+          maxWidth="150px"
+          size="sm"
+          label="select staff"
+          fontSize="sm"
+        />
+        <div className=" w-[300px]">
+          <SelectCombobox
+            value={filterClientId || undefined}
+            onChange={setFilterClientId}
+            items={clientFilterItems}
+            placeholder="Filter by client"
+            maxWidth="250px"
+            minWidth="200px"
+            size="sm"
+            label="select client"
+            fontSize="sm"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <Text fontSize={"sm"}> Select status </Text>
+          <NativeSelectWrapper
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            items={statusItems}
+            maxWidth="120px"
+            css={{ bg: "#FFF", border: "1px solid #DDD" }}
+
+
+          />
+        </div>
+
+
+        <button
+          className="cb-btn-primary"
+          onClick={openCreate}
+        >
+          <Plus size={13} />
+          Add Booking
+        </button>
+      </div>
 
       <CustomTable
-        title="All Calls Bookings"
+        // title="All Calls Bookings"
+        showSearch={false}
         columns={COLUMNS}
         data={
           filteredBookings as CallsBookingListItem_Table[]
@@ -1096,9 +1269,9 @@ export default function CallsBookingPage() {
         rowKey="sno"
         isLoading={isLoading}
         onEdit={openEdit}
-        onDelete={(row) =>
-          setDeleteRow(row)
-        }
+        // onDelete={(row) =>
+        //   setDeleteRow(row)
+        // }
         extraActions={[
           {
             label: "View Details",
@@ -1119,57 +1292,9 @@ export default function CallsBookingPage() {
               }
           },
         ]}
-        searchPlaceholder="Search ticket, project, module..."
-        emptyMessage="No bookings found."
-        toolbarRight={
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <SelectCombobox
-              value={filterUserId || undefined}
-              onChange={setFilterUserId}
-              items={staffFilterItems}
-              placeholder="Filter by staff"
-              maxWidth="150px"
-              size="sm"
-              label="select staff"
-              fontSize="sm"
-            />
-            <div className=" w-[300px]">
-            <SelectCombobox
-              value={filterClientId || undefined}
-              onChange={setFilterClientId}
-              items={clientFilterItems}
-              placeholder="Filter by client"
-              maxWidth="250px"
-              minWidth= "200px"
-              size="sm"
-              label="select client"
-              fontSize="sm"
-            />
-            </div>
-            
-            <div className="flex flex-col">
-              <Text fontSize={"sm"}> Select status </Text>
-              <NativeSelectWrapper
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                items={statusItems}
-                maxWidth="120px"
-                css={{bg:"#FFF" , border:"1px solid #DDD"}}
-                
-
-              />
-            </div>
-           
-
-            <button
-              className="cb-btn-primary"
-              onClick={openCreate}
-            >
-              <Plus size={13} />
-              Add Booking
-            </button>
-          </div>
-        }
+        // searchPlaceholder="Search ticket, project, module..."
+        // emptyMessage="No bookings found."
+       
 
       />
 

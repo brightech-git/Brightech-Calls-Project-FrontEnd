@@ -20,11 +20,11 @@ import {
 } from "@/services/TaskAssignmentService";
 
 import {
+  CallsBookingListParams,
   CallsBookingMediaMeta,
   CallsBookingPayload,
   UpdateStatusPayload,
 } from "@/types/TaskAssignment/TaskAssignment";
-import { PageParams } from "@/types/common/Pagination";
 
 const CALLS_BOOKING_KEY = [
   "calls-booking-list",
@@ -32,14 +32,20 @@ const CALLS_BOOKING_KEY = [
 
 // GET ALL (paginated — defaults to a large page so existing
 // client-side table pagination keeps working unchanged)
+// fromDate/toDate (yyyy-MM-dd) are optional and included in the query key
+// so switching the date filter (or the "As On" single-day filter, which
+// callers pass as fromDate === toDate) refetches instead of reusing a
+// stale cached page.
 export const useCallsBookingList = (
-  params?: PageParams
+  params?: CallsBookingListParams
 ) =>
   useQuery({
     queryKey: [
       ...CALLS_BOOKING_KEY,
       params?.page ?? 0,
       params?.size ?? 100,
+      params?.fromDate ?? null,
+      params?.toDate ?? null,
     ],
     queryFn: () =>
       getAllCallsBookings(params),
