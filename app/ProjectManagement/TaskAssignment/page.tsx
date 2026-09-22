@@ -64,7 +64,7 @@ const DEFAULTS_STATUS: StatusForm = {
 };
 
 const STATUS_ITEMS = [
-  { label: "Open", value: "OPEN" },
+  // { label: "Open", value: "OPEN" },
   { label: "Process", value: "PROCESS" },
   { label: "Closed", value: "CLOSED" },
 ];
@@ -112,6 +112,15 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
       </div>
     ),
   },
+  {
+    key: "status",
+    header: "Status",
+    sortable: true,
+    render: (row) => {
+      const status = row.status === "P" ? "PENDING" : row.status === "C" ? "COMPLETED" : "BOTH";
+      return <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: FONT.size.xs }}>{status}</span>;
+    },
+  },
   // { key: "bookingMedia", header: "Calls Media", render: (row) => {
   //   const image = typeof row?.bookingMedia === "string"
   //     ? JSON.parse(row.bookingMedia)
@@ -128,21 +137,7 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
   //   })  : ""
   //  }},
 
-  {
-    key: "statusRemark", header: "Status Remark", render: (row) => (
-      <div
-        style={{
-          width: "300px",
-          whiteSpace: "normal",
-          overflowWrap: "anywhere",
-          wordBreak: "break-word",
-          lineHeight: "18px",
-        }}
-      >
-        {row.statusRemark}
-      </div>
-    ),
-},
+  
 //   {
 //     key: "statusMedia", header: "Status Media", render: (row) => {
 //       const image = typeof row?.bookingMedia === "string"
@@ -166,15 +161,7 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
   { key: "moduleName",  header: "Module",      sortable: true },
   { key: "assignedUsers", header: "Staff",     sortable: true },
   { key: "tktDate",     header: "Date",        sortable: true, render: (row) => row.tktDate ? new Date(row.tktDate as string).toLocaleDateString() : "-" },
-  {
-    key: "status",
-    header: "Status",
-    sortable: true,
-    render: (row) => {
-      const status = row.status === "P" ? "PENDING" :row.status === "C" ? "COMPLETED" : "BOTH";
-      return <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: FONT.size.xs}}>{status}</span>;
-    },
-  },
+ 
   {
     key: "active",
     header: "Active",
@@ -185,6 +172,21 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
       }}>
         {row.active === "Y" ? "Active" : "Inactive"}
       </span>
+    ),
+  },
+  {
+    key: "statusRemark", header: "Status Remark", render: (row) => (
+      <div
+        style={{
+          width: "300px",
+          whiteSpace: "normal",
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+          lineHeight: "18px",
+        }}
+      >
+        {row.statusRemark}
+      </div>
     ),
   },
 ];
@@ -209,6 +211,8 @@ const DEFAULTS: CallsBookingForm = {
 // ─────────────────────────────────────────────
 
 export default function CallsBookingPage() {
+  const today = new Date().toISOString().split("T")[0];
+
   usePageHeader({
     title: "Calls Booking",
     subtitle:
@@ -255,8 +259,8 @@ export default function CallsBookingPage() {
   // so the filter — and the summary tiles below — reflect the whole
   // matching dataset, not just the currently loaded page.
   const [asOn, setAsOn] = useState(false);
-  const [asOnDate, setAsOnDate] = useState<string>("");
-  const [fromDate, setFromDate] = useState<string>("");
+  const [asOnDate, setAsOnDate] = useState<string>(today);
+  const [fromDate, setFromDate] = useState<string>(today);
   const [toDate, setToDate] = useState<string>("");
 
   const effectiveFromDate = asOn ? (asOnDate || undefined) : (fromDate || undefined);
@@ -1127,9 +1131,9 @@ export default function CallsBookingPage() {
         }}
       >
         {[
-          { label: "Total Listed", value: summaryTotal, bg: COLORS.gray50, color: COLORS.textPrimary },
-          { label: "Completed",    value: summaryCompleted, bg: COLORS.successBg, color: COLORS.success },
-          { label: "Processing",   value: summaryProcessing, bg: COLORS.warningBg, color: COLORS.warning },
+          { label: "Calls Total Listed", value: summaryTotal, bg: COLORS.gray50, color: COLORS.textPrimary },
+          { label: "Calls Completed",    value: summaryCompleted, bg: COLORS.successBg, color: COLORS.success },
+          { label: "Calls Processing",   value: summaryProcessing, bg: COLORS.warningBg, color: COLORS.warning },
         ].map((tile) => (
           <div
             key={tile.label}
@@ -1207,6 +1211,7 @@ export default function CallsBookingPage() {
                 placeholder="To date"
                 minDate={fromDate || undefined}
                 maxWidth="150px"
+                maxDate={today}
               />
             </div>
           </>
