@@ -59,28 +59,49 @@ export const createCallsBooking = async (
 export const getAllCallsBookings = async (
   params?: CallsBookingListParams
 ): Promise<PagedResponse<CallsBookingListItem>> => {
-  const response =
-    await axiosInstance.get<
-      ApiResponse<PagedResponse<CallsBookingListItem>>
-      >("/callsbooking", {
-      params: {
-        page: params?.page ?? 0,
-        size: params?.size ?? 100,
-        // Omitted (not sent as empty string) when unset, so the backend's
-        // @RequestParam(required = false) LocalDate stays null instead of
-        // failing to parse "".
-        ...(params?.fromDate ? { fromDate: params.fromDate } : {}),
-        ...(params?.toDate ? { toDate: params.toDate } : {}),
-      },
-    });
+  const {
+    page = 0,
+    size = 100,
+    fromDate,
+    toDate,
+    asOn = false,
+    asOnDate,
+    clientId,
+    userId,
+    status,
+    projectId,
+    moduleId
+  } = params ?? {};
+
+  const queryParams = {
+    page,
+    size,
+
+    // Range filtering
+    ...(!asOn && fromDate ? { fromDate } : {}),
+    ...(!asOn && toDate ? { toDate } : {}),
+
+    // As-on filtering
+    ...(asOn && asOnDate ? { toDate: asOnDate } : {}),
+
+    // Other filters
+    ...(clientId ? { clientId } : {}),
+    ...(userId ? { userIds :userId } : {}),
+    ...(status ? { status } : {}),
+    ...(projectId ? { projectId } : {}),
+    ...(moduleId ? {moduleId} : {})
+  };
+
+  const response = await axiosInstance.get<
+    ApiResponse<PagedResponse<CallsBookingListItem>>
+  >("/callsbooking", {
+    params: queryParams,
+  });
+
   return response.data.data;
 };
 
-// GET BY ID
-// NOTE: the backend wraps every response in ApiResponse<T> ({success,
-// message, data}) - the actual booking is at response.data.data, not
-// response.data. Unwrapping here (rather than in every caller) is what
-// was missing before, which is why View Details/Edit showed no values.
+
 export const getCallsBookingById = async (
   id: string
 ): Promise<CallsBookingRecord> => {

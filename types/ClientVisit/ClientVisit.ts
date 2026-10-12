@@ -26,7 +26,9 @@ export interface ClientVisitPayload {
   SHORTKEY?:     string | null;
   ACTIVE?:       string | null;
   STATEID?:      number | null;
-
+  status ?:     string;
+  existingSoftware ?:string;
+  remainder ?:string;
   CREATEDAT?: string;
 }
 
@@ -53,6 +55,7 @@ export interface ClientVisitRecord extends ClientVisitPayload {
   UPDATED?: string | null;
   UPTIME?:  string | null;
   media?:   ClientVisitMediaRecord[] | null;
+
 }
 
 export type ClientVisitRecord_Table = ClientVisitRecord & Record<string, unknown>;

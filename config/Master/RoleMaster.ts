@@ -7,35 +7,35 @@ type RoleMasterFormConfing = {
 export const RoleMaster = (prop:RoleMasterFormConfing):FormField[]  => [
     {
         name: "ROLENAME",
-        label: "ROLE NAME",
+        label: "Role name",
         type: "text",
         size: "sm",
-        rounded: "sm",
+        rounded: "10px",
     },
     {
         name: "ACTIVE",
-        label: "ACTIVE",
+        label: "Active",
         type: "select",
         size: "sm",
-        rounded: "sm",
+        rounded: "10px",
         items: prop.yesOrNo
 
     },
     {
         name: "PWDACCESS",
-        label: "PASSWORD ACCESS",
+        label: "Password access",
         type: "select",
         size: "sm",
-        rounded: "sm",
+        rounded: "10px",
         items: prop.yesOrNo
   
     },
     {
         name: "ADMINACCESS",
-        label: "ADMINACCESS",
+        label: "Admin access",
         type: "select",
         size: "sm",
-        rounded:"sm",
+        rounded: "10px",
         items: prop.yesOrNo
     },
 ];

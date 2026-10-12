@@ -41,7 +41,7 @@ export const SwitchInput = React.forwardRef<HTMLDivElement, SwitchInputProps>(({
                 size={size}
             >
                 <Switch.HiddenInput />
-                <Switch.Control />
+                <Switch.Control _checked={{ bg: "var(--primary)" }} />
                 <Switch.Label fontSize={labelFontSize}>{isChecked ? labels.on : labels.off}</Switch.Label>
             </Switch.Root>
         </HStack>

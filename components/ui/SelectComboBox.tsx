@@ -1,245 +1,201 @@
 "use client";
 
+import { ui } from "@/utils/ui";
 import React, { useEffect, useState, forwardRef } from "react";
 import { Field, Combobox, Portal, useListCollection, useFilter } from "@chakra-ui/react";
-
 export type SelectItem = {
-    label: string;
-    value: string;
+  label: string;
+  value: string;
 };
-
 type SelectComboboxProps = {
-    label?: string;
-    value: string | undefined;
-    onChange: (value: string) => void;
-    editId?: number | null;
-    items: SelectItem[];
-    placeholder?: string;
-    rounded?: string;
-    disable?: boolean;
-    onEnter?: () => void;
-    onKeyDown?: (e: React.KeyboardEvent) => void; // Add this prop
-    ref?: React.Ref<HTMLInputElement>;
-    onBlur?:()=>void,
-    maxWidth?: string;
-    minWidth?:string;
-    fontSize?:string;
-    size?:"xs"|"sm"|"md"|"lg",
-    listFontSize?: "xs" | "sm" | "md" | "lg",
+  className?: string;
+  label?: string;
+  value: string | undefined;
+  onChange: (value: string) => void;
+  editId?: number | null;
+  items: SelectItem[];
+  placeholder?: string;
+  rounded?: string;
+  disable?: boolean;
+  onEnter?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent) => void; // Add this prop
+  ref?: React.Ref<HTMLInputElement>;
+  onBlur?: () => void;
+  maxWidth?: string;
+  minWidth?: string;
+  fontSize?: string;
+  size?: "xs" | "sm" | "md" | "lg";
+  listFontSize?: "xs" | "sm" | "md" | "lg";
 };
-
 export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(({
-    label,
-    value,
-    onChange,
-    editId,
-    items,
-    placeholder = "Select an option",
-    rounded = "full",
-    disable,
-    onEnter,
-    onKeyDown, // Receive the onKeyDown from EnterWrapperon
-    onBlur,
-    maxWidth,
-    minWidth,
-    size="xs",
-    fontSize="xs",
-    listFontSize= "xs"
-
+  className = "",
+  label,
+  value,
+  onChange,
+  editId,
+  items,
+  placeholder = "Select an option",
+  rounded = "10px",
+  disable,
+  onEnter,
+  onKeyDown,
+  // Receive the onKeyDown from EnterWrapperon
+  onBlur,
+  maxWidth,
+  minWidth,
+  size = "xs",
+  fontSize = "xs",
+  listFontSize = "xs"
 }, ref) => {
-    const { contains } = useFilter({ sensitivity: "base" });
-    const [typedInput, setTypedInput] = useState("");
-    const [isOpen, setIsOpen] = useState(false);
-    const [highlightedValue, setHighlightedValue] = useState<string | null>(null);
-    const safeItems = React.useMemo(
-        () => (items || []).map((item) => ({
-            label: item.label ?? "",
-            value: item.value ?? "",
-        })),
-        [items]
-    );
-    const { collection, filter: applyFilter, set: setCollection } = useListCollection({
-        initialItems: safeItems,
-        itemToString: (item) => item.label,
-        itemToValue: (item) => item.value,
-        filter: contains,
-    });
+  const {
+    contains
+  } = useFilter({
+    sensitivity: "base"
+  });
+  const [typedInput, setTypedInput] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [highlightedValue, setHighlightedValue] = useState<string | null>(null);
+  const safeItems = React.useMemo(() => (items || []).map(item => ({
+    label: item.label ?? "",
+    value: item.value ?? ""
+  })), [items]);
+  const {
+    collection,
+    filter: applyFilter,
+    set: setCollection
+  } = useListCollection({
+    initialItems: safeItems,
+    itemToString: item => item.label,
+    itemToValue: item => item.value,
+    filter: contains
+  });
 
-    // Update collection when items change
-    useEffect(() => {
-        setCollection(safeItems);
-        applyFilter("");
-    }, [safeItems, setCollection, applyFilter]);
+  // Update collection when items change
+  useEffect(() => {
+    setCollection(safeItems);
+    applyFilter("");
+  }, [safeItems, setCollection, applyFilter]);
 
-    // Reset filter when editId changes
-    useEffect(() => {
-        applyFilter("");
-    }, [editId, applyFilter]);
+  // Reset filter when editId changes
+  useEffect(() => {
+    applyFilter("");
+  }, [editId, applyFilter]);
 
-    // Clear value when disabled
-    // useEffect(() => {
-    //     if (disable) {
-    //         onChange("");
-    //     }
-    // }, [disable]);
+  // Clear value when disabled
+  // useEffect(() => {
+  //     if (disable) {
+  //         onChange("");
+  //     }
+  // }, [disable]);
 
-    // Reset filter when value becomes empty
-    useEffect(() => {
-        if (!value) {
-            applyFilter("");
-        }
-    }, [value, applyFilter]);
+  // Reset filter when value becomes empty
+  useEffect(() => {
+    if (!value) {
+      applyFilter("");
+    }
+  }, [value, applyFilter]);
 
-    // Update typed input when value or items change
-    useEffect(() => {
-        if (value && safeItems.length > 0) {
-            const selectedItem = safeItems.find(
-                (item) => String(item.value) === String(value)
-            );
-            setTypedInput(selectedItem ? selectedItem.label.toUpperCase() : "");
-        } else {
-            setTypedInput("");
-        }
-    }, [value, safeItems]);
+  // Update typed input when value or items change
+  useEffect(() => {
+    if (value && safeItems.length > 0) {
+      const selectedItem = safeItems.find(item => String(item.value) === String(value));
+      setTypedInput(selectedItem ? selectedItem.label.toUpperCase() : "");
+    } else {
+      setTypedInput("");
+    }
+  }, [value, safeItems]);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
+      e.stopPropagation();
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter" || e.key === "Tab") {
-            e.preventDefault();
-            e.stopPropagation();
+      // select current value
+      let selectedItem = collection.items.find(item => item.value === highlightedValue);
+      if (!selectedItem && typedInput) {
+        selectedItem = collection.items.find(item => item.label.toUpperCase() === typedInput.toUpperCase());
+      }
+      if (!selectedItem && collection.items.length > 0) {
+        selectedItem = collection.items[0]; // fallback
+      }
+      if (selectedItem) {
+        onChange(selectedItem.value);
+        setTypedInput(selectedItem.label.toUpperCase());
+      }
+      setIsOpen(false);
+      setHighlightedValue(null);
 
-            // select current value
-            let selectedItem = collection.items.find(
-                (item) => item.value === highlightedValue
-            );
-            if (!selectedItem && typedInput) {
-                selectedItem = collection.items.find(
-                    (item) => item.label.toUpperCase() === typedInput.toUpperCase()
-                );
-            }
-            if (!selectedItem && collection.items.length > 0) {
-                selectedItem = collection.items[0]; // fallback
-            }
+      // ✅ Move to next field
+      setTimeout(() => onEnter?.(), 50);
+      return;
+    }
 
-            if (selectedItem) {
-                onChange(selectedItem.value);
-                setTypedInput(selectedItem.label.toUpperCase());
-            }
+    // Forward all other keys
+    onKeyDown?.(e);
+  };
+  const handleValueChange = (e: any) => {
+    if (e.value.length === 0) {
+      onChange("");
+      setTypedInput("");
+      setIsOpen(false);
+      return;
+    }
+    if (disable) return;
+    const val = e.value[0] || "";
+    onChange(val);
+    const selectedItem = safeItems.find(item => item.value === val);
+    setTypedInput(selectedItem?.label.toUpperCase() || "");
+    setIsOpen(false);
 
-            setIsOpen(false);
-            setHighlightedValue(null);
+    // Move to next field when value changes via click
+    setTimeout(() => {
+      if (onEnter) onEnter();
+    }, 50);
+  };
+  return <Field.Root className={className} maxW={maxWidth} minWidth={minWidth}>
+            {label && <Field.Label fontSize={fontSize}>{label}</Field.Label>}
 
-            // ✅ Move to next field
-            setTimeout(() => onEnter?.(), 50);
-            return;
-        }
-
-        // Forward all other keys
-        onKeyDown?.(e);
-    };
-
-    const handleValueChange = (e: any) => {
-        if (e.value.length === 0) {
-            onChange("");
-            setTypedInput("");
-            setIsOpen(false);
-            return;
-        }
-        if (disable) return;
-        const val = e.value[0] || "";
-        onChange(val);
-        const selectedItem = safeItems.find(item => item.value === val);
-        setTypedInput(selectedItem?.label.toUpperCase() || "");
+            <Combobox.Root key={editId ?? "null"} collection={collection} value={value ? [value] : []} inputValue={typedInput} open={isOpen} onOpenChange={e => setIsOpen(e.open)} onValueChange={handleValueChange} onInputValueChange={e => {
+      const upper = e.inputValue.toUpperCase();
+      setTypedInput(upper);
+      applyFilter(upper);
+      // Open dropdown when typing
+      if (upper.length > 0) {
+        setIsOpen(true);
+      } else {
         setIsOpen(false);
-
-        // Move to next field when value changes via click
-        setTimeout(() => {
-            if (onEnter) onEnter();
-        }, 50);
-    };
-
-    return (
-        <Field.Root maxW={maxWidth} minWidth={minWidth} >
-            {label && <Field.Label fontSize={fontSize} >{label}</Field.Label>}
-
-            <Combobox.Root
-                key={editId ?? "null"}
-                collection={collection}
-                value={value ? [value] : []}
-                inputValue={typedInput}
-                open={isOpen}
-                onOpenChange={(e) => setIsOpen(e.open)}
-                onValueChange={handleValueChange}
-                onInputValueChange={(e) => {
-                    const upper = e.inputValue.toUpperCase();
-                    setTypedInput(upper);
-                    applyFilter(upper);
-                    // Open dropdown when typing
-                    if (upper.length > 0) {
-                        setIsOpen(true);
-                    } else {
-                        setIsOpen(false);
-                    } 
-                }}
-                onBlur={onBlur}
-                size={size}
-                onHighlightChange={(e) => {
-                    setHighlightedValue(e.highlightedValue);
-                }}
-                openOnClick={!disable}
-                disabled={disable}
-                fontSize={fontSize}
-           
-            >
-                <Combobox.Control rounded='full'>
-                    <Combobox.Input
-                        ref={ref}
-                        placeholder={placeholder}
-                        fontSize="2xs"
-                        textTransform="uppercase"
-                        rounded={rounded}
-                
-                        onKeyDown={handleKeyDown} // Use our combined handler
-                        onFocus={() => {
-                            if (typedInput.length >= 0) {
-                                setIsOpen(true);
-                            }
-                        }}
-                    />
+      }
+    }} onBlur={onBlur} size={size} onHighlightChange={e => {
+      setHighlightedValue(e.highlightedValue);
+    }} openOnClick={!disable} disabled={disable} fontSize={fontSize}>
+                <Combobox.Control className={ui("[border-radius:9999px]!")}>
+                    <Combobox.Input ref={ref} placeholder={placeholder} rounded={rounded} onKeyDown={handleKeyDown} // Use our combined handler
+        onFocus={() => {
+          if (typedInput.length >= 0) {
+            setIsOpen(true);
+          }
+        }} className={ui("form-control " + ui("[font-size:var(--font-sm)]! [min-height:var(--control-height)]! [border-radius:10px]! [text-transform:uppercase]!"))} />
                     <Combobox.IndicatorGroup>
                         <Combobox.ClearTrigger onClick={() => {
-                            onChange("");
-                            setTypedInput("");
-                        }} />
+            onChange("");
+            setTypedInput("");
+          }} />
                         <Combobox.Trigger />
                     </Combobox.IndicatorGroup>
                 </Combobox.Control>
-                {!disable && (
-                    <Portal>
-                        <Combobox.Positioner mt={-1.5}  zIndex = {1}>
-                            <Combobox.Content overflowY="auto" maxHeight={'100px'}  border='1px solid'
-                            borderColor='border.emphasis'>
+                {!disable && <Portal>
+                        <Combobox.Positioner mt={-1.5} className={ui("[z-index:1]!")}>
+                            <Combobox.Content maxHeight="260px" className={ui("[overflow-y:auto]! [border-radius:10px]! border! border-solid! [border-color:var(--border)]!")}>
                                 <Combobox.Empty fontSize={fontSize}>
                                     No items found
                                 </Combobox.Empty>
-                                {collection.items.map((item) => (
-                                    <Combobox.Item
-                                        key={item.value}
-                                        item={item}
-                                        fontSize={listFontSize}
-                                        textTransform="uppercase"
-                                
-                                    >
+                                {collection.items.map(item => <Combobox.Item key={item.value} item={item} fontSize={listFontSize} className={ui("[text-transform:uppercase]!")}>
                                         {String(item.label).toUpperCase()}
                                         <Combobox.ItemIndicator />
-                                    </Combobox.Item>
-                                ))}
+                                    </Combobox.Item>)}
                             </Combobox.Content>
                         </Combobox.Positioner>
-                    </Portal>
-                )}
+                    </Portal>}
             </Combobox.Root>
-        </Field.Root>
-    );
+        </Field.Root>;
 });
-
 SelectCombobox.displayName = 'SelectCombobox';

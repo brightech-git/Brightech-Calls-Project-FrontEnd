@@ -1,200 +1,37 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useLogin } from "@/hooks/Auth/useAuth";
-import { COLORS, FONT, RADIUS } from "@/utils/theme";
-import { Eye, EyeOff, Bolt } from "lucide-react";
-
+import { ui } from "@/utils/ui";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { isAxiosError } from 'axios';
+import { useLogin } from '@/hooks/Auth/useAuth';
+import { Eye, EyeOff, Headphones, ArrowRight, CheckCircle2, Workflow, Users } from 'lucide-react';
 export default function LoginPage() {
   const router = useRouter();
-  const { mutate: login, isPending } = useLogin();
-
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPw, setShowPw]     = useState(false);
-  const [error, setError]       = useState("");
-
-
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    login(
-      { username, password },
-      {
-        onSuccess: () => {
-          router.push("/Home");
-        },
-        onError: (err: any) => {
-          setError(
-            err?.response?.data?.message ||
-            err?.message ||
-            "Invalid username or password."
-          );
-        },
-      }
-    );
+  const {
+    mutate: login,
+    isPending
+  } = useLogin();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const handleLogin = (event: React.FormEvent) => {
+    event.preventDefault();
+    setError('');
+    login({
+      username,
+      password
+    }, {
+      onSuccess: () => router.replace('/Home'),
+      onError: (error: unknown) => setError(isAxiosError(error) ? error.response?.data?.message || 'Unable to sign in. Check your credentials and connection.' : 'Unable to sign in. Please try again.')
+    });
   };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const form = (e.target as HTMLElement).closest("form");
-      if (!form) return;
-      const inputs = Array.from(form.querySelectorAll<HTMLElement>("input:not([disabled])"));
-      const idx = inputs.indexOf(e.target as HTMLElement);
-      if (idx >= 0 && idx < inputs.length - 1) inputs[idx + 1].focus();
-    }
-  };
-
-  return (
-    <>
-      <style>{`
-        .login-page {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: ${COLORS.contentBg};
-          font-family: ${FONT.family};
-        }
-        .login-card {
-          background: ${COLORS.cardBg};
-          border: 1px solid ${COLORS.cardBorder};
-          border-radius: ${RADIUS.xl};
-          box-shadow: 0 4px 24px ${COLORS.cardShadow};
-          width: 100%;
-          max-width: 360px;
-          padding: 32px 28px 28px;
-        }
-        .login-logo {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          margin-bottom: 24px;
-        }
-        .login-logo-icon {
-          width: 36px; height: 36px;
-          border-radius: ${RADIUS.md};
-          background: ${COLORS.sidebarLogoIconBg};
-          display: flex; align-items: center; justify-content: center;
-          color: ${COLORS.sidebarLogoIconColor};
-        }
-        .login-logo-text {
-          font-size: 16px; font-weight: 700;
-          color: ${COLORS.textPrimary}; letter-spacing: -0.02em;
-        }
-        .login-logo-sub {
-          font-size: 10px; color: ${COLORS.textMuted};
-          font-weight: 500; letter-spacing: 0.06em;
-          text-transform: uppercase;
-        }
-        .login-field { display: flex; flex-direction: column; gap: 5px; width: 100%; }
-        .login-label {
-          font-size: 11px; font-weight: 700;
-          color: ${COLORS.textSecondary};
-          letter-spacing: 0.05em; text-transform: uppercase;
-        }
-        .login-input-wrap { position: relative; }
-        .login-input {
-          width: 100%; height: 36px;
-          background: ${COLORS.inputBg};
-          border: 1px solid ${COLORS.inputBorder};
-          border-radius: ${RADIUS.md};
-          color: ${COLORS.inputText};
-          font-size: 13px; font-family: inherit;
-          padding: 0 36px 0 10px;
-          outline: none; transition: border-color 0.15s, box-shadow 0.15s;
-          box-sizing: border-box;
-        }
-        .login-input::placeholder { color: ${COLORS.inputPlaceholder}; }
-        .login-input:focus {
-          border-color: ${COLORS.inputBorderFocus};
-          box-shadow: 0 0 0 2px rgba(107,114,128,0.15);
-        }
-        .login-eye {
-          position: absolute; right: 10px; top: 50%;
-          transform: translateY(-50%);
-          background: none; border: none; cursor: pointer;
-          color: ${COLORS.textMuted}; display: flex; align-items: center;
-          padding: 0;
-        }
-        .login-error {
-          font-size: 12px; color: ${COLORS.error};
-          width: 100%; margin-top: -4px;
-        }
-        .login-btn {
-          width: 100%; height: 38px;
-          background: ${COLORS.btnPrimaryBg};
-          color: ${COLORS.btnPrimaryText};
-          border: none; border-radius: ${RADIUS.md};
-          font-size: 13px; font-weight: 600;
-          font-family: inherit; cursor: pointer;
-          transition: background 0.15s;
-          margin-top: 4px;
-        }
-        .login-btn:hover:not(:disabled) { background: ${COLORS.btnPrimaryHover}; }
-        .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-      `}</style>
-
-      <div className="login-page">
-        <div className="login-card">
-          <div className="login-logo">
-            <div className="login-logo-icon"><Bolt size={18} /></div>
-            <div>
-              <div className="login-logo-text">Brightech</div>
-              <div className="login-logo-sub">Calls Management</div>
-            </div>
-          </div>
-
-          <form onSubmit={handleLogin}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-
-              <div className="login-field">
-                <label className="login-label">Username</label>
-                <div className="login-input-wrap">
-                  <input
-                    className="login-input"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.toUpperCase())}
-                    placeholder="Enter username"
-                    onKeyDown={handleKeyDown}
-                    tabIndex={1}
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              <div className="login-field">
-                <label className="login-label">Password</label>
-                <div className="login-input-wrap">
-                  <input
-                    className="login-input"
-                    type={showPw ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter password"
-                    tabIndex={2}
-                  />
-                  <button type="button" className="login-eye" tabIndex={-1}
-                    onClick={() => setShowPw((p) => !p)}>
-                    {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </button>
-                </div>
-              </div>
-
-              {error && <div className="login-error">{error}</div>}
-
-              <button type="submit" className="login-btn" disabled={isPending} tabIndex={3}>
-                {isPending ? "Logging in..." : "Login"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </>
-  );
+  return <main className={ui("login-page")}><section className={ui("login-story")} aria-label="Brightech Calls">
+    <div className={ui("login-brand")}><span><Headphones size={24} /></span><strong>brightech <em>calls</em></strong></div>
+    <div className={ui("login-story-content")}><div className={ui("login-story-tag")}>A BETTER DAY AT WORK</div><h1>Great service.<br />One call at a time.</h1><p>A focused workspace for your clients, projects, and the people who keep things moving.</p><div className={ui("login-features")}><span><Workflow size={18} />Keep every task on track</span><span><Users size={18} />Stay connected with your clients</span><span><CheckCircle2 size={18} />Turn follow-ups into resolutions</span></div></div>
+    <div className={ui("login-story-footer")}>Brightech Software · Calls Management</div>
+  </section><section className={ui("login-form-side")}><div className={ui("login-card")}><div className={ui("login-mobile-brand")}><Headphones size={23} />Brightech Calls</div><div className={ui("ui-eyebrow")}>YOUR WORKSPACE AWAITS</div><h2>Welcome back</h2><p className={ui("login-intro")}>Sign in to manage your calls and assignments.</p>
+    <form onSubmit={handleLogin}><div className={ui("login-field")}><label htmlFor="login-username">Username</label><input id="login-username" autoComplete="username" required value={username} onChange={event => setUsername(event.target.value.toUpperCase())} placeholder="Enter your username" disabled={isPending} /></div><div className={ui("login-field")}><label htmlFor="login-password">Password</label><div className={ui("login-password-wrap")}><input id="login-password" autoComplete="current-password" required type={showPassword ? 'text' : 'password'} value={password} onChange={event => setPassword(event.target.value)} placeholder="Enter your password" disabled={isPending} aria-describedby={error ? 'login-error' : undefined} /><button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
+    {error && <p id="login-error" className={ui("login-error")} role="alert">{error}</p>}<button className={ui("login-submit")} type="submit" disabled={isPending}>{isPending ? 'Signing in…' : 'Sign in'}<ArrowRight size={18} /></button></form><p className={ui("login-help")}>Need access? Contact your workspace administrator.</p></div><p className={ui("login-copyright")}>Brightech Calls · Built for better service</p></section></main>;
 }

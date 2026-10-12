@@ -1,61 +1,62 @@
 "use client";
 
-import React, {
-  useState, useEffect, useMemo, useCallback, memo,
-} from "react";
-import {
-  Box, Button, Flex, Tabs, VStack, HStack, Text,
-  Spinner, Badge, Grid, GridItem,
-} from "@chakra-ui/react";
+import { ui } from "@/utils/ui";
+import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { Box, Button, Flex, Tabs, VStack, HStack, Text, Spinner, Badge, Grid, GridItem } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
-import {
-  ChevronRight, ChevronDown, Plus, Trash2,
-  ShieldCheck, Eye, CheckSquare, AlertCircle, Edit2,
-} from "lucide-react";
-
+import { ChevronRight, ChevronDown, Plus, Trash2, ShieldCheck, Eye, CheckSquare, AlertCircle, Edit2 } from "lucide-react";
 import { CustomTable, TableColumn } from "@/components/table/CustomTable";
-import { toastError, toastCreated }  from "@/components/toast/toast";
-
-import {
-  useRoleTransactions, useInsertRoleTransaction,
-  useDeleteRoleTransaction, useToggleRoleTransactionActive, useMenu,
-} from "@/hooks/ApiHooks/RoleTran/useRoleTran";
-import { RoleTran, RoleTranInput }  from "@/types/RoleTran/RoleTran";
+import { toastError, toastCreated } from "@/components/toast/toast";
+import { useRoleTransactions, useInsertRoleTransaction, useDeleteRoleTransaction, useToggleRoleTransactionActive, useMenu } from "@/hooks/ApiHooks/RoleTran/useRoleTran";
+import { RoleTran, RoleTranInput } from "@/types/RoleTran/RoleTran";
 import { useRole } from "@/hooks/ApiHooks/RoleMaster/useRoleMaster";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
+import { COLORS, RADIUS } from "@/utils/theme";
 const T = {
-  navy:        "#0b2d5c",
-  navyMID:     "#0b2d5c",
-  navyLight:   "#082347",
-  accent:      "#0b2d5c",
-  accentLight: "#eaf0f9",
-  accentMID:   "#eaf0f9",
-  green:       "#16a34a",
-  greenLight:  "#dcfce7",
-  red:         "#ef4444",
-  redLight:    "#fee2e2",
-  orange:      "#b45309",
-  text:        "#0a0a0a",
-  textMID:     "#1a1a1a",
-  textSub:     "#4b5563",
-  textMuted:   "#9ca3af",
-  border:      "#e5e7eb",
-  borderMID:   "#d1d5db",
-  bg:          "#f5f5f5",
-  bgCard:      "#FFFFFF",
-  bgHover:     "#f3f4f6",
-  radius:      "6px",
-  radiusMd:    "8px",
-  radiusLg:    "12px",
+  navy: COLORS.primary,
+  navyMID: COLORS.primary,
+  navyLight: COLORS.primaryHover,
+  accent: COLORS.primary,
+  accentLight: COLORS.primaryLight,
+  accentMID: COLORS.primaryLight,
+  green: COLORS.success,
+  greenLight: COLORS.successBg,
+  red: COLORS.error,
+  redLight: COLORS.errorBg,
+  orange: COLORS.warning,
+  text: COLORS.textPrimary,
+  textMID: COLORS.textSecondary,
+  textSub: COLORS.textMuted,
+  textMuted: COLORS.textMuted,
+  border: COLORS.cardBorder,
+  borderMID: COLORS.inputBorder,
+  bg: COLORS.gray50,
+  bgCard: COLORS.cardBg,
+  bgHover: COLORS.primaryLight,
+  radius: RADIUS.md,
+  radiusMd: RADIUS.md,
+  radiusLg: RADIUS.lg
 } as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ContentNode   { id: number; name: string }
-interface SubModuleNode { id: number; name: string; moduleContent: ContentNode[] }
-interface ModuleNode { id: number; name: string; moduleContent: ContentNode[]; subModulel: SubModuleNode[] }
+interface ContentNode {
+  id: number;
+  name: string;
+}
+interface SubModuleNode {
+  id: number;
+  name: string;
+  moduleContent: ContentNode[];
+}
+interface ModuleNode {
+  id: number;
+  name: string;
+  moduleContent: ContentNode[];
+  subModulel: SubModuleNode[];
+}
 type CheckState = "none" | "some" | "all";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -79,253 +80,211 @@ function toRoleTranInputs(txs: RoleTran[]): RoleTranInput[] {
     SUBMODULENAME: tx.SUBMODULENAME,
     CONTENTID: tx.CONTENTID,
     CONTENTNAME: tx.CONTENTNAME,
-    ACTIVE: tx.ACTIVE,
+    ACTIVE: tx.ACTIVE
   }));
 }
 
 // ─── TriCheckbox ──────────────────────────────────────────────────────────────
 
-const TriCheckbox = memo(({ state, onChange }: { state: CheckState; onChange: () => void }) => (
-  <input
-    type="checkbox"
-    ref={el => { if (el) el.indeterminate = state === "some"; }}
-    checked={state === "all"}
-    onChange={onChange}
-    style={{ cursor: "pointer", width: 13, height: 13, accentColor: T.accent, flexShrink: 0 }}
-  />
-));
+const TriCheckbox = memo(({
+  state,
+  onChange
+}: {
+  state: CheckState;
+  onChange: () => void;
+}) => <input type="checkbox" ref={el => {
+  if (el) el.indeterminate = state === "some";
+}} checked={state === "all"} onChange={onChange} style={{
+  accentColor: T.accent
+}} className={ui("[cursor:pointer] [width:13px] [height:13px] [flex-shrink:0]")} />);
 TriCheckbox.displayName = "TriCheckbox";
 
 // ─── ContentRow ───────────────────────────────────────────────────────────────
 
-const ContentRow = memo(({ content, selected, onToggle }: {
-  content: ContentNode; selected: boolean; onToggle: (ID: number) => void;
-}) => (
-  <label style={{
-    display: "flex", alignItems: "center", gap: 8,
-    padding: "4px 10px 4px 42px", cursor: "pointer", borderRadius: 6,
-    background: selected ? T.accentLight : "transparent",
-    fontSize: 12.5, userSelect: "none",
-    transition: "background 0.12s",
-  }}>
-    <input
-      type="checkbox" checked={selected} onChange={() => onToggle(content.id)}
-      style={{ cursor: "pointer", width: 13, height: 13, accentColor: T.accent, flexShrink: 0 }}
-    />
-    <span style={{ color: selected ? "#1D4ED8" : T.textMID, transition: "color 0.12s" }}>
+const ContentRow = memo(({
+  content,
+  selected,
+  onToggle
+}: {
+  content: ContentNode;
+  selected: boolean;
+  onToggle: (ID: number) => void;
+}) => <label style={{
+  background: selected ? T.accentLight : "transparent"
+}} className={ui("[display:flex] [align-items:center] [gap:8px] [padding:4px_10px_4px_42px] [cursor:pointer] [border-radius:6px] [font-size:12.5px] [user-select:none] [transition:background_0.12s]")}>
+    <input type="checkbox" checked={selected} onChange={() => onToggle(content.id)} style={{
+    accentColor: T.accent
+  }} className={ui("[cursor:pointer] [width:13px] [height:13px] [flex-shrink:0]")} />
+    <span style={{
+    color: selected ? "#1D4ED8" : T.textMID
+    }} className={ui("[transition:color_0.12s] [font-size:var(--font-sm)]!")}>
       {content.name}
     </span>
-  </label>
-));
+  </label>);
 ContentRow.displayName = "ContentRow";
 
 // ─── SubModuleRow ─────────────────────────────────────────────────────────────
 
-const SubModuleRow = memo(({ sub, selected, onToggleContent, onToggleGroup, forceOpen }: {
-  sub: SubModuleNode; selected: Set<number>;
+const SubModuleRow = memo(({
+  sub,
+  selected,
+  onToggleContent,
+  onToggleGroup,
+  forceOpen
+}: {
+  sub: SubModuleNode;
+  selected: Set<number>;
   onToggleContent: (ID: number) => void;
   onToggleGroup: (IDs: number[]) => void;
   forceOpen?: boolean;
 }) => {
   const [open, setOpen] = useState(forceOpen ?? true);
-  useEffect(() => { if (forceOpen !== undefined) setOpen(forceOpen); }, [forceOpen]);
-
+  useEffect(() => {
+    if (forceOpen !== undefined) setOpen(forceOpen);
+  }, [forceOpen]);
   const IDs = useMemo(() => sub.moduleContent.map(c => c.id), [sub.moduleContent]);
   const state = getCheckState(IDs, selected);
   const checkedCount = IDs.filter(ID => selected.has(ID)).length;
-
-  return (
-    <Box>
-      <Flex
-        align="center" gap={1.5} px={2} py="5px" cursor="pointer"
-        borderRadius={6} _hover={{ bg: T.bgHover }}
-        style={{ paddingLeft: 20 }}
-        transition="background 0.12s"
-      >
-        <Box
-          as="span" onClick={() => setOpen(o => !o)}
-          style={{ display: "flex", alignItems: "center", color: T.textSub, flexShrink: 0 }}
-        >
+  return <Box>
+      <Flex _hover={{
+      bg: T.bgHover
+    }} className={ui("[align-items:center]! [gap:6px]! [padding-left:8px]! [padding-right:8px]! [padding-top:5px]! [padding-bottom:5px]! [cursor:pointer]! [border-radius:6px]! [padding-left:20px] [transition:background_0.12s]!")}>
+        <Box as="span" onClick={() => setOpen(o => !o)} style={{
+        color: T.textSub
+      }} className={ui("[display:flex] [align-items:center] [flex-shrink:0]")}>
           {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </Box>
         <TriCheckbox state={state} onChange={() => onToggleGroup(IDs)} />
-        <Text
-          fontSize="xs" fontWeight="semibold" color={state !== "none" ? T.accent : T.textSub}
-          ml={1} onClick={() => setOpen(o => !o)}
-          style={{ cursor: "pointer", userSelect: "none", flex: 1 }}
-          transition="color 0.12s"
-        >
+        <Text color={state !== "none" ? T.accent : T.textSub} onClick={() => setOpen(o => !o)} className={ui("[font-size:var(--font-xs)]! font-normal! [margin-left:4px]! [cursor:pointer] [user-select:none] [flex:1] [transition:color_0.12s]!")}>
           📁 {sub.name}
         </Text>
-        {state !== "none" && (
-          <Box
-            px={1.5} py="1px" borderRadius={10} fontSize="10px" fontWeight={600}
-            bg={T.accentLight} color={T.accent}
-          >
+        {state !== "none" && <Box bg={T.accentLight} color={T.accent} className={ui("[padding-left:6px]! [padding-right:6px]! [padding-top:1px]! [padding-bottom:1px]! [border-radius:10px]! [font-size:10px]! font-normal!")}>
             {checkedCount}/{IDs.length}
-          </Box>
-        )}
+          </Box>}
       </Flex>
-      {open && (
-        <Box>
-          {sub.moduleContent.map(c => (
-            <ContentRow key={c.id} content={c} selected={selected.has(c.id)} onToggle={onToggleContent} />
-          ))}
-        </Box>
-      )}
-    </Box>
-  );
+    {open && <Box>
+          {sub.moduleContent.map(c => <ContentRow key={c.id} content={c} selected={selected.has(c.id)} onToggle={onToggleContent} />)}
+        </Box>}
+    </Box>;
 });
 SubModuleRow.displayName = "SubModuleRow";
 
 // ─── ModuleRow ────────────────────────────────────────────────────────────────
 
-const ModuleRow = memo(({ mod, selected, onToggleContent, onToggleGroup, forceOpen, expandedSubIDs }: {
-  mod: ModuleNode; selected: Set<number>;
+const ModuleRow = memo(({
+  mod,
+  selected,
+  onToggleContent,
+  onToggleGroup,
+  forceOpen,
+  expandedSubIDs
+}: {
+  mod: ModuleNode;
+  selected: Set<number>;
   onToggleContent: (ID: number) => void;
   onToggleGroup: (IDs: number[]) => void;
   forceOpen?: boolean;
   expandedSubIDs?: Set<number>;
 }) => {
-
-  console.log(mod,'mod')
+  console.log(mod, 'mod');
   const [open, setOpen] = useState(forceOpen ?? true);
-  useEffect(() => { if (forceOpen !== undefined) setOpen(forceOpen); }, [forceOpen]);
-
-  const allIDs = useMemo(() => [
-    ...mod.moduleContent.map(c => c.id),
-    // ...mod.SUBMODULES.flatMap(s => s.CONTENTS.map(c => c.ID)),
+  useEffect(() => {
+    if (forceOpen !== undefined) setOpen(forceOpen);
+  }, [forceOpen]);
+  const allIDs = useMemo(() => [...mod.moduleContent.map(c => c.id)
+  // ...mod.SUBMODULES.flatMap(s => s.CONTENTS.map(c => c.ID)),
   ], [mod]);
-
   const state = getCheckState(allIDs, selected);
   const checkedCount = allIDs.filter(ID => selected.has(ID)).length;
-
-  return (
-    <Box
-      mb={1.5}
-      border={`1px solid ${state !== "none" ? T.accentMID : T.border}`}
-      borderRadius={T.radiusMd} overflow="hidden"
-      transition="border-color 0.15s"
-      boxShadow={state !== "none" ? "0 0 0 2px rgba(59,130,246,0.08)" : "none"}
-    >
-      <Flex
-        align="center" gap={2} px={3} py="7px"
-        bg={state !== "none" ? T.accentLight : T.bg}
-        cursor="pointer"
-        _hover={{ bg: state !== "none" ? "#DBEAFE" : T.bgHover }}
-        transition="background 0.12s"
-      >
-        <Box
-          as="span" onClick={() => setOpen(o => !o)}
-          style={{ display: "flex", alignItems: "center", color: T.textSub, flexShrink: 0 }}
-        >
+  return <Box border={`1px solid ${state !== "none" ? T.accentMID : T.border}`} borderRadius={T.radiusMd} boxShadow={state !== "none" ? "0 0 0 2px rgba(59,130,246,0.08)" : "none"} className={ui("[margin-bottom:6px]! [overflow:hidden]! [transition:border-color_0.15s]!")}>
+      <Flex bg={state !== "none" ? T.accentLight : T.bg} _hover={{
+      bg: state !== "none" ? "#DBEAFE" : T.bgHover
+    }} className={ui("[align-items:center]! [gap:8px]! [padding-left:12px]! [padding-right:12px]! [padding-top:7px]! [padding-bottom:7px]! [cursor:pointer]! [transition:background_0.12s]!")}>
+        <Box as="span" onClick={() => setOpen(o => !o)} style={{
+        color: T.textSub
+      }} className={ui("[display:flex] [align-items:center] [flex-shrink:0]")}>
           {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </Box>
         <TriCheckbox state={state} onChange={() => onToggleGroup(allIDs)} />
-        <Text
-          fontSize="xs" fontWeight="bold"
-          color={state !== "none" ? "#1E40AF" : T.textMID}
-          ml={1} flex={1}
-          onClick={() => setOpen(o => !o)}
-          style={{ cursor: "pointer", userSelect: "none" }}
-          transition="color 0.12s"
-        >
+        <Text color={state !== "none" ? "#1E40AF" : T.textMID} onClick={() => setOpen(o => !o)} className={ui("[font-size:var(--font-xs)]! font-normal! [margin-left:4px]! [flex:1]! [cursor:pointer] [user-select:none] [transition:color_0.12s]!")}>
           {mod.name}
         </Text>
-        {state !== "none" && (
-          <Box
-            px={2} py="2px" borderRadius={10} fontSize="10px" fontWeight={700}
-            bg="#DBEAFE" color="#1E40AF"
-          >
+        {state !== "none" && <Box className={ui("[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:10px]! font-normal! [background:#DBEAFE]! [color:#1E40AF]!")}>
             {checkedCount}/{allIDs.length}
-          </Box>
-        )}
+          </Box>}
       </Flex>
-      {open && (
-        <Box py={1} bg={T.bgCard}>
-          {mod.moduleContent.map(c => (
-            <ContentRow key={c.id} content={c} selected={selected.has(c.id)} onToggle={onToggleContent} />
-          ))}
+      {open && <Box bg={T.bgCard} className={ui("[padding-top:4px]! [padding-bottom:4px]!")}>
+          {mod.moduleContent.map(c => <ContentRow key={c.id} content={c} selected={selected.has(c.id)} onToggle={onToggleContent} />)}
           {/* {mod.SUBMODULES.map(sub => (
             <SubModuleRow
               key={sub.ID} sub={sub} selected={selected}
               onToggleContent={onToggleContent} onToggleGroup={onToggleGroup}
               forceOpen={expandedSubIDs ? expandedSubIDs.has(sub.ID) : true}
             />
-          ))} */}
-        </Box>
-      )}
-    </Box>
-  );
+           ))} */}
+        </Box>}
+    </Box>;
 });
 ModuleRow.displayName = "ModuleRow";
 
 // ─── ModuleTree ───────────────────────────────────────────────────────────────
 
-const ModuleTree = memo(({ menuData, selectedContentIDs, onToggleContent, onToggleGroup, expandedModuleIDs, expandedSubIDs }: {
-  menuData: ModuleNode[]; selectedContentIDs: Set<number>;
-  onToggleContent: (ID: number) => void; onToggleGroup: (IDs: number[]) => void;
-  expandedModuleIDs?: Set<number>; expandedSubIDs?: Set<number>;
+const ModuleTree = memo(({
+  menuData,
+  selectedContentIDs,
+  onToggleContent,
+  onToggleGroup,
+  expandedModuleIDs,
+  expandedSubIDs
+}: {
+  menuData: ModuleNode[];
+  selectedContentIDs: Set<number>;
+  onToggleContent: (ID: number) => void;
+  onToggleGroup: (IDs: number[]) => void;
+  expandedModuleIDs?: Set<number>;
+  expandedSubIDs?: Set<number>;
 }) => {
-  const allIDs = useMemo(() =>
-    menuData.flatMap(m => [
-      ...m.moduleContent.map(c => c.id),
-      // ...m.SUBMODULES.flatMap(s => s.CONTENTS.map(c => c.ID)),
-    ]), [menuData]);
-
+  const allIDs = useMemo(() => menuData.flatMap(m => [...m.moduleContent.map(c => c.id)
+  // ...m.SUBMODULES.flatMap(s => s.CONTENTS.map(c => c.ID)),
+  ]), [menuData]);
   const rootState = getCheckState(allIDs, selectedContentIDs);
   const totalSelected = allIDs.filter(ID => selectedContentIDs.has(ID)).length;
-
-  return (
-    <Box>
-      <Flex
-        align="center" gap={2} px={3} py="6px" mb={2}
-        bg={T.bg} borderRadius={T.radius} border={`1px solid ${T.border}`}
-      >
+  return <Box >
+      <Flex bg={T.bg} borderRadius={T.radius} border={`1px solid ${T.border}`} className={ui("[align-items:center]! [gap:8px]! [padding-left:12px]! [padding-right:12px]! [padding-top:6px]! [padding-bottom:6px]! [margin-bottom:8px]!")}>
         <TriCheckbox state={rootState} onChange={() => onToggleGroup(allIDs)} />
-        <Text fontSize="xs" fontWeight="bold" color={T.textMID} flex={1}>Select All</Text>
-        {totalSelected > 0 && (
-          <Box px={2} py="2px" borderRadius={10} fontSize="10px" fontWeight={700} bg={T.accentLight} color={T.accent}>
+        <Text color={T.textMID} className={ui("[font-size:14px]! font-normal! [flex:1]!")}>Select All</Text>
+        {totalSelected > 0 && <Box bg={T.accentLight} color={T.accent} className={ui("[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:10px]! font-normal!")}>
             {totalSelected} / {allIDs.length}
-          </Box>
-        )}
+          </Box>}
       </Flex>
-      {menuData.map(mod => (
-        <ModuleRow
-          key={mod.id} mod={mod} selected={selectedContentIDs}
-          onToggleContent={onToggleContent} onToggleGroup={onToggleGroup}
-          forceOpen={expandedModuleIDs ? expandedModuleIDs.has(mod.id) : true}
-          expandedSubIDs={expandedSubIDs}
-        />
-      ))}
-    </Box>
-  );
+      {menuData.map(mod => <ModuleRow key={mod.id} mod={mod} selected={selectedContentIDs} onToggleContent={onToggleContent} onToggleGroup={onToggleGroup} forceOpen={expandedModuleIDs ? expandedModuleIDs.has(mod.id) : true} expandedSubIDs={expandedSubIDs} />)}
+    </Box>;
 });
 ModuleTree.displayName = "ModuleTree";
 
 // ─── MergedViewTable ──────────────────────────────────────────────────────────
 
 interface FlatRow {
-  sno?: number; moduleNAME: string; subModuleNAME: string;
-  contentNAME: string; active?: boolean;
+  sno?: number;
+  moduleNAME: string;
+  subModuleNAME: string;
+  contentNAME: string;
+  active?: boolean;
 }
-
 function buildFlatRows(txs: RoleTran[]): FlatRow[] {
-  return [...txs]
-    .sort((a, b) => {
-      const m = a.MODULENAME.localeCompare(b.MODULENAME);
-      if (m) return m;
-      const s = (a.SUBMODULENAME || "").localeCompare(b.SUBMODULENAME || "");
-      if (s) return s;
-      return a.CONTENTNAME.localeCompare(b.CONTENTNAME);
-    })
-    .map(tx => ({
-      sno: tx.SNO,
-      moduleNAME:    tx.MODULENAME,
-      subModuleNAME: tx.SUBMODULENAME || "—",
-      contentNAME:   tx.CONTENTNAME,
-      active:        tx.ACTIVE,
-    }));
+  return [...txs].sort((a, b) => {
+    const m = a.MODULENAME.localeCompare(b.MODULENAME);
+    if (m) return m;
+    const s = (a.SUBMODULENAME || "").localeCompare(b.SUBMODULENAME || "");
+    if (s) return s;
+    return a.CONTENTNAME.localeCompare(b.CONTENTNAME);
+  }).map(tx => ({
+    sno: tx.SNO,
+    moduleNAME: tx.MODULENAME,
+    subModuleNAME: tx.SUBMODULENAME || "—",
+    contentNAME: tx.CONTENTNAME,
+    active: tx.ACTIVE
+  }));
 }
 
 // Compute rowspan array: null = skip cell (covered by rowspan above)
@@ -339,229 +298,160 @@ function computeSpans<T>(rows: T[], key: (r: T, i: number) => string): (number |
     return null;
   });
 }
-
-const MergedViewTable = memo(({ txs, onToggle, onDelete, isToggling, isDeleting }: {
-  txs: RoleTran[]; onToggle: (sno: number) => void; onDelete: (sno: number) => void;
-  isToggling: boolean; isDeleting: boolean;
+const MergedViewTable = memo(({
+  txs,
+  onToggle,
+  onDelete,
+  isToggling,
+  isDeleting
+}: {
+  txs: RoleTran[];
+  onToggle: (sno: number) => void;
+  onDelete: (sno: number) => void;
+  isToggling: boolean;
+  isDeleting: boolean;
 }) => {
   const rows = useMemo(() => buildFlatRows(txs), [txs]);
-
-  const moduleSpans = useMemo(() =>
-    computeSpans(rows, r => r.moduleNAME), [rows]);
-
-  const subSpans = useMemo(() =>
-    computeSpans(rows, (r, i) => `${r.moduleNAME}__${r.subModuleNAME}`), [rows]);
-
+  const moduleSpans = useMemo(() => computeSpans(rows, r => r.moduleNAME), [rows]);
+  const subSpans = useMemo(() => computeSpans(rows, (r, i) => `${r.moduleNAME}__${r.subModuleNAME}`), [rows]);
   const cell: React.CSSProperties = {
-    padding: "9px 14px", fontSize: 13,
-    borderBottom: `1px solid ${T.border}`, verticalAlign: "middle",
+    padding: "9px 14px",
+    fontSize: 13,
+    borderBottom: `1px solid ${T.border}`,
+    verticalAlign: "middle"
   };
-
-  return (
-    <Box overflowX="auto">
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+  return <Box className={ui("[overflow-x:auto]!")}>
+      <table className={ui("[width:100%] [border-collapse:collapse] [font-size:13px]")}>
         <thead>
-          <tr style={{ background: T.navy }}>
-            {["Module", "Sub Module", "Content", "Status", "Actions"].map((h, i) => (
-              <th key={h} style={{
-                padding: "11px 14px",
-                textAlign: i >= 3 ? "center" : "left",
-                color: "#E2E8F0", fontWeight: 600, fontSize: 11.5,
-                letterSpacing: "0.06em", textTransform: "uppercase",
-                borderBottom: `2px solid ${T.navyLight}`, whiteSpace: "nowrap",
-              }}>{h}</th>
-            ))}
+          <tr style={{
+          background: T.navy
+        }}>
+            {["Module", "Sub Module", "Content", "Status", "Actions"].map((h, i) => <th key={h} style={{
+            textAlign: i >= 3 ? "center" : "left",
+            borderBottom: `2px solid ${T.navyLight}`
+          }} className={ui("[padding:11px_14px] [color:#E2E8F0] [font-weight:600] [font-size:11.5px] [letter-spacing:0.06em] [text-transform:uppercase] [white-space:nowrap]")}>{h}</th>)}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => (
-            <tr
-              key={i}
-              style={{ background: i % 2 === 0 ? T.bgCard : T.bg, transition: "background 0.1s" }}
-            >
-              {moduleSpans[i] !== null && (
-                <td
-                  rowSpan={moduleSpans[i]!}
-                  style={{
-                    ...cell,
-                    background: T.accentLight,
-                    borderRight: `2px solid ${T.accentMID}`,
-                    borderBottom: `1px solid ${T.accentMID}`,
-                    textAlign: "center", verticalAlign: "middle", minWidth: 120,
-                  }}
-                >
-                  <Box
-                    display="inline-block" bg="#DBEAFE" color="#1E40AF"
-                    px={3} py={1} borderRadius={6} fontSize="12px" fontWeight="bold"
-                    maxW="150px" style={{ wordBreak: "break-word", textAlign: "center" }}
-                  >
+          {rows.map((row, i) => <tr key={i} style={{
+          background: i % 2 === 0 ? T.bgCard : T.bg
+        }} className={ui("[transition:background_0.1s]")}>
+              {moduleSpans[i] !== null && <td rowSpan={moduleSpans[i]!} style={{
+            ...cell,
+            background: T.accentLight,
+            borderRight: `2px solid ${T.accentMID}`,
+            borderBottom: `1px solid ${T.accentMID}`
+          }} className={ui("[text-align:center] [vertical-align:middle] [min-width:120px]")}>
+                  <Box className={ui("[display:inline-block]! [background:#DBEAFE]! [color:#1E40AF]! [padding-left:12px]! [padding-right:12px]! [padding-top:4px]! [padding-bottom:4px]! [border-radius:6px]! [font-size:12px]! font-normal! [max-width:150px]! [word-break:break-word] [text-align:center]")}>
                     {row.moduleNAME}
                   </Box>
-                </td>
-              )}
+                </td>}
 
-              {subSpans[i] !== null && (
-                <td
-                  rowSpan={subSpans[i]!}
-                  style={{
-                    ...cell, background: "#F7FAFF",
-                    borderRight: `1px solid ${T.border}`,
-                    borderBottom: `1px solid ${T.border}`,
-                    textAlign: "center", verticalAlign: "middle", minWidth: 110,
-                  }}
-                >
-                  {row.subModuleNAME === "—" ? (
-                    <Text color={T.textMuted} fontSize="13px">—</Text>
-                  ) : (
-                    <Box
-                      display="inline-block" bg="#F5F3FF" color="#6D28D9"
-                      px={2} py="2px" borderRadius={5} fontSize="11.5px" fontWeight={500}
-                      maxW="130px" style={{ wordBreak: "break-word", textAlign: "center" }}
-                    >
+              {subSpans[i] !== null && <td rowSpan={subSpans[i]!} style={{
+            ...cell,
+            borderRight: `1px solid ${T.border}`,
+            borderBottom: `1px solid ${T.border}`
+          }} className={ui("[background:#F7FAFF] [text-align:center] [vertical-align:middle] [min-width:110px]")}>
+                  {row.subModuleNAME === "—" ? <Text color={T.textMuted} className={ui("[font-size:13px]!")}>—</Text> : <Box className={ui("[display:inline-block]! [background:#F5F3FF]! [color:#6D28D9]! [padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:5px]! [font-size:11.5px]! font-normal! [max-width:130px]! [word-break:break-word] [text-align:center]")}>
                       📁 {row.subModuleNAME}
-                    </Box>
-                  )}
-                </td>
-              )}
+                    </Box>}
+                </td>}
 
               {/* Content */}
-              <td style={{ ...cell, color: T.text, fontWeight: 400 }}>
+              <td style={{
+            ...cell,
+            color: T.text
+          }} className={ui("[font-weight:400]")}>
                 {row.contentNAME}
               </td>
 
               {/* Status */}
-              <td style={{ ...cell, textAlign: "center" }}>
-                <Box
-                  display="inline-flex" alignItems="center" gap={1}
-                  px={2.5} py="3px" borderRadius={20} fontSize="11px" fontWeight={700}
-                  bg={row.active ? T.greenLight : T.redLight}
-                  color={row.active ? "#065F46" : "#991B1B"}
-                >
-                  <Box
-                    w="6px" h="6px" borderRadius="full" flexShrink={0}
-                    bg={row.active ? T.green : T.red}
-                  />
+              <td style={{
+            ...cell
+          }} className={ui("[text-align:center]")}>
+                <Box bg={row.active ? T.greenLight : T.redLight} color={row.active ? "#065F46" : "#991B1B"} className={ui("[display:inline-flex]! [align-items:center]! [gap:4px]! [padding-left:10px]! [padding-right:10px]! [padding-top:3px]! [padding-bottom:3px]! [border-radius:20px]! [font-size:11px]! font-normal!")}>
+                  <Box bg={row.active ? T.green : T.red} className={ui("[width:6px]! [height:6px]! [border-radius:9999px]! [flex-shrink:0]!")} />
                   {row.active ? "Active" : "Inactive"}
                 </Box>
               </td>
 
               {/* Actions */}
-              <td style={{ ...cell, textAlign: "center" }}>
-                <HStack gap={1.5} justify="center">
-                  <button
-                    onClick={() => row.sno && onToggle(row.sno)}
-                    disabled={isToggling || !row.sno}
-                    title={row.active ? "Deactivate" : "Activate"}
-                    style={{
-                      padding: "3px 10px", fontSize: 11.5, fontWeight: 600,
-                      borderRadius: 6, cursor: "pointer", border: "1px solid",
-                      borderColor: row.active ? "#F59E0B" : T.green,
-                      color: row.active ? T.orange : T.green,
-                      background: row.active ? "#FFFBEB" : "#F0FDF4",
-                      transition: "all 0.12s",
-                      opacity: isToggling || !row.sno ? 0.5 : 1,
-                    }}
-                  >
+              <td style={{
+            ...cell
+          }} className={ui("[text-align:center]")}>
+                <HStack className={ui("[gap:6px]! [justify-content:center]!")}>
+                  <button onClick={() => row.sno && onToggle(row.sno)} disabled={isToggling || !row.sno} title={row.active ? "Deactivate" : "Activate"} style={{
+                borderColor: row.active ? "#F59E0B" : T.green,
+                color: row.active ? T.orange : T.green,
+                background: row.active ? "#FFFBEB" : "#F0FDF4",
+                opacity: isToggling || !row.sno ? 0.5 : 1
+              }} className={ui("[padding:3px_10px] [font-size:11.5px] [font-weight:600] [border-radius:6px] [cursor:pointer] [border:1px_solid] [transition:all_0.12s]")}>
                     {row.active ? "Deactivate" : "Activate"}
                   </button>
-                  <button
-                    onClick={() => row.sno && onDelete(row.sno)}
-                    disabled={isDeleting || !row.sno}
-                    title="Delete"
-                    style={{
-                      padding: "4px 8px", borderRadius: 6, cursor: "pointer",
-                      border: `1px solid ${T.redLight}`, background: T.redLight,
-                      color: T.red, display: "flex", alignItems: "center",
-                      transition: "all 0.12s",
-                      opacity: isDeleting || !row.sno ? 0.5 : 1,
-                    }}
-                  >
+                  <button onClick={() => row.sno && onDelete(row.sno)} disabled={isDeleting || !row.sno} title="Delete" style={{
+                border: `1px solid ${T.redLight}`,
+                background: T.redLight,
+                color: T.red,
+                opacity: isDeleting || !row.sno ? 0.5 : 1
+              }} className={ui("[padding:4px_8px] [border-radius:6px] [cursor:pointer] [display:flex] [align-items:center] [transition:all_0.12s]")}>
                     <Trash2 size={13} />
                   </button>
                 </HStack>
               </td>
-            </tr>
-          ))}
+            </tr>)}
         </tbody>
       </table>
-    </Box>
-  );
+    </Box>;
 });
 MergedViewTable.displayName = "MergedViewTable";
 
 // ─── RoleCard ─────────────────────────────────────────────────────────────────
 
-const RoleCard = memo(({ roleNAME, txs, onEdit, onToggle, onDelete, isToggling, isDeleting }: {
-  roleNAME: string; txs: RoleTran[];
+const RoleCard = memo(({
+  roleNAME,
+  txs,
+  onEdit,
+  onToggle,
+  onDelete,
+  isToggling,
+  isDeleting
+}: {
+  roleNAME: string;
+  txs: RoleTran[];
   onEdit: (roleNAME: string, txs: RoleTran[]) => void;
-  onToggle: (sno: number) => void; onDelete: (sno: number) => void;
-  isToggling: boolean; isDeleting: boolean;
+  onToggle: (sno: number) => void;
+  onDelete: (sno: number) => void;
+  isToggling: boolean;
+  isDeleting: boolean;
 }) => {
   const [expanded, setExpanded] = useState(false);
   const activeCount = txs.filter(t => t.ACTIVE).length;
-
-  return (
-    <Box
-      mb={4} border={`1px solid ${T.border}`} borderRadius={T.radiusLg}
-      overflow="hidden" boxShadow="0 1px 4px rgba(0,0,0,0.06)"
-      transition="box-shadow 0.15s"
-      _hover={{ boxShadow: "0 3px 12px rgba(0,0,0,0.1)" }}
-    >
+  return <Box border={`1px solid ${T.border}`} borderRadius={T.radiusLg} _hover={{
+    boxShadow: "0 3px 12px rgba(0,0,0,0.1)"
+  }} className={ui("[margin-bottom:16px]! [overflow:hidden]! [box-shadow:0_1px_4px_rgba(0,0,0,0.06)]! [transition:box-shadow_0.15s]!")}>
       {/* Header */}
-      <Flex
-        justify="space-between" align="center"
-        px={4} py={3} bg={T.navyMID} cursor="pointer"
-        onClick={() => setExpanded(e => !e)}
-      >
-        <HStack gap={3}>
-          <Box
-            w="32px" h="32px" borderRadius={8} bg="rgba(255,255,255,0.12)"
-            display="flex" alignItems="center" justifyContent="center"
-          >
-            <ShieldCheck size={15} color="white" />
+      <Flex bg={T.navyMID} onClick={() => setExpanded(e => !e)} className={ui("[justify-content:space-between]! [align-items:center]! [padding-left:16px]! [padding-right:16px]! [padding-top:12px]! [padding-bottom:12px]! [cursor:pointer]!")}>
+        <HStack className={ui("[gap:12px]!")}>
+          <Box className={ui("[width:32px]! [height:32px]! [border-radius:8px]! [background:rgba(255,255,255,0.12)]! [display:flex]! [align-items:center]! [justify-content:center]!")}>
+            <ShieldCheck size={15} className={ui("[color:white]!")} />
           </Box>
           <Box>
-            <Text fontWeight={700} color="white" fontSize="sm">{roleNAME}</Text>
-            <HStack gap={2} mt={0.5}>
-              <Box
-                px={1.5} py="1px" borderRadius={10} fontSize="10px" fontWeight={600}
-                bg="rgba(255,255,255,0.15)" color="white"
-              >
+            <Text className={ui("font-normal! [color:white]! [font-size:var(--font-sm)]!")}>{roleNAME}</Text>
+            <HStack className={ui("[gap:8px]! [margin-top:2px]!")}>
+              <Box className={ui("[padding-left:6px]! [padding-right:6px]! [padding-top:1px]! [padding-bottom:1px]! [border-radius:10px]! [font-size:10px]! font-normal! [background:rgba(255,255,255,0.15)]! [color:white]!")}>
                 {txs.length} permission{txs.length !== 1 ? "s" : ""}
               </Box>
-              <Box
-                px={1.5} py="1px" borderRadius={10} fontSize="10px" fontWeight={600}
-                bg={activeCount > 0 ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.2)"}
-                color={activeCount > 0 ? "#6EE7B7" : "#FCA5A5"}
-              >
+              <Box bg={activeCount > 0 ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.2)"} color={activeCount > 0 ? "#6EE7B7" : "#FCA5A5"} className={ui("[padding-left:6px]! [padding-right:6px]! [padding-top:1px]! [padding-bottom:1px]! [border-radius:10px]! [font-size:10px]! font-normal!")}>
                 {activeCount} active
               </Box>
             </HStack>
           </Box>
         </HStack>
-        <HStack gap={2} onClick={e => e.stopPropagation()}>
-          <button
-            onClick={() => onEdit(roleNAME, txs)}
-            style={{
-              display: "flex", alignItems: "center", gap: 5,
-              padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-              background: "rgba(255,255,255,0.12)", color: "white",
-              border: "1px solid rgba(255,255,255,0.2)",
-              cursor: "pointer", transition: "background 0.12s",
-            }}
-          >
+        <HStack onClick={e => e.stopPropagation()} className={ui("[gap:8px]!")}>
+          <button onClick={() => onEdit(roleNAME, txs)} className={ui("[display:flex] [align-items:center] [gap:5px] [padding:5px_12px] [border-radius:6px] [font-size:12px] [font-weight:600] [background:rgba(255,255,255,0.12)] [color:white] [border:1px_solid_rgba(255,255,255,0.2)] [cursor:pointer] [transition:background_0.12s]")}>
             <Edit2 size={12} /> Edit
           </button>
-          <button
-            onClick={() => setExpanded(e => !e)}
-            style={{
-              display: "flex", alignItems: "center", gap: 5,
-              padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-              background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              cursor: "pointer", transition: "background 0.12s",
-            }}
-          >
+          <button onClick={() => setExpanded(e => !e)} className={ui("[display:flex] [align-items:center] [gap:5px] [padding:5px_12px] [border-radius:6px] [font-size:12px] [font-weight:600] [background:rgba(255,255,255,0.08)] [color:rgba(255,255,255,0.7)] [border:1px_solid_rgba(255,255,255,0.12)] [cursor:pointer] [transition:background_0.12s]")}>
             {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             {expanded ? "Hide" : "Show"}
           </button>
@@ -569,56 +459,73 @@ const RoleCard = memo(({ roleNAME, txs, onEdit, onToggle, onDelete, isToggling, 
       </Flex>
 
       {/* Table */}
-      {expanded && (
-        <MergedViewTable
-          txs={txs} onToggle={onToggle} onDelete={onDelete}
-          isToggling={isToggling} isDeleting={isDeleting}
-        />
-      )}
-    </Box>
-  );
+      {expanded && <MergedViewTable txs={txs} onToggle={onToggle} onDelete={onDelete} isToggling={isToggling} isDeleting={isDeleting} />}
+    </Box>;
 });
 RoleCard.displayName = "RoleCard";
-
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function RoleTranCreationPage() {
   const [tabValue, setTabValue] = useState<string>("create");
-  const [selectedRoleID,   setSelectedRoleID]   = useState<number | undefined>(undefined);
+  const [selectedRoleID, setSelectedRoleID] = useState<number | undefined>(undefined);
   const [selectedRoleNAME, setSelectedRoleNAME] = useState("");
-  const [active,           setActive]           = useState(true);
+  const [active, setActive] = useState(true);
   const [selectedContentIDs, setSelectedContentIDs] = useState<Set<number>>(new Set());
-  const [expandedModuleIDs,  setExpandedModuleIDs]  = useState<Set<number> | undefined>(undefined);
-  const [expandedSubIDs,     setExpandedSubIDs]     = useState<Set<number> | undefined>(undefined);
-  const [rows,         setRows]         = useState<RoleTran[]>([]);
+  const [expandedModuleIDs, setExpandedModuleIDs] = useState<Set<number> | undefined>(undefined);
+  const [expandedSubIDs, setExpandedSubIDs] = useState<Set<number> | undefined>(undefined);
+  const [rows, setRows] = useState<RoleTran[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editingRole,  setEditingRole]  = useState<{ roleNAME: string; originalRows: RoleTran[] } | null>(null);
-
-  const { data: menu = [] } = useMenu();
-
-  
-  const { data: roleTransactions, isLoading: isLoadingTransactions, refetch } = useRoleTransactions();
-  
-  console.log(roleTransactions, menu,'roleTransactions')
-  const { mutate: insertRoles,      isPending: isInserting } = useInsertRoleTransaction();
-  const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteRoleTransaction();
-  const { mutate: toggleTransaction, isPending: isToggling } = useToggleRoleTransactionActive();
-  const { roles, loading: loadingRoles } = useRole();
-
-
-  console.log(menu,'roleTransactions')
+  const [editingRole, setEditingRole] = useState<{
+    roleNAME: string;
+    originalRows: RoleTran[];
+  } | null>(null);
+  const {
+    data: menu = []
+  } = useMenu();
+  const {
+    data: roleTransactions,
+    isLoading: isLoadingTransactions,
+    refetch
+  } = useRoleTransactions();
+  console.log(roleTransactions, menu, 'roleTransactions');
+  const {
+    mutate: insertRoles,
+    isPending: isInserting
+  } = useInsertRoleTransaction();
+  const {
+    mutate: deleteTransaction,
+    isPending: isDeleting
+  } = useDeleteRoleTransaction();
+  const {
+    mutate: toggleTransaction,
+    isPending: isToggling
+  } = useToggleRoleTransactionActive();
+  const {
+    roles,
+    loading: loadingRoles
+  } = useRole();
+  console.log(menu, 'roleTransactions');
 
   // ── Content meta lookup ────────────────────────────────────────────────────
   const contentMeta = useMemo(() => {
     const map = new Map<number, {
-      moduleID: number; moduleNAME: string;
-      subModuleID: number; subModuleNAME: string; contentNAME: string;
+      moduleID: number;
+      moduleNAME: string;
+      subModuleID: number;
+      subModuleNAME: string;
+      contentNAME: string;
     }>();
-    (menu as unknown as ModuleNode[] ).forEach(mod => {
-      console.log(mod,'modmod')
+    (menu as unknown as ModuleNode[]).forEach(mod => {
+      console.log(mod, 'modmod');
       mod.moduleContent?.forEach(c => {
-        map.set(c.id, { moduleID: mod.id, moduleNAME: mod.name, subModuleID: 0, subModuleNAME: "", contentNAME: c.name });
+        map.set(c.id, {
+          moduleID: mod.id,
+          moduleNAME: mod.name,
+          subModuleID: 0,
+          subModuleNAME: "",
+          contentNAME: c.name
+        });
       });
       // mod.SUBMODULES?.forEach(sub => {
       //   sub.CONTENTS?.forEach(c => {
@@ -628,15 +535,20 @@ export default function RoleTranCreationPage() {
     });
     return map;
   }, [menu]);
-
   const computeExpandedIDs = useCallback((contentIDs: Set<number>) => {
     const modIDs = new Set<number>();
     const subIDs = new Set<number>();
     contentIDs.forEach(cID => {
       const m = contentMeta.get(cID);
-      if (m) { modIDs.add(m.moduleID); if (m.subModuleID) subIDs.add(m.subModuleID); }
+      if (m) {
+        modIDs.add(m.moduleID);
+        if (m.subModuleID) subIDs.add(m.subModuleID);
+      }
     });
-    return { modIDs, subIDs };
+    return {
+      modIDs,
+      subIDs
+    };
   }, [contentMeta]);
 
   // ── Toggle helpers ─────────────────────────────────────────────────────────
@@ -647,48 +559,58 @@ export default function RoleTranCreationPage() {
       return next;
     });
   }, []);
-
   const handleToggleGroup = useCallback((IDs: number[]) => {
     setSelectedContentIDs(prev => {
       const next = new Set(prev);
       const allSelected = IDs.every(ID => next.has(ID));
-      if (allSelected) IDs.forEach(ID => next.delete(ID));
-      else IDs.forEach(ID => next.add(ID));
+      if (allSelected) IDs.forEach(ID => next.delete(ID));else IDs.forEach(ID => next.add(ID));
       return next;
     });
   }, []);
-
   const isFormValID = selectedRoleID !== undefined && selectedContentIDs.size > 0;
 
   // ── Clear ──────────────────────────────────────────────────────────────────
   const handleClear = useCallback(() => {
-    setSelectedRoleID(undefined); setSelectedRoleNAME("");
-    setSelectedContentIDs(new Set()); setExpandedModuleIDs(undefined);
-    setExpandedSubIDs(undefined); setRows([]);
-    setEditingIndex(null); setEditingRole(null); setActive(true);
+    setSelectedRoleID(undefined);
+    setSelectedRoleNAME("");
+    setSelectedContentIDs(new Set());
+    setExpandedModuleIDs(undefined);
+    setExpandedSubIDs(undefined);
+    setRows([]);
+    setEditingIndex(null);
+    setEditingRole(null);
+    setActive(true);
   }, []);
 
   // ── Add / edit rows ────────────────────────────────────────────────────────
   const handleAddRows = useCallback(() => {
-    if (!isFormValID) { toastError("Please select a role and at least one content"); return; }
-
-    console.log(selectedContentIDs,'selectedContentIDs')
-
+    if (!isFormValID) {
+      toastError("Please select a role and at least one content");
+      return;
+    }
+    console.log(selectedContentIDs, 'selectedContentIDs');
     const newRows: RoleTran[] = Array.from(selectedContentIDs).map(contentID => {
       const meta = contentMeta.get(contentID);
-      console.log(meta, contentID,'meta')
+      console.log(meta, contentID, 'meta');
       if (!meta) throw new Error(`Content ${contentID} not found`);
       return {
-        ROLEID: selectedRoleID!, ROLENAME: selectedRoleNAME,
-        MODULEID: meta.moduleID, MODULENAME: meta.moduleNAME,
-        SUBMODULEID: meta.subModuleID, SUBMODULENAME: meta.subModuleNAME,
-        CONTENTID: contentID, CONTENTNAME: meta.contentNAME,
-        ACTIVE: active,
+        ROLEID: selectedRoleID!,
+        ROLENAME: selectedRoleNAME,
+        MODULEID: meta.moduleID,
+        MODULENAME: meta.moduleNAME,
+        SUBMODULEID: meta.subModuleID,
+        SUBMODULENAME: meta.subModuleNAME,
+        CONTENTID: contentID,
+        CONTENTNAME: meta.contentNAME,
+        ACTIVE: active
       };
     });
-
     if (editingIndex !== null) {
-      setRows(prev => { const u = [...prev]; u[editingIndex] = newRows[0]; return u; });
+      setRows(prev => {
+        const u = [...prev];
+        u[editingIndex] = newRows[0];
+        return u;
+      });
       setEditingIndex(null);
     } else {
       const existing = new Set(rows.map(r => `${r.ROLEID}-${r.CONTENTID}`));
@@ -697,193 +619,215 @@ export default function RoleTranCreationPage() {
     }
     setSelectedContentIDs(new Set());
   }, [isFormValID, selectedContentIDs, contentMeta, selectedRoleID, selectedRoleNAME, active, editingIndex, rows]);
-
   const handleEditRow = useCallback((index: number) => {
     const row = rows[index];
     const role = roles.find(r => r.ROLEID === row.ROLEID);
-    if (role) { setSelectedRoleID(role.ROLEID); setSelectedRoleNAME(role.ROLENAME); }
+    if (role) {
+      setSelectedRoleID(role.ROLEID);
+      setSelectedRoleNAME(role.ROLENAME);
+    }
     const IDs = new Set([row.CONTENTID]);
     setSelectedContentIDs(IDs);
-    const { modIDs, subIDs } = computeExpandedIDs(IDs);
-    setExpandedModuleIDs(modIDs); setExpandedSubIDs(subIDs);
-    setActive(row.ACTIVE ?? true); setEditingIndex(index); setTabValue("create");
+    const {
+      modIDs,
+      subIDs
+    } = computeExpandedIDs(IDs);
+    setExpandedModuleIDs(modIDs);
+    setExpandedSubIDs(subIDs);
+    setActive(row.ACTIVE ?? true);
+    setEditingIndex(index);
+    setTabValue("create");
   }, [rows, roles, computeExpandedIDs]);
-
   const handleDeleteRow = useCallback((index: number) => {
     setRows(prev => prev.filter((_, i) => i !== index));
-    if (editingIndex === index) { setEditingIndex(null); setSelectedContentIDs(new Set()); }
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setSelectedContentIDs(new Set());
+    }
   }, [editingIndex]);
-
   const handleEditRole = useCallback((roleNAME: string, txs: RoleTran[]) => {
     const first = txs[0];
-    setSelectedRoleID(first.ROLEID); setSelectedRoleNAME(first.ROLENAME);
-    setRows(txs); setEditingRole({ roleNAME, originalRows: txs }); setEditingIndex(null);
+    setSelectedRoleID(first.ROLEID);
+    setSelectedRoleNAME(first.ROLENAME);
+    setRows(txs);
+    setEditingRole({
+      roleNAME,
+      originalRows: txs
+    });
+    setEditingIndex(null);
     const IDs = new Set(txs.map(tx => tx.CONTENTID));
     setSelectedContentIDs(IDs);
-    const { modIDs, subIDs } = computeExpandedIDs(IDs);
-    setExpandedModuleIDs(modIDs); setExpandedSubIDs(subIDs);
-    setActive(true); setTabValue("create");
+    const {
+      modIDs,
+      subIDs
+    } = computeExpandedIDs(IDs);
+    setExpandedModuleIDs(modIDs);
+    setExpandedSubIDs(subIDs);
+    setActive(true);
+    setTabValue("create");
   }, [computeExpandedIDs]);
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmitSuccess = useCallback(() => {
     toastCreated("Role permissions saved successfully");
-    handleClear(); refetch();
+    handleClear();
+    refetch();
   }, [handleClear, refetch]);
-
   const handleSubmit = useCallback(() => {
-    if (!rows.length) { toastError("Please add at least one role transaction"); return; }
-
+    if (!rows.length) {
+      toastError("Please add at least one role transaction");
+      return;
+    }
     const payload = toRoleTranInputs(rows);
-    console.log(payload,'payload');
-
-
+    console.log(payload, 'payload');
     if (editingRole) {
       const snos = editingRole.originalRows.filter(tx => tx.SNO).map(tx => tx.SNO!);
-      if (!snos.length) { insertRoles(payload, { onSuccess: handleSubmitSuccess }); return; }
-      let done = 0; let errored = false;
+      if (!snos.length) {
+        insertRoles(payload, {
+          onSuccess: handleSubmitSuccess
+        });
+        return;
+      }
+      let done = 0;
+      let errored = false;
       snos.forEach(sno => deleteTransaction(sno, {
-        onSuccess: () => { done++; if (done === snos.length && !errored) insertRoles(payload, { onSuccess: handleSubmitSuccess }); },
-        onError:   () => { if (!errored) { errored = true; toastError("Error deleting old permissions"); } },
+        onSuccess: () => {
+          done++;
+          if (done === snos.length && !errored) insertRoles(payload, {
+            onSuccess: handleSubmitSuccess
+          });
+        },
+        onError: () => {
+          if (!errored) {
+            errored = true;
+            toastError("Error deleting old permissions");
+          }
+        }
       }));
     } else {
-      insertRoles(payload, { onSuccess: handleSubmitSuccess });
+      insertRoles(payload, {
+        onSuccess: handleSubmitSuccess
+      });
     }
   }, [rows, editingRole, insertRoles, deleteTransaction, handleSubmitSuccess]);
-
   const handleDeleteFromDB = useCallback((sno: number) => {
-    if (window.confirm("Delete this permission?"))
-      deleteTransaction(sno, { onSuccess: () => refetch() });
+    if (window.confirm("Delete this permission?")) deleteTransaction(sno, {
+      onSuccess: () => refetch()
+    });
   }, [deleteTransaction, refetch]);
-
   const handleToggleFromDB = useCallback((sno: number) => {
-    toggleTransaction(sno, { onSuccess: () => refetch() });
+    toggleTransaction(sno, {
+      onSuccess: () => refetch()
+    });
   }, [toggleTransaction, refetch]);
 
   // ── Staging table columns ──────────────────────────────────────────────────
-  const selectedRowsColumns: TableColumn[] = useMemo(() => [
-    { key: "MODULENAME",    label: "Module",     align: "start"  },
-    { key: "SUBMODULENAME", label: "Sub Module", align: "start"  },
-    { key: "CONTENTNAME",   label: "Content",    align: "start"  },
-    { key: "ACTIVE",        label: "Active",     align: "center" },
-    { key: "actions",       label: "",           align: "center" },
-  ], []);
-
+  const selectedRowsColumns: TableColumn[] = useMemo(() => [{
+    key: "MODULENAME",
+    label: "Module",
+    align: "start"
+  }, {
+    key: "SUBMODULENAME",
+    label: "Sub Module",
+    align: "start"
+  }, {
+    key: "CONTENTNAME",
+    label: "Content",
+    align: "start"
+  }, {
+    key: "ACTIVE",
+    label: "Active",
+    align: "center"
+  }, {
+    key: "actions",
+    label: "",
+    align: "center"
+  }], []);
   const groupedByRole = useMemo(() => {
     if (!roleTransactions) return {} as Record<string, RoleTran[]>;
     const g: Record<string, RoleTran[]> = {};
-    roleTransactions.forEach(tx => { (g[tx.ROLENAME] = g[tx.ROLENAME] || []).push(tx); });
+    roleTransactions.forEach(tx => {
+      (g[tx.ROLENAME] = g[tx.ROLENAME] || []).push(tx);
+    });
     return g;
   }, [roleTransactions]);
 
   // ─────────────────────────────────────────────────────────────────────────────
 
-  return (
-    <Box bg={T.bgCard} rounded={T.radiusLg} shadow="sm" border={`1px solid ${T.border}`}>
-      <Tabs.Root
-        value={tabValue}
-        onValueChange={(d: any) => setTabValue(d.value)}
-        variant="enclosed"
-      >
-        <Tabs.List
-          borderBottom={`2px solid ${T.border}`}
-          bg={T.bg}
-          borderRadius={`${T.radiusMd} ${T.radiusMd} 0 0`}
-          p={1} gap={1}
-        >
-          {[
-            { value: "create", label: "Create Role Transaction", icon: <ShieldCheck size={14} /> },
-            { value: "view",   label: "View Role Transactions",  icon: <Eye         size={14} /> },
-          ].map(tab => (
-            <Tabs.Trigger
-              key={tab.value} value={tab.value}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "7px 16px", borderRadius: 8,
-                fontSize: 13, fontWeight: 500,
-                transition: "all 0.15s",
-              }}
-            >
+  return <Box className={ui("role-workspace")} bg={T.bgCard} rounded={T.radiusLg} shadow="sm" border={`1px solid ${T.border}`}>
+      <Tabs.Root value={tabValue} onValueChange={(d: any) => setTabValue(d.value)} variant="enclosed">
+        <Tabs.List borderBottom={`2px solid ${T.border}`} bg={T.bg} borderRadius={`${T.radiusMd} ${T.radiusMd} 0 0`} className={ui("[padding:4px]! [gap:4px]!")}>
+          {[{
+          value: "create",
+          label: "Create Role Transaction",
+          icon: <ShieldCheck size={14} />
+        }, {
+          value: "view",
+          label: "View Role Transactions",
+          icon: <Eye size={14} />
+        }].map(tab => <Tabs.Trigger key={tab.value} value={tab.value} className={ui("[display:flex] [align-items:center] [gap:6px] [padding:7px_16px] [border-radius:8px] [font-size:13px] [font-weight:500] [transition:all_0.15s]")}>
               {tab.icon} {tab.label}
-            </Tabs.Trigger>
-          ))}
+            </Tabs.Trigger>)}
         </Tabs.List>
 
         {/* ── CREATE TAB ──────────────────────────────────────────────────── */}
         <Tabs.Content value="create">
-          <Grid templateColumns={{ base: "1fr", md: "1fr 1.6fr" }} gap={5} p={4}>
+          <Grid className={ui("[grid-template-columns:1fr]! md:[grid-template-columns:1fr_1.6fr]! [gap:20px]! [padding:16px]!")}>
 
             {/* LEFT: form + tree */}
             <GridItem>
-              <Box
-                bg={T.bg} p={4} rounded={T.radiusLg}
-                border={`1px solid ${T.border}`}
-                boxShadow="0 1px 3px rgba(0,0,0,0.05)"
-              >
+              <Box bg={T.bg} rounded={T.radiusLg} border={`1px solid ${T.border}`} className={ui("[padding:16px]! [box-shadow:0_1px_3px_rgba(0,0,0,0.05)]!")}>
                 {/* Section header */}
-                <HStack gap={2} mb={4}>
-                  <Box
-                    w="28px" h="28px" borderRadius={7} bg={T.navyMID}
-                    display="flex" alignItems="center" justifyContent="center"
-                    flexShrink={0}
-                  >
-                    <ShieldCheck size={14} color="white" />
+                <HStack className={ui("[gap:8px]! [margin-bottom:16px]!")}>
+                  <Box bg={T.navyMID} className={ui("[width:28px]! [height:28px]! [border-radius:7px]! [display:flex]! [align-items:center]! [justify-content:center]! [flex-shrink:0]!")}>
+                    <ShieldCheck size={14} className={ui("[color:white]!")} />
                   </Box>
                   <Box>
-                    <Text fontSize="sm" fontWeight={700} color={T.text}>
-                      {editingRole
-                        ? `Editing: ${editingRole.roleNAME}`
-                        : editingIndex !== null ? "Edit Transaction" : "New Transaction"}
+                    <Text color={T.text} className={ui("[font-size:var(--font-sm)]! font-normal!")}>
+                      {editingRole ? `Editing: ${editingRole.roleNAME}` : editingIndex !== null ? "Edit Transaction" : "New Transaction"}
                     </Text>
-                    {editingRole && (
-                      <Text fontSize="xs" color={T.orange}>⚠ Editing existing role permissions</Text>
-                    )}
+                    {editingRole && <Text color={T.orange} className={ui("[font-size:var(--font-xs)]!")}>⚠ Editing existing role permissions</Text>}
                   </Box>
                 </HStack>
 
-                <VStack gap={4} align="stretch">
+                <VStack className={ui("[gap:16px]! [align-items:stretch]!")}>
                   {/* Role selector */}
                   <Box>
-                    <Text fontSize="xs" fontWeight={700} color={T.textSub} mb={1.5}
-                      textTransform="uppercase" letterSpacing="0.05em">
+                    <Text color={T.textSub} className={ui("[font-size:var(--font-xs)]! font-normal! [margin-bottom:6px]! [text-transform:uppercase]! [letter-spacing:0.05em]!")}>
                       Role *
                     </Text>
-                    {loadingRoles ? (
-                      <Flex align="center" gap={2}><Spinner size="sm" /><Text fontSize="xs" color={T.textMuted}>Loading roles…</Text></Flex>
-                    ) : (
-                      <select
-                        style={{
-                          width: "100%", padding: "8px 12px", fontSize: 13,
-                          borderRadius: T.radius, border: `1px solid ${T.borderMID}`,
-                          background: T.bgCard, color: T.text,
-                          outline: "none", cursor: "pointer",
-                        }}
-                        value={selectedRoleID ?? ""}
-                        onChange={e => {
-                          const ID = Number(e.target.value);
-                          const r = roles.find(r => r.ROLEID === ID);
-                          if (r) { setSelectedRoleID(r.ROLEID); setSelectedRoleNAME(r.ROLENAME); }
-                          else   { setSelectedRoleID(undefined); setSelectedRoleNAME(""); }
-                        }}
-                      >
+                    {loadingRoles ? <Flex className={ui("[align-items:center]! [gap:8px]!")}><Spinner size="sm" /><Text color={T.textMuted} className={ui("[font-size:var(--font-xs)]!")}>Loading roles…</Text></Flex> : 
+                    <select style={{
+                    borderRadius: T.radius,
+                    border: `1px solid ${T.borderMID}`,
+                    background: T.bgCard,
+                    color: T.text
+                  }} value={selectedRoleID ?? ""} onChange={e => {
+                    const ID = Number(e.target.value);
+                    const r = roles.find(r => r.ROLEID === ID);
+                    if (r) {
+                      setSelectedRoleID(r.ROLEID);
+                      setSelectedRoleNAME(r.ROLENAME);
+                    } else {
+                      setSelectedRoleID(undefined);
+                      setSelectedRoleNAME("");
+                    }
+                  }} className={ui("[width:100%] [padding:8px_12px] [font-size:13px] [outline:none] [cursor:pointer]")}>
                         <option value="">Select role…</option>
                         {roles.map(r => <option key={r.ROLEID} value={r.ROLEID}>{r.ROLENAME}</option>)}
-                      </select>
-                    )}
+                      </select>}
                   </Box>
 
                   {/* Active toggle */}
                   <label style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    cursor: "pointer", userSelect: "none",
-                    padding: "7px 10px", borderRadius: T.radius,
-                    background: active ? T.greenLight : T.bg,
-                    border: `1px solid ${active ? "#A7F3D0" : T.border}`,
-                    transition: "all 0.15s", fontSize: 13, fontWeight: 500,
-                    color: active ? "#065F46" : T.textMID,
-                  }}>
-                    <input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)}
-                      style={{ accentColor: T.green, width: 14, height: 14 }} />
+                  borderRadius: T.radius,
+                  background: active ? T.greenLight : T.bg,
+                  border: `1px solid ${active ? "#A7F3D0" : T.border}`,
+                  color: active ? "#065F46" : T.textMID
+                }} className={ui("[display:flex] [align-items:center] [padding:12px] [gap:8px] [cursor:pointer] [user-select:none] [padding:7px_10px] [transition:all_0.15s] [font-size:13px] [font-weight:500]")}>
+                    <input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} style={{
+                    accentColor: T.green
+                  }} className={ui("[width:14px] [padding:12px] [height:14px]")} />
                     Active Permission
                   </label>
 
@@ -891,197 +835,125 @@ export default function RoleTranCreationPage() {
 
                   {/* Permission tree */}
                   <Box>
-                    <HStack justify="space-between" mb={2}>
-                      <Text fontSize="xs" fontWeight={700} color={T.textSub}
-                        textTransform="uppercase" letterSpacing="0.05em">
+                    <HStack className={ui("[justify-content:space-between]! [margin-bottom:8px]!")}>
+                      <Text color={T.textSub} className={ui("[font-size:var(--font-xs)]! font-normal! [text-transform:uppercase]! [letter-spacing:0.05em]!")}>
                         Permissions
                       </Text>
-                      {selectedContentIDs.size > 0 && (
-                        <Box px={2} py="2px" borderRadius={10} fontSize="10px" fontWeight={700}
-                          bg={T.accentLight} color={T.accent}>
+                      {selectedContentIDs.size > 0 && <Box bg={T.accentLight} color={T.accent} className={ui("[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:10px]! font-normal!")}>
                           {selectedContentIDs.size} selected
-                        </Box>
-                      )}
+                        </Box>}
                     </HStack>
-                    <Box
-                      maxH="340px" overflowY="auto"
-                      border={`1px solid ${T.border}`} rounded={T.radius} p={2} bg={T.bgCard}
-                      css={{
-                        "&::-webkit-scrollbar": { width: "4px" },
-                        "&::-webkit-scrollbar-track": { background: "transparent" },
-                        "&::-webkit-scrollbar-thumb": { background: T.borderMID, borderRadius: "4px" },
-                      }}
-                    >
-                      {!menu.length ? (
-                        <Flex justify="center" align="center" h="80px" gap={2}>
-                          <Spinner size="sm" /><Text fontSize="xs" color={T.textMuted}>Loading permissions…</Text>
-                        </Flex>
-                      ) : (
-                        <ModuleTree
-                            menuData={menu as unknown as ModuleNode[]}
-                          selectedContentIDs={selectedContentIDs}
-                          onToggleContent={handleToggleContent}
-                          onToggleGroup={handleToggleGroup}
-                          expandedModuleIDs={expandedModuleIDs}
-                          expandedSubIDs={expandedSubIDs}
-                        />
-                      )}
+                    <Box border={`1px solid ${T.border}`} rounded={T.radius} bg={T.bgCard} css={{
+                    "&::-webkit-scrollbar": {
+                      width: "4px"
+                    },
+                    "&::-webkit-scrollbar-track": {
+                      background: "transparent"
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                      background: T.borderMID,
+                      borderRadius: "4px"
+                    }
+                  }} className={ui("[max-height:340px]! [overflow-y:auto]! [padding:8px]!")}>
+                      {!menu.length ? <Flex className={ui("[justify-content:center]! [align-items:center]! [height:80px]! [gap:8px]!")}>
+                          <Spinner size="sm" /><Text color={T.textMuted} className={ui("[font-size:var(--font-xs)]!")}>Loading permissions…</Text>
+                        </Flex> : <ModuleTree menuData={menu as unknown as ModuleNode[]} selectedContentIDs={selectedContentIDs} onToggleContent={handleToggleContent} onToggleGroup={handleToggleGroup} expandedModuleIDs={expandedModuleIDs} expandedSubIDs={expandedSubIDs} />}
                     </Box>
                   </Box>
 
                   {/* Add row button */}
-                  <button
-                    onClick={handleAddRows} disabled={!isFormValID}
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-                      width: "100%", padding: "8px 16px", borderRadius: T.radius,
-                      fontSize: 13, fontWeight: 600, cursor: isFormValID ? "pointer" : "not-allowed",
-                      background: isFormValID ? T.navyMID : T.border,
-                      color: isFormValID ? "white" : T.textMuted,
-                      border: "none", transition: "all 0.15s",
-                    }}
-                  >
+                  <button onClick={handleAddRows} disabled={!isFormValID} style={{
+                  borderRadius: T.radius,
+                  cursor: isFormValID ? "pointer" : "not-allowed",
+                  background: isFormValID ? T.navyMID : T.border,
+                  color: isFormValID ? "white" : T.textMuted
+                }} className={ui("[display:flex] [align-items:center] [justify-content:center] [gap:7px] [width:100%] [padding:8px_16px] [font-size:13px] [font-weight:600] [border:none] [transition:all_0.15s]")}>
                     <Plus size={15} />
                     {editingIndex !== null ? "Update Row" : "Add Row(s)"}
                   </button>
 
-                  {(editingIndex !== null || editingRole) && (
-                    <button
-                      onClick={handleClear}
-                      style={{
-                        width: "100%", padding: "7px 16px", borderRadius: T.radius,
-                        fontSize: 13, fontWeight: 500, cursor: "pointer",
-                        background: "transparent", color: T.textMID,
-                        border: `1px solid ${T.border}`, transition: "all 0.15s",
-                      }}
-                    >
+                  {(editingIndex !== null || editingRole) && <button onClick={handleClear} style={{
+                  borderRadius: T.radius,
+                  color: T.textMID,
+                  border: `1px solid ${T.border}`
+                }} className={ui("[width:100%] [padding:7px_16px] [font-size:13px] [font-weight:500] [cursor:pointer] [background:transparent] [transition:all_0.15s]")}>
                       Cancel Edit
-                    </button>
-                  )}
+                    </button>}
                 </VStack>
               </Box>
             </GridItem>
 
             {/* RIGHT: staging table */}
             <GridItem>
-              <Box
-                border={`1px solid ${T.border}`} rounded={T.radiusLg} p={3} bg={T.bgCard}
-                h="100%" boxShadow="0 1px 3px rgba(0,0,0,0.05)"
-              >
-                <HStack justify="space-between" mb={3}>
-                  <HStack gap={2}>
-                    <Text fontSize="sm" fontWeight={700} color={T.text}>
+              <Box border={`1px solid ${T.border}`} rounded={T.radiusLg} bg={T.bgCard} className={ui("[padding:12px]! [height:100%]! [box-shadow:0_1px_3px_rgba(0,0,0,0.05)]!")}>
+                <HStack className={ui("[justify-content:space-between]! [margin-bottom:12px]!")}>
+                  <HStack className={ui("[gap:8px]!")}>
+                    <Text color={T.text} className={ui("[font-size:var(--font-sm)]! font-normal!")}>
                       Staged Transactions
                     </Text>
-                    <Box px={2} py="2px" borderRadius={10} fontSize="11px" fontWeight={700}
-                      bg={rows.length ? T.accentLight : T.bg}
-                      color={rows.length ? T.accent : T.textMuted}>
+                    <Box bg={rows.length ? T.accentLight : T.bg} color={rows.length ? T.accent : T.textMuted} className={ui("[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:11px]! font-normal!")}>
                       {rows.length}
                     </Box>
-                    {editingRole && (
-                      <Box px={2} py="2px" borderRadius={10} fontSize="10px" fontWeight={700}
-                        bg="#FFFBEB" color={T.orange}>
+                    {editingRole && <Box color={T.orange} className={ui("[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:10px]! font-normal! [background:#FFFBEB]!")}>
                         Editing Role
-                      </Box>
-                    )}
+                      </Box>}
                   </HStack>
-                  {rows.length > 0 && (
-                    <button
-                      onClick={handleClear}
-                      style={{
-                        fontSize: 11.5, color: T.textMuted, cursor: "pointer",
-                        background: "none", border: "none", padding: "2px 6px",
-                      }}
-                    >
+                  {rows.length > 0 && <button onClick={handleClear} style={{
+                  color: T.textMuted
+                }} className={ui("[font-size:11.5px] [cursor:pointer] [background:none] [border:none] [padding:2px_6px]")}>
                       Clear all
-                    </button>
-                  )}
+                    </button>}
                 </HStack>
 
-                {rows.length === 0 ? (
-                  <Flex
-                    direction="column" justify="center" align="center"
-                    h="200px" gap={3} color={T.textMuted}
-                  >
-                    <Box
-                      w="44px" h="44px" borderRadius={12} bg={T.bg}
-                      display="flex" alignItems="center" justifyContent="center"
-                    >
+                {rows.length === 0 ? <Flex direction="column" color={T.textMuted} className={ui("[justify-content:center]! [align-items:center]! [height:200px]! [gap:12px]!")}>
+                    <Box bg={T.bg} className={ui("[width:44px]! [height:44px]! [border-radius:12px]! [display:flex]! [align-items:center]! [justify-content:center]!")}>
                       <AlertCircle size={20} color={T.textMuted} />
                     </Box>
-                    <Text fontSize="sm">No rows added yet</Text>
-                    <Text fontSize="xs" color={T.textMuted} textAlign="center" maxW="200px">
+                    <Text className={ui("[font-size:var(--font-sm)]!")}>No rows added yet</Text>
+                    <Text color={T.textMuted} className={ui("[font-size:var(--font-xs)]! [text-align:center]! [max-width:200px]!")}>
                       Select a role and permissions, then click "Add Row(s)"
                     </Text>
-                  </Flex>
-                ) : (
-                  <VStack align="stretch" gap={4}>
-                    <Box overflowX="auto">
-                      <CustomTable
-                        columns={selectedRowsColumns}
-                        data={rows} size="sm"
-                        headerBg="blue.50" bodyBg="white" borderColor="gray.200"
-                        renderRow={(row, IDx) => (
-                          <>
+                  </Flex> : <VStack className={ui("[align-items:stretch]! [gap:16px]!")}>
+                    <Box className={ui("[overflow-x:auto]!")}>
+                      <CustomTable columns={selectedRowsColumns} data={rows} size="sm" headerBg="blue.50" bodyBg="white" renderRow={(row, IDx) => <>
                             <Table.Cell>{row.MODULENAME}</Table.Cell>
                             <Table.Cell>{row.SUBMODULENAME || "—"}</Table.Cell>
                             <Table.Cell>{row.CONTENTNAME}</Table.Cell>
-                            <Table.Cell textAlign="center">
-                              <Box
-                                display="inline-block" px={2} py="1px" borderRadius={10}
-                                fontSize="11px" fontWeight={600}
-                                bg={row.ACTIVE ? T.greenLight : T.redLight}
-                                color={row.ACTIVE ? "#065F46" : "#991B1B"}
-                              >
+                            <Table.Cell className={ui("[text-align:center]!")}>
+                              <Box bg={row.ACTIVE ? T.greenLight : T.redLight} color={row.ACTIVE ? "#065F46" : "#991B1B"} className={ui("[display:inline-block]! [padding-left:8px]! [padding-right:8px]! [padding-top:1px]! [padding-bottom:1px]! [border-radius:10px]! [font-size:11px]! font-normal!")}>
                                 {row.ACTIVE ? "Yes" : "No"}
                               </Box>
                             </Table.Cell>
-                            <Table.Cell textAlign="center">
-                              <HStack gap={1} justify="center">
-                                <button
-                                  onClick={() => handleEditRow(IDx)}
-                                  style={{
-                                    padding: "3px 8px", fontSize: 11.5, borderRadius: 5,
-                                    background: T.accentLight, color: T.accent,
-                                    border: `1px solid ${T.accentMID}`, cursor: "pointer", fontWeight: 600,
-                                  }}
-                                >Edit</button>
-                                <button
-                                  onClick={() => handleDeleteRow(IDx)}
-                                  style={{
-                                    padding: "4px 7px", borderRadius: 5,
-                                    background: T.redLight, color: T.red,
-                                    border: `1px solid #FECACA`, cursor: "pointer",
-                                    display: "flex", alignItems: "center",
-                                  }}
-                                >
+                            <Table.Cell className={ui("[text-align:center]!")}>
+                              <HStack className={ui("[gap:4px]! [justify-content:center]!")}>
+                                <button onClick={() => handleEditRow(IDx)} style={{
+                          background: T.accentLight,
+                          color: T.accent,
+                          border: `1px solid ${T.accentMID}`
+                        }} className={ui("[padding:3px_8px] [font-size:11.5px] [border-radius:5px] [cursor:pointer] [font-weight:600]")}>Edit</button>
+                                <button onClick={() => handleDeleteRow(IDx)} style={{
+                          background: T.redLight,
+                          color: T.red,
+                          border: `1px solid #FECACA`
+                        }} className={ui("[padding:4px_7px] [border-radius:5px] [cursor:pointer] [display:flex] [align-items:center]")}>
                                   <Trash2 size={13} />
                                 </button>
                               </HStack>
                             </Table.Cell>
-                          </>
-                        )}
-                      />
+                          </>} className={ui("[border-color:var(--color-gray-200)]!")} />
                     </Box>
-                    <HStack justify="flex-end" gap={2} pt={1} borderTop={`1px solid ${T.border}`}>
-                      <button
-                        onClick={handleSubmit} disabled={isInserting}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 6,
-                          padding: "7px 18px", borderRadius: T.radius,
-                          fontSize: 13, fontWeight: 700,
-                          background: isInserting ? T.border : T.green,
-                          color: isInserting ? T.textMuted : "white",
-                          border: "none", cursor: isInserting ? "not-allowed" : "pointer",
-                          transition: "all 0.15s",
-                        }}
-                      >
+                    <HStack borderTop={`1px solid ${T.border}`} className={ui("[justify-content:flex-end]! [gap:8px]! [padding-top:4px]!")}>
+                      <button onClick={handleSubmit} disabled={isInserting} style={{
+                    borderRadius: T.radius,
+                    background: isInserting ? T.border : T.green,
+                    color: isInserting ? T.textMuted : "white",
+                    cursor: isInserting ? "not-allowed" : "pointer"
+                  }} className={ui("[display:flex] [align-items:center] [gap:6px] [padding:7px_18px] [font-size:13px] [font-weight:700] [border:none] [transition:all_0.15s]")}>
                         <CheckSquare size={14} />
                         {isInserting ? "Submitting…" : "Submit All"}
                       </button>
                     </HStack>
-                  </VStack>
-                )}
+                  </VStack>}
               </Box>
             </GridItem>
           </Grid>
@@ -1089,47 +961,29 @@ export default function RoleTranCreationPage() {
 
         {/* ── VIEW TAB ────────────────────────────────────────────────────── */}
         <Tabs.Content value="view">
-          <VStack align="stretch" gap={4} p={4}>
-            {isLoadingTransactions ? (
-              <Flex justify="center" align="center" minH="300px" gap={3}>
+          <VStack className={ui("[align-items:stretch]! [gap:16px]! [padding:16px]!")}>
+            {isLoadingTransactions ? <Flex className={ui("[justify-content:center]! [align-items:center]! [min-height:300px]! [gap:12px]!")}>
                 <Spinner size="lg" color={T.accent} />
-                <Text color={T.textMuted} fontSize="sm">Loading permissions…</Text>
-              </Flex>
-            ) : roleTransactions && roleTransactions.length > 0 ? (
-              <>
-                <HStack justify="space-between">
-                  <HStack gap={2}>
-                    <Text fontSize="sm" fontWeight={700} color={T.text}>Role Permissions</Text>
-                    <Box px={2} py="2px" borderRadius={10} fontSize="11px" fontWeight={700}
-                      bg={T.accentLight} color={T.accent}>
+                <Text color={T.textMuted} className={ui("[font-size:var(--font-sm)]!")}>Loading permissions…</Text>
+              </Flex> : roleTransactions && roleTransactions.length > 0 ? <>
+                <HStack className={ui("[justify-content:space-between]!")}>
+                  <HStack className={ui("[gap:8px]!")}>
+                    <Text color={T.text} className={ui("[font-size:var(--font-sm)]! font-normal!")}>Role Permissions</Text>
+                    <Box bg={T.accentLight} color={T.accent} className={ui("[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:11px]! font-normal!")}>
                       {Object.keys(groupedByRole).length} roles · {roleTransactions.length} total
                     </Box>
                   </HStack>
                 </HStack>
-                {Object.entries(groupedByRole).map(([roleNAME, txs]) => (
-                  <RoleCard
-                    key={roleNAME} roleNAME={roleNAME} txs={txs}
-                    onEdit={handleEditRole}
-                    onToggle={handleToggleFromDB} onDelete={handleDeleteFromDB}
-                    isToggling={isToggling} isDeleting={isDeleting}
-                  />
-                ))}
-              </>
-            ) : (
-              <Flex direction="column" justify="center" align="center" minH="300px" gap={3}>
-                <Box
-                  w="52px" h="52px" borderRadius={14} bg={T.bg}
-                  display="flex" alignItems="center" justifyContent="center"
-                >
+                {Object.entries(groupedByRole).map(([roleNAME, txs]) => <RoleCard key={roleNAME} roleNAME={roleNAME} txs={txs} onEdit={handleEditRole} onToggle={handleToggleFromDB} onDelete={handleDeleteFromDB} isToggling={isToggling} isDeleting={isDeleting} />)}
+              </> : <Flex direction="column" className={ui("[justify-content:center]! [align-items:center]! [min-height:300px]! [gap:12px]!")}>
+                <Box bg={T.bg} className={ui("[width:52px]! [height:52px]! [border-radius:14px]! [display:flex]! [align-items:center]! [justify-content:center]!")}>
                   <ShieldCheck size={24} color={T.textMuted} />
                 </Box>
-                <Text color={T.textMID} fontSize="sm" fontWeight={600}>No permissions found</Text>
-                <Text color={T.textMuted} fontSize="xs">Create role transactions in the Create tab</Text>
-              </Flex>
-            )}
+                <Text color={T.textMID} className={ui("[font-size:var(--font-sm)]! font-normal!")}>No permissions found</Text>
+                <Text color={T.textMuted} className={ui("[font-size:var(--font-xs)]!")}>Create role transactions in the Create tab</Text>
+              </Flex>}
           </VStack>
         </Tabs.Content>
       </Tabs.Root>
-    </Box>
-  );
+    </Box>;
 }

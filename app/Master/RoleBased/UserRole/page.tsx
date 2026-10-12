@@ -1,21 +1,10 @@
 "use client";
 
+import { ui } from "@/utils/ui";
 import React, { useState, useEffect } from "react";
 
 /* ------------------ CHAKRA UI ------------------ */
-import {
-    Box,
-    Button,
-    VStack,
-    Text,
-    Grid,
-    GridItem,
-    HStack,
-    Fieldset,
-    Flex,
-    Badge,
-    Spinner,
-} from "@chakra-ui/react";
+import { Box, Button, VStack, Text, Grid, GridItem, HStack, Fieldset, Flex, Badge, Spinner } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
 
 /* ------------------ ICONS ------------------ */
@@ -52,250 +41,237 @@ import { Role } from "@/types/RoleMaster/RoleMaster";
 
 /* ------------------ CONFIG ------------------ */
 import { UserRoleMaster as UserRoleMasterConfig } from "@/config/Master/UserRoleMaster";
-
-
-
 const UPUSERID = 1;
-
 const emptyForm: UserRolePayload = {
-    USERID: 0,
-    ROLEID: 0,
-    UPUSERID,
+  USERID: 0,
+  ROLEID: 0,
+  UPUSERID
 };
-
-const userRoleColumns = [
-    { key: "SNO", label: "S.No" },
-    { key: "USERID", label: "User" },
-    { key: "ROLEID", label: "Role" },
-    { key: "actions", label: "Actions" },
-];
-
+const userRoleColumns = [{
+  key: "SNO",
+  label: "S.No"
+}, {
+  key: "USERID",
+  label: "User"
+}, {
+  key: "ROLEID",
+  label: "Role"
+}, {
+  key: "actions",
+  label: "Actions"
+}];
 export default function UserRoleMaster() {
-    // const { theme } = useTheme();
-    const router = useRouter();
-    // const { setData, setColumns, setShowSno, title } = usePrint();
-    const { userRoles, loading, addUserRole, editUserRole, removeUserRole } = useUserRole();
+  // const { theme } = useTheme();
+  const router = useRouter();
+  // const { setData, setColumns, setShowSno, title } = usePrint();
+  const {
+    userRoles,
+    loading,
+    addUserRole,
+    editUserRole,
+    removeUserRole
+  } = useUserRole();
+  const [form, setForm] = useState<UserRolePayload>(emptyForm);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(0);
+  const [highlightedId, setHighlightedId] = useState<number | null>(null);
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const size = 10;
 
-
-    const [form, setForm] = useState<UserRolePayload>(emptyForm);
-    const [editId, setEditId] = useState<number | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [page, setPage] = useState(0);
-    const [highlightedId, setHighlightedId] = useState<number | null>(null);
-
-    const [operators, setOperators] = useState<Operator[]>([]);
-    const [roles, setRoles] = useState<Role[]>([]);
-    const size = 10;
-
-    // Load operators and roles for dropdowns
-    useEffect(() => {
-        OperatorService.getAll(0, 1000)
-            .then((res) => setOperators(res?.content ?? []))
-            .catch(console.error);
-        fetchRoles()
-            .then(setRoles)
-            .catch(console.error);
-    }, []);
-
-    useEffect(() => {
-        if (editId !== null) {
-            const ur = userRoles.find((r: UserRole) => r.USERID === editId);
-            if (ur) {
-                setForm({ USERID: ur.USERID, ROLEID: ur.ROLEID, UPUSERID });
-                scrollToTop();
-            }
-        }
-    }, [editId]);
-
-    useEffect(() => {
-        if (!highlightedId) return;
-        const t = setTimeout(() => setHighlightedId(null), 3000);
-        return () => clearTimeout(t);
-    }, [highlightedId]);
-
-    useEffect(() => { setPage(0); }, [searchTerm]);
-
-    const getOperatorName = (id: number) =>
-        operators.find((o) => o.OPER_CODE === id)?.OPER_NAME ?? String(id);
-
-    const getRoleName = (id: number) =>
-        roles.find((r) => r.ROLEID === id)?.ROLENAME ?? String(id);
-
-    const handleChange = (field: keyof UserRolePayload, value: any) => {
-        const safeValue =
-            value?.target?.value ??
-            value?.value ??
-            value;
-
-        setForm((prev) => ({
-            ...prev,
-            [field]: Number(safeValue),
-        }));
-    };
-
-    const resetForm = () => { setEditId(null); setForm(emptyForm); };
-
-
-    const handleEdit = (userRole: UserRole) => {
-        setEditId(userRole.USERID);
-    };
-
-    const validateForm = () => {
-        if (!form.USERID || form.USERID === 0) {
-            toaster.error({ title: "Error", description: "User is required" });
-            return false;
-        }
-        if (!form.ROLEID || form.ROLEID === 0) {
-            toaster.error({ title: "Error", description: "Role is required" });
-            return false;
-        }
-        const exists = (userRoles as UserRole[]).some(
-            (ur) => ur.USERID === form.USERID && ur.ROLEID === form.ROLEID && ur.USERID !== editId
-        );
-        if (exists) {
-            const userName = operators.find((o) => o.OPER_CODE === form.USERID)?.OPER_NAME ?? String(form.USERID);
-            const roleName = roles.find((r) => r.ROLEID === form.ROLEID)?.ROLENAME ?? String(form.ROLEID);
-            toaster.error({ title: "Already Assigned", description: `"${roleName}" role is already assigned to "${userName}"` });
-            return false;
-        }
-        return true;
-    };
-
-    const handleSave = async () => {
-        if (!validateForm()) return;
-
-        setIsSubmitting(true);
-
-        try {
-            const payload: UserRolePayload = {
-                ...form,
-                UPUSERID: 999,
-            };
-
-            if (editId !== null) {
-                await editUserRole({
-                    id: editId,
-                    payload,
-                });
-
-                toaster.success({
-                    title: "Success",
-                    description: "User role updated successfully",
-                });
-            } else {
-                const newUserRole = await addUserRole(payload);
-
-                if ((newUserRole as any)?.USERID) {
-                    setHighlightedId((newUserRole as any).USERID);
-                }
-
-                toaster.success({
-                    title: "Success",
-                    description: "User role created successfully",
-                });
-            }
-
-            resetForm();
-        } catch (error: any) {
-            toaster.error({
-                title: "Error",
-                description: error?.message || "Failed to save user role",
-            });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleDelete = async (id: number) => {
-        if (!window.confirm("Are you sure you want to delete this user role?")) return;
-        try {
-            await removeUserRole(id);
-            toaster.success({ title: "Success", description: "User role deleted successfully" });
-            if (paginatedUserRoles.length === 1 && page > 0) setPage(page - 1);
-        } catch (error: any) {
-            toaster.error({ title: "Error", description: error?.message || "Failed to delete user role" });
-        }
-    };
-
-    // const handleExport = (option: string) => {
-    //     setData((userRoles as UserRole[]).map((ur) => ({
-    //         USERID: getOperatorName(ur.USERID),
-    //         ROLEID: getRoleName(ur.ROLEID),
-    //     })));
-    //     setColumns([
-    //         { key: "USERID", label: "User" },
-    //         { key: "ROLEID", label: "Role" },
-    //     ]);
-    //     setShowSno(true);
-    //     title?.("User Role Master");
-    //     router.push(`/print?export=${option}`);
-    // };
-
-    const filteredUserRoles = (userRoles as UserRole[]).filter((ur) =>
-        getOperatorName(ur.USERID).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getRoleName(ur.ROLEID).toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    const totalElements = filteredUserRoles.length;
-    const paginatedUserRoles = filteredUserRoles.slice(page * size, (page + 1) * size);
-
-    const operatorItems = operators.map((o) => ({ label: o.OPER_NAME, value: String(o.OPER_CODE) }));
-    const roleItems = roles.map((r) => ({ label: r.ROLENAME, value: String(r.ROLEID) }));
-
-
-    const UserRoleFields = UserRoleMasterConfig({ users: operatorItems , roles:roleItems });
-
-    const formNames = UserRoleFields.map(f=>f.name);
-    const { register, focusFirst, focusNext } = useEnterNavigation(formNames,handleSave);
-
-
-    if (loading) {
-        return (
-            <Box display="flex" justifyContent="center" alignItems="center" minH="100vh"
-            //  bg={theme.colors.primary}
-             >
-                <Spinner size="xl" 
-                // color={theme.colors.accient}
-                 />
-            </Box>
-        );
+  // Load operators and roles for dropdowns
+  useEffect(() => {
+    OperatorService.getAll(0, 1000).then(res => setOperators(res?.content ?? [])).catch(console.error);
+    fetchRoles().then(setRoles).catch(console.error);
+  }, []);
+  useEffect(() => {
+    if (editId !== null) {
+      const ur = userRoles.find((r: UserRole) => r.USERID === editId);
+      if (ur) {
+        setForm({
+          USERID: ur.USERID,
+          ROLEID: ur.ROLEID,
+          UPUSERID
+        });
+        scrollToTop();
+      }
     }
+  }, [editId]);
+  useEffect(() => {
+    if (!highlightedId) return;
+    const t = setTimeout(() => setHighlightedId(null), 3000);
+    return () => clearTimeout(t);
+  }, [highlightedId]);
+  useEffect(() => {
+    setPage(0);
+  }, [searchTerm]);
+  const getOperatorName = (id: number) => operators.find(o => o.OPER_CODE === id)?.OPER_NAME ?? String(id);
+  const getRoleName = (id: number) => roles.find(r => r.ROLEID === id)?.ROLENAME ?? String(id);
+  const handleChange = (field: keyof UserRolePayload, value: any) => {
+    const safeValue = value?.target?.value ?? value?.value ?? value;
+    setForm(prev => ({
+      ...prev,
+      [field]: Number(safeValue)
+    }));
+  };
+  const resetForm = () => {
+    setEditId(null);
+    setForm(emptyForm);
+  };
+  const handleEdit = (userRole: UserRole) => {
+    setEditId(userRole.USERID);
+  };
+  const validateForm = () => {
+    if (!form.USERID || form.USERID === 0) {
+      toaster.error({
+        title: "Error",
+        description: "User is required"
+      });
+      return false;
+    }
+    if (!form.ROLEID || form.ROLEID === 0) {
+      toaster.error({
+        title: "Error",
+        description: "Role is required"
+      });
+      return false;
+    }
+    const exists = (userRoles as UserRole[]).some(ur => ur.USERID === form.USERID && ur.ROLEID === form.ROLEID && ur.USERID !== editId);
+    if (exists) {
+      const userName = operators.find(o => o.OPER_CODE === form.USERID)?.OPER_NAME ?? String(form.USERID);
+      const roleName = roles.find(r => r.ROLEID === form.ROLEID)?.ROLENAME ?? String(form.ROLEID);
+      toaster.error({
+        title: "Already Assigned",
+        description: `"${roleName}" role is already assigned to "${userName}"`
+      });
+      return false;
+    }
+    return true;
+  };
+  const handleSave = async () => {
+    if (!validateForm()) return;
+    setIsSubmitting(true);
+    try {
+      const payload: UserRolePayload = {
+        ...form,
+        UPUSERID: 999
+      };
+      if (editId !== null) {
+        await editUserRole({
+          id: editId,
+          payload
+        });
+        toaster.success({
+          title: "Success",
+          description: "User role updated successfully"
+        });
+      } else {
+        const newUserRole = await addUserRole(payload);
+        if ((newUserRole as any)?.USERID) {
+          setHighlightedId((newUserRole as any).USERID);
+        }
+        toaster.success({
+          title: "Success",
+          description: "User role created successfully"
+        });
+      }
+      resetForm();
+    } catch (error: any) {
+      toaster.error({
+        title: "Error",
+        description: error?.message || "Failed to save user role"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this user role?")) return;
+    try {
+      await removeUserRole(id);
+      toaster.success({
+        title: "Success",
+        description: "User role deleted successfully"
+      });
+      if (paginatedUserRoles.length === 1 && page > 0) setPage(page - 1);
+    } catch (error: any) {
+      toaster.error({
+        title: "Error",
+        description: error?.message || "Failed to delete user role"
+      });
+    }
+  };
 
-    return (
-        <Box fontWeight="semibold"
-        //  bg={theme.colors.primary} color={theme.colors.secondary}
-         >
+  // const handleExport = (option: string) => {
+  //     setData((userRoles as UserRole[]).map((ur) => ({
+  //         USERID: getOperatorName(ur.USERID),
+  //         ROLEID: getRoleName(ur.ROLEID),
+  //     })));
+  //     setColumns([
+  //         { key: "USERID", label: "User" },
+  //         { key: "ROLEID", label: "Role" },
+  //     ]);
+  //     setShowSno(true);
+  //     title?.("User Role Master");
+  //     router.push(`/print?export=${option}`);
+  // };
+
+  const filteredUserRoles = (userRoles as UserRole[]).filter(ur => getOperatorName(ur.USERID).toLowerCase().includes(searchTerm.toLowerCase()) || getRoleName(ur.ROLEID).toLowerCase().includes(searchTerm.toLowerCase()));
+  const totalElements = filteredUserRoles.length;
+  const paginatedUserRoles = filteredUserRoles.slice(page * size, (page + 1) * size);
+  const operatorItems = operators.map(o => ({
+    label: o.OPER_NAME,
+    value: String(o.OPER_CODE)
+  }));
+  const roleItems = roles.map(r => ({
+    label: r.ROLENAME,
+    value: String(r.ROLEID)
+  }));
+  const UserRoleFields = UserRoleMasterConfig({
+    users: operatorItems,
+    roles: roleItems
+  });
+  const formNames = UserRoleFields.map(f => f.name);
+  const {
+    register,
+    focusFirst,
+    focusNext
+  } = useEnterNavigation(formNames, handleSave);
+  if (loading) {
+    return <Box className={ui("[display:flex]! [justify-content:center]! [align-items:center]! [min-height:100vh]!")}>
+                <Spinner size="xl"
+      // color={theme.colors.accient}
+      />
+            </Box>;
+  }
+  return <Box className={ui("role-workspace" + " " + "font-normal!")}>
             <Toaster />
-            <Grid templateColumns={{ base: "1fr", lg: "1fr 2.5fr" }} gap={2}>
+            <Grid className={ui("[grid-template-columns:1fr]! lg:[grid-template-columns:1fr_2.5fr]! [gap:24px]!")}>
 
                <GridItem>
-                    <VStack 
-                    
-                    // bg={theme.colors.formColor}
-                     p={4} borderRadius="xl" border="1px solid #eef">
+                    <VStack
+
+        // bg={theme.colors.formColor}
+        className={ui("role-panel" + " " + "[padding:24px]! [border-radius:20px]! [border:1px_solid_var(--border)]!")}>
+                      <div className={ui("role-panel-heading")}>{editId ? "Edit assignment" : "Create assignment"}</div>
+                      <p className={ui("role-panel-caption")}>Choose the details below, then save your changes.</p>
                 
-                      <Fieldset.Root size="sm" width="100%">
+                      <Fieldset.Root size="sm" className={ui("[width:100%]!")}>
                           <Fieldset.Content>
-                              <DynamicForm 
-                                  register={register}
-                                  formData={form}
-                                  focusNext={focusNext}
-                                  layout="vertical"
-                                  onChange={handleChange}
-                                  fields={UserRoleFields}
-                                  minLabelWidth="70px"
-                              />
+                              <DynamicForm register={register} formData={form} focusNext={focusNext} layout="verticalCombine" labelFontSize="var(--font-sm)" onChange={handleChange} fields={UserRoleFields} minLabelWidth="70px" />
                           </Fieldset.Content>
                       </Fieldset.Root>
 
                       <HStack>
-                          <Button size="xs" colorPalette="blue" onClick={handleSave}>
+                          <Button size="sm" disabled={isSubmitting} onClick={handleSave} className={ui("[background:var(--primary)]! [color:white]!")}>
                               <AiOutlineSave /> {editId ? "Update" : "Save"}
                           </Button>
-                          <Button size="xs" colorPalette="blue" onClick={resetForm}>
+                          <Button size="sm" variant="outline" onClick={resetForm}>
                               <IoIosExit /> Reset
                           </Button>
-                          <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
+                          <Button size="sm" variant="ghost" onClick={() => router.back()}>
                               <IoIosExit /> Exit
                           </Button>
                       </HStack>
@@ -303,10 +279,10 @@ export default function UserRoleMaster() {
                 </GridItem>
 
                 {/* TABLE */}
-                <GridItem minW={0}>
-                    <Box 
-                    // bg={theme.colors.formColor} 
-                    p={3} borderRadius="xl" border="1px solid #eef">
+                <GridItem className={ui("[min-width:0]!")}>
+                    <Box
+        // bg={theme.colors.formColor} 
+        className={ui("role-panel" + " " + "[padding:12px]! [border-radius:20px]! [background:white]! [border:1px_solid_var(--border)]!")}>
                         {/* <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "start", sm: "center" }} mb={3} gap={2}>
                             <HStack gap={2}>
                                 <Text fontWeight="semibold" fontSize="small">USER ROLE LIST</Text>
@@ -327,46 +303,27 @@ export default function UserRoleMaster() {
                                     <FaPrint />
                                 </Button>
                             </Flex>
-                        </Flex> */}
+                         </Flex> */}
 
-                        <CustomTable
-                            columns={userRoleColumns}
-                            data={paginatedUserRoles}
-                     
-                            renderRow={(ur: UserRole, index: number) => (
-                                <>
+                        <CustomTable columns={userRoleColumns} data={paginatedUserRoles} renderRow={(ur: UserRole, index: number) => <>
                                     <Table.Cell>{page * size + index + 1}</Table.Cell>
                                     <Table.Cell>{getOperatorName(ur.USERID)}</Table.Cell>
                                     <Table.Cell>{getRoleName(ur.ROLEID)}</Table.Cell>
                                     <Table.Cell>
-                                        <Box display="flex" gap={2}>
+                                        <Box className={ui("[display:flex]! [gap:8px]!")}>
                                        
-                                                <FaTrash
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(ur.USERID);
-                                                    }}
-                                                    cursor="pointer"
-                                                    color="red"
-                                                    size={14}
-                                                />
+                                                <FaTrash onClick={e => {
+                  e.stopPropagation();
+                  handleDelete(ur.USERID);
+                }} size={14} className={ui("[cursor:pointer]! [color:red]!")} />
                                            
                                         </Box>
                                     </Table.Cell>
-                                </>
-                            )}
-                            headerBg="blue.800"
-                            headerColor="white"
-                            borderColor="white"
-                            // bodyBg={theme.colors.primary}
-                            highlightRowId={highlightedId}
-                            rowIdKey="USERID"
-                            emptyText="No user role assignments available"
-                            onRowClick={(row) => handleEdit(row)}
-                        />
+                                </>} headerBg="#f8fafc" headerColor="var(--text-muted)"
+          // bodyBg={theme.colors.primary}
+          highlightRowId={highlightedId} rowIdKey="USERID" emptyText="No user role assignments available" onRowClick={row => handleEdit(row)} className={ui("[border-color:var(--border)]!")} />
                     </Box>
                 </GridItem>
             </Grid>
-        </Box>
-    );
+        </Box>;
 }

@@ -1,5 +1,6 @@
 import { axiosInstance } from "@/api/axiosInstance";
 import { StaffPayload, StaffRecord } from "@/types/StaffMaster/StaffMaster";
+import { ApiResponse } from "@/types/ApiResponse";
 
 // CREATE
 export const createStaff = async (payload: StaffPayload): Promise<StaffRecord> => {
@@ -9,8 +10,10 @@ export const createStaff = async (payload: StaffPayload): Promise<StaffRecord> =
 
 // GET ALL
 export const getAllStaff = async (): Promise<StaffRecord[]> => {
-  const response = await axiosInstance.get("/staff");
-  return response.data;
+  const response = await axiosInstance.get<StaffRecord[] | ApiResponse<StaffRecord[]>>("/staff");
+  const records = Array.isArray(response.data) ? response.data : response.data.data;
+  if (!Array.isArray(records)) throw new Error("The staff response could not be read.");
+  return records;
 };
 
 // GET BY STAFFID

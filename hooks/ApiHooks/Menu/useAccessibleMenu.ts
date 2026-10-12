@@ -13,10 +13,9 @@
 
 import { useMemo } from "react";
 import { menuConfig, MenuEntryConfig } from "@/config/menu/menuConfig";
+import { useSession } from "@/hooks/Auth/useSession";
 
-function getAllowedMenuIds(): string[] | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem("menuIds");
+function getAllowedMenuIds(raw: string | null | undefined): string[] | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw);
@@ -27,7 +26,8 @@ function getAllowedMenuIds(): string[] | null {
 }
 
 export function useAccessibleMenu() {
-  const allowedIds = useMemo(getAllowedMenuIds, []);
+  const { menuIds } = useSession();
+  const allowedIds = useMemo(() => getAllowedMenuIds(menuIds), [menuIds]);
 
   // No ids stored yet -> nothing to restrict against, show everything.
   const isAllowed = (id: string): boolean => !allowedIds || allowedIds.includes(id);

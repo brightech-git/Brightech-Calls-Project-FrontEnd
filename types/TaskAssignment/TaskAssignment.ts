@@ -100,6 +100,13 @@ export type CallsBookingListItem_Table =
 export interface CallsBookingListParams {
   page?: number;
   size?: number;
+  asOn :boolean;
   fromDate?: string | null;
   toDate?: string | null;
+  asOnDate?:string ;
+  clientId ?: string;
+  userId ?:string;
+  projectId ?:string
+  moduleId?:string
+  status ?: string
 }

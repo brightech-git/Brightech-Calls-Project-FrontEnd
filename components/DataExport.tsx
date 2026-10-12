@@ -486,9 +486,9 @@ export function DataExport<T = any>({
             size={buttonSize as any}
             onClick={handleExcel}
             disabled={isDisabled}
-            bg="green.500"
-            color="white"
-            _hover={{ bg: "green.600" }}
+            variant="outline" bg="var(--surface)" borderColor="var(--border)" minH="var(--control-height)" fontSize="var(--font-sm)"
+            color="var(--text-muted)"
+            _hover={{ bg: "var(--primary-light)", color: "var(--primary)" }}
           >
             <Icon as={FileSpreadsheet} boxSize="14px" /> Excel
           </Button>
@@ -498,9 +498,9 @@ export function DataExport<T = any>({
             size={buttonSize as any}
             onClick={handlePDF}
             disabled={isDisabled}
-            bg="red.500"
-            color="white"
-            _hover={{ bg: "red.600" }}
+            variant="outline" bg="var(--surface)" borderColor="var(--border)" minH="var(--control-height)" fontSize="var(--font-sm)"
+            color="var(--text-muted)"
+            _hover={{ bg: "var(--primary-light)", color: "var(--primary)" }}
           >
             <Icon as={FileText} boxSize="14px" /> PDF
           </Button>
@@ -510,9 +510,9 @@ export function DataExport<T = any>({
             size={buttonSize as any}
             onClick={handlePrint}
             disabled={isDisabled}
-            bg="gray.600"
-            color="white"
-            _hover={{ bg: "gray.700" }}
+            variant="outline" bg="var(--surface)" borderColor="var(--border)" minH="var(--control-height)" fontSize="var(--font-sm)"
+            color="var(--text-muted)"
+            _hover={{ bg: "var(--primary-light)", color: "var(--primary)" }}
           >
             <Icon as={Printer} boxSize="14px" /> Print
           </Button>

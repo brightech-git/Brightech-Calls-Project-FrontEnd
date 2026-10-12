@@ -43,12 +43,15 @@ export const createClientVisit = async (
 };
 
 export interface ClientVisitFilters {
+  fromDate :string,
+  toDate :string,
   active?: string;
   mobile?: string;
   area?: string;
   city?: string;
   client?: string;
   search?: string;
+  status ?:string
 }
 
 // GET ALL

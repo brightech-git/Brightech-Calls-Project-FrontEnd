@@ -1,11 +1,11 @@
 "use client";
 
+import { ui } from "@/utils/ui";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Pencil } from "lucide-react";
-
 import { CustomTable, TableColumn } from "@/components/CustomTable";
 import { DataExport, ExportColumn } from "@/components/DataExport";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -13,26 +13,14 @@ import { SelectCombobox } from "@/components/ui/SelectComboBox";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { SwitchInput } from "@/components/ui/SwitchInput";
-
 import { usePageHeader } from "@/context/PageHeaderContext";
 import { useToast } from "@/components/Toast";
-
 import { COLORS, FONT, RADIUS } from "@/utils/theme";
-
-import {
-  useProjectLinkList,
-  useCreateProjectLink,
-  useUpdateProjectLink,
-  useDeleteProjectLink,
-} from "@/hooks/ProjectLink/useProjectLink";
+import { useProjectLinkList, useCreateProjectLink, useUpdateProjectLink, useDeleteProjectLink } from "@/hooks/ProjectLink/useProjectLink";
 import { useCompanyList } from "@/hooks/CompanyMaster/useCompanyMaster";
 import { useClientList } from "@/hooks/ClientMaster/useClientMaster";
 import { useProjectTypeList } from "@/hooks/ProjectTypeMaster/useProjectTypeMaster";
-
-import {
-  ProjectLinkRecord,
-  ProjectLinkRecord_Table,
-} from "@/types/ProjectLink/ProjectLink";
+import { ProjectLinkRecord, ProjectLinkRecord_Table } from "@/types/ProjectLink/ProjectLink";
 import { NativeSelect } from "@chakra-ui/react";
 import { NativeSelectWrapper } from "@/components/ui/NativeSelectWrapper";
 
@@ -49,40 +37,47 @@ const projectLinkSchema = z.object({
   authPassword: z.string().optional(),
   status: z.string().optional(),
   type: z.string().optional(),
-  active: z.boolean(),
+  active: z.boolean()
 });
-
-const TypeCollections = [
-  {label:"Desktop",value:"D"},
-  {label:"Mobile",value:"M"},
-  {label:"Website",value:"W"}
-]
-
-const ProjectStatuses = [
-  {label:"Live",value:"L"},
-  {label:"Test",value:"T"},
-]
-
-const ActiveFilterOptions = [
-  { label: "Active", value: "true" },
-  { label: "Inactive", value: "false" },
-  { label: "All", value: "" },
-];
-
+const TypeCollections = [{
+  label: "Desktop",
+  value: "D"
+}, {
+  label: "Mobile",
+  value: "M"
+}, {
+  label: "Website",
+  value: "W"
+}];
+const ProjectStatuses = [{
+  label: "Live",
+  value: "L"
+}, {
+  label: "Test",
+  value: "T"
+}];
+const ActiveFilterOptions = [{
+  label: "Active",
+  value: "true"
+}, {
+  label: "Inactive",
+  value: "false"
+}, {
+  label: "All",
+  value: ""
+}];
 interface ProjectLinkFilterState {
   active: string;
   clientId: string;
   projectTypeId: string;
   deviceType: string;
 }
-
 const FILTER_DEFAULTS: ProjectLinkFilterState = {
   active: "true",
   clientId: "",
   projectTypeId: "",
-  deviceType: "",
+  deviceType: ""
 };
-
 type ProjectLinkForm = z.infer<typeof projectLinkSchema>;
 
 // ─────────────────────────────────────────────
@@ -98,77 +93,101 @@ const DEFAULTS: ProjectLinkForm = {
   authPassword: "",
   status: "L",
   type: "W",
-  active: true,
+  active: true
 };
 
 // ─────────────────────────────────────────────
 // Columns
 // ─────────────────────────────────────────────
 
-const COLUMNS: TableColumn<ProjectLinkRecord_Table>[] = [
-  { key: "linkId", header: "ID",  width: "70px", align: "center" },
-  {
-    key: "company", header: "Client Name", 
-    render: (row) => row?.clientName ?? row.clientId ?? "—",
-  },
-  {
-    key: "projectType", header: "Project Type", 
-    render: (row) => row.projectTypeName ?? row.projectTypeId ?? "—",
-  },
-  {
-    key: "url",
-    header: "URL",
-
-    render: (row) => (
-      <a href={row.url} target="_blank" rel="noopener noreferrer" style={{ color: COLORS.textSecondary, textDecoration: "none" }}>
+const COLUMNS: TableColumn<ProjectLinkRecord_Table>[] = [{
+  key: "linkId",
+  header: "ID",
+  width: "70px",
+  align: "center"
+}, {
+  key: "company",
+  header: "Client Name",
+  render: row => row?.clientName ?? row.clientId ?? "—"
+}, {
+  key: "projectType",
+  header: "Project Type",
+  render: row => row.projectTypeName ?? row.projectTypeId ?? "—"
+}, {
+  key: "url",
+  header: "URL",
+  render: row => <a href={row.url} target="_blank" rel="noopener noreferrer" className={ui("[color:#34445d] [text-decoration:none]")}>
         {row.url}
       </a>
-    ),
-  },
-  { key: "userName", header: "User Name",  },
-  { key: "password", header: "Password",  },
-  { key: "authPassword", header: "Auth Password",  },
-  // { key: "status", header: "Status",  },
-  { key: "type", header: "Type", render : (row)=>{
-    switch(row.type){
-      case "W" : return "website"
-      case "M" : return "mobile"
-      case "D" : return "desktop"
-      default : return row.type
-
+}, {
+  key: "userName",
+  header: "User Name"
+}, {
+  key: "password",
+  header: "Password"
+}, {
+  key: "authPassword",
+  header: "Auth Password"
+},
+// { key: "status", header: "Status",  },
+{
+  key: "type",
+  header: "Type",
+  render: row => {
+    switch (row.type) {
+      case "W":
+        return "website";
+      case "M":
+        return "mobile";
+      case "D":
+        return "desktop";
+      default:
+        return row.type;
     }
-  
-  }  },
-  {
-    key: "active",
-    header: "Active",
-    
-    render: (row) => (
-      <span style={{
-        padding: "2px 10px", borderRadius: 20, fontSize: FONT.size.xs, fontWeight: 600,
-        background: row.active ? COLORS.successBg : COLORS.errorBg,
-        color:      row.active ? COLORS.success   : COLORS.error,
-      }}>
+  }
+}, {
+  key: "active",
+  header: "Active",
+  render: row => <span style={{
+    background: row.active ? COLORS.successBg : COLORS.errorBg,
+    color: row.active ? COLORS.success : COLORS.error
+  }} className={ui("[padding:2px_10px] [border-radius:20px] [font-size:var(--font-xs)] [font-weight:600]")}>
         {row.active ? "Active" : "Inactive"}
       </span>
-    ),
-  },
-];
+}];
 
 // ─────────────────────────────────────────────
 // Export Columns
 // ─────────────────────────────────────────────
 
-const EXPORT_COLUMNS: ExportColumn<ProjectLinkRecord_Table>[] = [
-  { key: "linkId", label: "ID" },
-  { key: "Client Name", label: "Company", exportValue: (_, row) => row?.clientName ?? row.clientId ?? "-"},
-  { key: "projectType", label: "Project Type", exportValue: (_, row) => row.projectTypeName ?? "—" },
-  { key: "url", label: "URL" },
-  { key: "userName", label: "User Name" },
-  { key: "status", label: "Status" },
-  { key: "type", label: "Type" },
-  { key: "active", label: "Active", exportValue: (v) => v ? "Active" : "Inactive" },
-];
+const EXPORT_COLUMNS: ExportColumn<ProjectLinkRecord_Table>[] = [{
+  key: "linkId",
+  label: "ID"
+}, {
+  key: "Client Name",
+  label: "Company",
+  exportValue: (_, row) => row?.clientName ?? row.clientId ?? "-"
+}, {
+  key: "projectType",
+  label: "Project Type",
+  exportValue: (_, row) => row.projectTypeName ?? "—"
+}, {
+  key: "url",
+  label: "URL"
+}, {
+  key: "userName",
+  label: "User Name"
+}, {
+  key: "status",
+  label: "Status"
+}, {
+  key: "type",
+  label: "Type"
+}, {
+  key: "active",
+  label: "Active",
+  exportValue: v => v ? "Active" : "Inactive"
+}];
 
 // ─────────────────────────────────────────────
 // Page
@@ -177,76 +196,67 @@ const EXPORT_COLUMNS: ExportColumn<ProjectLinkRecord_Table>[] = [
 export default function ProjectLinkPage() {
   usePageHeader({
     title: "Project Links",
-    subtitle: "Manage project link credentials",
+    subtitle: "Manage project link credentials"
   });
-
   const toast = useToast();
-
   const [open, setOpen] = useState(false);
-
-  const [editRow, setEditRow] =
-    useState<ProjectLinkRecord | null>(null);
-
-  const [deleteRow, setDeleteRow] =
-    useState<ProjectLinkRecord | null>(null);
-
-  const [filterInputs, setFilterInputs] =
-    useState<ProjectLinkFilterState>(FILTER_DEFAULTS);
-
-  const updateFilter = (key: keyof ProjectLinkFilterState, value: string) =>
-    setFilterInputs((prev) => ({ ...prev, [key]: value }));
-
+  const [editRow, setEditRow] = useState<ProjectLinkRecord | null>(null);
+  const [deleteRow, setDeleteRow] = useState<ProjectLinkRecord | null>(null);
+  const [filterInputs, setFilterInputs] = useState<ProjectLinkFilterState>(FILTER_DEFAULTS);
+  const updateFilter = (key: keyof ProjectLinkFilterState, value: string) => setFilterInputs(prev => ({
+    ...prev,
+    [key]: value
+  }));
   const resetFilters = () => setFilterInputs(FILTER_DEFAULTS);
-
-  const { data: clients = [] } = useClientList();
-  const { data: projectTypes = [] } = useProjectTypeList();
-  const { data: projectLinks = [], isLoading } = useProjectLinkList({
+  const {
+    data: clients = []
+  } = useClientList();
+  const {
+    data: projectTypes = []
+  } = useProjectTypeList();
+  const {
+    data: projectLinks = [],
+    isLoading
+  } = useProjectLinkList({
     active: filterInputs.active === "" ? undefined : filterInputs.active === "true",
     clientId: filterInputs.clientId ? Number(filterInputs.clientId) : undefined,
     projectTypeId: filterInputs.projectTypeId ? Number(filterInputs.projectTypeId) : undefined,
-    deviceType: filterInputs.deviceType || undefined,
+    deviceType: filterInputs.deviceType || undefined
   });
-
-  const clientItems = clients.map((c) => ({ label: c.CLIENTNAME, value: String(c.CLIENTID) }));
-
-  const projectTypeItems = projectTypes.map((p) => ({ label: p.projectTypeName, value: String(p.projectTypeId) }));
-
+  const clientItems = clients.map(c => ({
+    label: c.CLIENTNAME,
+    value: String(c.CLIENTID)
+  }));
+  const projectTypeItems = projectTypes.map(p => ({
+    label: p.projectTypeName,
+    value: String(p.projectTypeId)
+  }));
   const createMutation = useCreateProjectLink();
   const updateMutation = useUpdateProjectLink();
   const deleteMutation = useDeleteProjectLink();
-
-  const isPending =
-    createMutation.isPending ||
-    updateMutation.isPending;
-
+  const isPending = createMutation.isPending || updateMutation.isPending;
   const {
     control,
     handleSubmit,
     reset,
-
-    formState: { errors },
+    formState: {
+      errors
+    }
   } = useForm<ProjectLinkForm>({
     resolver: zodResolver(projectLinkSchema),
-    defaultValues: DEFAULTS,
+    defaultValues: DEFAULTS
   });
 
   // ─────────────────────────
 
   const openCreate = () => {
     setEditRow(null);
-
     reset(DEFAULTS);
-
     setOpen(true);
   };
-
-  const openEdit = (
-    row: ProjectLinkRecord_Table
-  ) => {
+  const openEdit = (row: ProjectLinkRecord_Table) => {
     const r = row as ProjectLinkRecord;
-
     setEditRow(r);
-
     reset({
       CLIENTID: r.clientId ?? 0,
       projectTypeId: r.projectTypeId ?? 0,
@@ -256,63 +266,41 @@ export default function ProjectLinkPage() {
       authPassword: r.authPassword ?? "",
       status: r.status ?? "",
       type: r.type ?? "",
-      active: r.active ?? true,
+      active: r.active ?? true
     });
-
     setOpen(true);
   };
 
   // ─────────────────────────
 
-  const onSubmit = async (
-    data: ProjectLinkForm
-  ) => {
+  const onSubmit = async (data: ProjectLinkForm) => {
     const payload = {
-      clientId:  data.CLIENTID ,
-      projectTypeId:data.projectTypeId ,
+      clientId: data.CLIENTID,
+      projectTypeId: data.projectTypeId,
       url: data.url,
       userName: data.userName,
       password: data.password,
-      authPassword :data.authPassword,
+      authPassword: data.authPassword,
       status: data.status,
       type: data.type,
-      active: data.active,
+      active: data.active
     };
-    console.log(payload,'payload')
-
+    console.log(payload, 'payload');
     try {
       if (editRow) {
         await updateMutation.mutateAsync({
           id: String(editRow.linkId),
-          payload,
+          payload
         });
-
-        toast.success(
-          "Project Link Updated",
-          "Project link updated successfully."
-        );
+        toast.success("Project Link Updated", "Project link updated successfully.");
       } else {
         await createMutation.mutateAsync(payload);
-
-        toast.success(
-          "Project Link Created",
-          "Project link created successfully."
-        );
+        toast.success("Project Link Created", "Project link created successfully.");
       }
-
       setOpen(false);
-
       reset(DEFAULTS);
     } catch (err: any) {
-      toast.error(
-        editRow
-          ? "Update Failed"
-          : "Create Failed",
-
-        err?.response?.data?.message ||
-          err?.message ||
-          "Operation failed."
-      );
+      toast.error(editRow ? "Update Failed" : "Create Failed", err?.response?.data?.message || err?.message || "Operation failed.");
     }
   };
 
@@ -320,304 +308,63 @@ export default function ProjectLinkPage() {
 
   const confirmDelete = () => {
     if (!deleteRow) return;
-
-    deleteMutation.mutate(
-      String(deleteRow.linkId),
-
-      {
-        onSuccess: () => {
-          toast.success(
-            "Project Link Deleted",
-            "Project link deleted successfully."
-          );
-
-          setDeleteRow(null);
-        },
-
-        onError: (err: any) => {
-          toast.error(
-            "Delete Failed",
-            err?.response?.data?.message ||
-              "Delete failed."
-          );
-
-          setDeleteRow(null);
-        },
+    deleteMutation.mutate(String(deleteRow.linkId), {
+      onSuccess: () => {
+        toast.success("Project Link Deleted", "Project link deleted successfully.");
+        setDeleteRow(null);
+      },
+      onError: (err: any) => {
+        toast.error("Delete Failed", err?.response?.data?.message || "Delete failed.");
+        setDeleteRow(null);
       }
-    );
+    });
   };
 
   // ─────────────────────────
 
-  return (
-    <>
-      <style>{`
-        .pl-modal-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.4);
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          z-index: 1000;
-          padding: 16px;
-        }
-
-        .pl-modal-box {
-          background: ${COLORS.cardBg};
-
-          border: 1px solid ${COLORS.cardBorder};
-
-          border-radius: ${RADIUS.xl};
-
-          width: 100%;
-          max-width: 720px;
-
-          font-family: ${FONT.family};
-
-          box-shadow: 0 8px 32px rgba(0,0,0,0.14);
-
-          animation: pl-slide-up 0.18s ease;
-        }
-
-        @keyframes pl-slide-up {
-          from {
-            transform: translateY(10px);
-            opacity: 0;
-          }
-
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-
-        .pl-modal-head {
-          padding: 12px 16px;
-
-          border-bottom: 1px solid ${COLORS.cardBorder};
-
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-
-          background: ${COLORS.gray50};
-
-          border-radius: ${RADIUS.xl} ${RADIUS.xl} 0 0;
-        }
-
-        .pl-modal-title {
-          font-size: 14px;
-          font-weight: 700;
-          color: ${COLORS.textPrimary};
-        }
-
-        .pl-modal-sub {
-          font-size: 14px;
-          color: ${COLORS.textMuted};
-          margin-top: 2px;
-        }
-
-        .pl-modal-body {
-          padding: 16px;
-        }
-
-        .pl-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px 24px;
-        }
-
-        .pl-field-row {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .pl-field-label {
-          font-size: 14px;
-          font-weight: 600;
-          color: ${COLORS.textSecondary};
-        }
-
-        .pl-field-error {
-          font-size: 14px;
-          color: ${COLORS.error};
-        }
-
-        .pl-modal-footer {
-          padding: 12px 16px;
-
-          border-top: 1px solid ${COLORS.cardBorder};
-
-          display: flex;
-          justify-content: flex-end;
-          gap: 8px;
-
-          background: ${COLORS.gray50};
-
-          border-radius: 0 0 ${RADIUS.xl} ${RADIUS.xl};
-        }
-
-        .pl-btn-primary {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-
-          padding: 0 16px;
-          height: 34px;
-
-          border-radius: ${RADIUS.md};
-
-          border: none;
-
-          background: ${COLORS.btnPrimaryBg};
-
-          color: ${COLORS.btnPrimaryText};
-
-          font-size: 14px;
-          font-weight: 600;
-
-          cursor: pointer;
-        }
-
-        .pl-btn-primary:hover {
-          background: ${COLORS.btnPrimaryHover};
-        }
-
-        .pl-btn-primary:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .pl-btn-secondary {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-
-          padding: 0 16px;
-          height: 34px;
-
-          border-radius: ${RADIUS.md};
-
-          border: 1px solid ${COLORS.btnSecondaryBorder};
-
-          background: ${COLORS.btnSecondaryBg};
-
-          color: ${COLORS.btnSecondaryText};
-
-          font-size: 14px;
-          font-weight: 500;
-
-          cursor: pointer;
-        }
-
-        .pl-close-btn {
-          width: 26px;
-          height: 26px;
-
-          border-radius: 6px;
-
-          border: 1px solid ${COLORS.cardBorder};
-
-          background: ${COLORS.cardBg};
-
-          cursor: pointer;
-        }
-
-        .pl-filter-field {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .pl-filter-label {
-          font-size: 14px;
-          font-weight: 600;
-          color: ${COLORS.textSecondary};
-        }
-      `}</style>
+  return <>
+      
 
       {/* Table */}
-      <div style={{display:"flex" ,flexDirection:"row" , justifyContent:"space-between", alignItems:"center"}}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div className={ui("workspace-filterbar")}>
+        <div className={ui("[display:flex] [flex-direction:column] [align-items:center]")}>
           <div>
             Manage Project Links
           </div>
-          <div style={{ color: COLORS.textSecondary, marginBottom: 8 }}>
-            Total Links: <span style={{ color: COLORS.textPrimary, fontWeight: 600 }}>{projectLinks.length}</span>
+          <div className={ui("[color:#34445d] [margin-bottom:8px]")}>
+            Total Links: <span className={ui("[color:var(--text-main)] [font-weight:600]")}>{projectLinks.length}</span>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 8, flexWrap: "wrap" }}>
-          <div className="pl-filter-field">
-            <label className="pl-filter-label">Client</label>
-            <SelectCombobox
-              value={filterInputs.clientId || undefined}
-              onChange={(val) => updateFilter("clientId", val)}
-              items={clientItems}
-              placeholder="All clients"
-              maxWidth="150px"
-            />
+        <div className={ui("[display:flex] [align-items:flex-end] [gap:8px] [flex-wrap:wrap]")}>
+          <div className={ui("pl-filter-field")}>
+            <label className={ui("pl-filter-label")}>Client</label>
+            <SelectCombobox value={filterInputs.clientId || undefined} onChange={val => updateFilter("clientId", val)} items={clientItems} placeholder="All clients" className={ui("[min-width:250px]!")} />
           </div>
 
-          <div className="pl-filter-field">
-            <label className="pl-filter-label">Project Type</label>
-            <SelectCombobox
-              value={filterInputs.projectTypeId || undefined}
-              onChange={(val) => updateFilter("projectTypeId", val)}
-              items={projectTypeItems}
-              placeholder="All types"
-              maxWidth="150px"
-            />
+          <div className={ui("pl-filter-field")}>
+            <label className={ui("pl-filter-label")}>Project Type</label>
+            <SelectCombobox value={filterInputs.projectTypeId || undefined} onChange={val => updateFilter("projectTypeId", val)} items={projectTypeItems} placeholder="All types" className={ui("[max-width:250px]!")} />
           </div>
 
-          <div className="pl-filter-field">
-            <label className="pl-filter-label">Device Type</label>
-            <NativeSelectWrapper
-              value={filterInputs.deviceType}
-              onChange={(e) => updateFilter("deviceType", e.target.value)}
-              items={[{ label: "All Devices", value: "" }, ...TypeCollections]}
-              maxWidth="120px"
-            />
+          <div className={ui("pl-filter-field")}>
+            <label className={ui("pl-filter-label")}>Device Type</label>
+            <NativeSelectWrapper value={filterInputs.deviceType} onChange={e => updateFilter("deviceType", e.target.value)} items={[{
+            label: "All Devices",
+            value: ""
+          }, ...TypeCollections]} className={ui("[max-width:200px]!")} />
           </div>
 
-          <div className="pl-filter-field">
-            <label className="pl-filter-label">Status</label>
-            <NativeSelectWrapper
-              value={filterInputs.active}
-              onChange={(e) => updateFilter("active", e.target.value)}
-              items={ActiveFilterOptions}
-              maxWidth="110px"
-            />
+          <div className={ui("pl-filter-field")}>
+            <label className={ui("pl-filter-label")}>Status</label>
+            <NativeSelectWrapper value={filterInputs.active} onChange={e => updateFilter("active", e.target.value)} items={ActiveFilterOptions} className={ui("[max-width:110px]!")} />
           </div>
 
-          {(filterInputs.clientId ||
-            filterInputs.projectTypeId ||
-            filterInputs.deviceType ||
-            filterInputs.active !== FILTER_DEFAULTS.active) && (
-              <button
-                type="button"
-                className="pl-btn-secondary"
-                onClick={resetFilters}
-              >
+          {(filterInputs.clientId || filterInputs.projectTypeId || filterInputs.deviceType || filterInputs.active !== FILTER_DEFAULTS.active) && <button type="button" className={ui("pl-btn-secondary")} onClick={resetFilters}>
                 Clear
-              </button>
-            )}
+              </button>}
 
-          <DataExport
-            data={projectLinks as ProjectLinkRecord_Table[]}
-            columns={EXPORT_COLUMNS}
-            filename="project-links"
-            title="Project Links"
-            showButtons={["excel", "pdf", "print"]}
-            buttonSize="sm"
-          />
-          <button
-            className="pl-btn-primary"
-            onClick={openCreate}
-          >
+          <DataExport data={projectLinks as ProjectLinkRecord_Table[]} columns={EXPORT_COLUMNS} filename="project-links" title="Project Links" showButtons={["excel", "pdf", "print"]} buttonSize="sm" />
+          <button className={ui("pl-btn-primary")} onClick={openCreate}>
             <Plus size={13} />
             Add Project Link
           </button>
@@ -625,279 +372,142 @@ export default function ProjectLinkPage() {
       </div>
      
      
-      <CustomTable
-        columns={COLUMNS}
-        data={projectLinks as ProjectLinkRecord_Table[]}
-        rowKey="linkId"
-        isLoading={isLoading}
-        onEdit={openEdit}
-        onDelete={(row) =>
-          setDeleteRow(row as ProjectLinkRecord)
-        }
-        emptyMessage="No project links found."
-        showSearch={false}
-
-        
-      />
+      <CustomTable columns={COLUMNS} data={projectLinks as ProjectLinkRecord_Table[]} rowKey="linkId" isLoading={isLoading} onEdit={openEdit} onDelete={row => setDeleteRow(row as ProjectLinkRecord)} emptyMessage="No project links found." showSearch={false} />
 
       {/* Modal */}
 
-      {open && (
-        <div
-          className="pl-modal-overlay"
-          onClick={(e) =>
-            e.target === e.currentTarget &&
-            setOpen(false)
-          }
-        >
-          <div className="pl-modal-box">
-            <div className="pl-modal-head">
+      {open && <div className={ui("pl-modal-overlay workspace-modal-overlay")} onClick={e => e.target === e.currentTarget && setOpen(false)}>
+          <div className={ui("pl-modal-box workspace-modal")} data-workspace-dialog role="dialog" aria-modal="true" aria-label="Project link details">
+            <div className={ui("pl-modal-head")}>
               <div>
-                <div className="pl-modal-title">
-                  {editRow
-                    ? "Edit Project Link"
-                    : "Add Project Link"}
+                <div className={ui("pl-modal-title")}>
+                  {editRow ? "Edit Project Link" : "Add Project Link"}
                 </div>
 
-                <div className="pl-modal-sub">
-                  {editRow
-                    ? `Editing: Link #${editRow.linkId}`
-                    : "Fill project link details"}
+                <div className={ui("pl-modal-sub")}>
+                  {editRow ? `Editing: Link #${editRow.linkId}` : "Fill project link details"}
                 </div>
               </div>
 
-              <button
-                className="pl-close-btn"
-                onClick={() => setOpen(false)}
-              >
+              <button className={ui("pl-close-btn")} data-dialog-close aria-label="Close form" onClick={() => setOpen(false)}>
                 ✕
               </button>
             </div>
 
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-            >
-              <div className="pl-modal-body">
-                <div className="pl-grid">
-                  <div className="pl-field-row">
-                    <label className="pl-field-label">Company *</label>
-                    <Controller
-                      name="CLIENTID"
-                      control={control}
-                      render={({ field }) => (
-                        <SelectCombobox
-                          value={field.value ? String(field.value) : undefined}
-                          onChange={(val) => field.onChange(val ? Number(val) : 0)}
-                          editId={editRow?.linkId ?? null}
-                          items={clientItems}
-                          placeholder="Select company"
-                          maxWidth="100%"
-                        />
-                      )}
-                    />
-                    {errors.CLIENTID && <span className="pl-field-error">{errors.CLIENTID.message}</span>}
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className={ui("pl-modal-body")}>
+                <div className={ui("pl-grid workspace-form-grid")}>
+                  <div className={ui("pl-field-row")}>
+                    <label className={ui("pl-field-label")}>Company *</label>
+                    <Controller name="CLIENTID" control={control} render={({
+                  field
+                }) => <SelectCombobox value={field.value ? String(field.value) : undefined} onChange={val => field.onChange(val ? Number(val) : 0)} editId={editRow?.linkId ?? null} items={clientItems} placeholder="Select company" className={ui("[max-width:100%]!")} />} />
+                    {errors.CLIENTID && <span className={ui("pl-field-error")}>{errors.CLIENTID.message}</span>}
                   </div>
 
-                  <div className="pl-field-row">
-                    <label className="pl-field-label">Project Type *</label>
-                    <Controller
-                      name="projectTypeId"
-                      control={control}
-                      render={({ field }) => (
-                        <SelectCombobox
-                          value={field.value ? String(field.value) : undefined}
-                          onChange={(val) => field.onChange(val ? Number(val) : 0)}
-                          editId={editRow?.linkId ?? null}
-                          items={projectTypeItems}
-                          placeholder="Select project type"
-                          maxWidth="100%"
-                        />
-                      )}
-                    />
-                    {errors.projectTypeId && <span className="pl-field-error">{errors.projectTypeId.message}</span>}
+                  <div className={ui("pl-field-row")}>
+                    <label className={ui("pl-field-label")}>Project Type *</label>
+                    <Controller name="projectTypeId" control={control} render={({
+                  field
+                }) => <SelectCombobox value={field.value ? String(field.value) : undefined} onChange={val => field.onChange(val ? Number(val) : 0)} editId={editRow?.linkId ?? null} items={projectTypeItems} placeholder="Select project type" className={ui("[max-width:100%]!")} />} />
+                    {errors.projectTypeId && <span className={ui("pl-field-error")}>{errors.projectTypeId.message}</span>}
                   </div>
 
-                  <div className="pl-field-row">
-                    <label className="pl-field-label">URL</label>
-                    <Controller
-                      name="url"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="url"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter URL"
-                          maxWidth="100%"
-                        />
-                      )}
-                    />
+                  <div className={ui("pl-field-row")}>
+                    <label className={ui("pl-field-label")}>URL</label>
+                    <Controller name="url" control={control} render={({
+                  field
+                }) => <CapitalizedInput value={field.value} field="url" onChange={(_, value) => field.onChange(value)} placeholder="Enter URL" className={ui("[max-width:100%]!")} />} />
                   </div>
 
-                  <div className="pl-field-row">
-                    <label className="pl-field-label">User Name</label>
-                    <Controller
-                      name="userName"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="userName"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter user name"
-                          maxWidth="100%"
-                        />
-                      )}
-                    />
+                  <div className={ui("pl-field-row")}>
+                    <label className={ui("pl-field-label")}>User Name</label>
+                    <Controller name="userName" control={control} render={({
+                  field
+                }) => <CapitalizedInput value={field.value} field="userName" onChange={(_, value) => field.onChange(value)} placeholder="Enter user name" className={ui("[max-width:100%]!")} />} />
                   </div>
 
-                  <div className="pl-field-row">
-                    <label className="pl-field-label">Password</label>
-                    <Controller
-                      name="password"
-                      control={control}
-                      render={({ field }) => (
-                        <PasswordInput
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          placeholder="Enter password"
-                          size="xs"
-                        />
-                      )}
-                    />
+                  <div className={ui("pl-field-row")}>
+                    <label className={ui("pl-field-label")}>Password</label>
+                    <Controller name="password" control={control} render={({
+                  field
+                }) => <PasswordInput value={field.value} onChange={e => field.onChange(e.target.value)} placeholder="Enter password" size="xs" />} />
                   </div>
 
-                  <div className="pl-field-row">
-                    <label className="pl-field-label">Auth Password</label>
-                    <Controller
-                      name="authPassword"
-                      control={control}
-                      render={({ field }) => (
-                        <PasswordInput
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          placeholder="Enter authorization password"
-                          size="xs"
-                        />
-                      )}
-                    />
+                  <div className={ui("pl-field-row")}>
+                    <label className={ui("pl-field-label")}>Auth Password</label>
+                    <Controller name="authPassword" control={control} render={({
+                  field
+                }) => <PasswordInput value={field.value} onChange={e => field.onChange(e.target.value)} placeholder="Enter authorization password" size="xs" />} />
                   </div>
 
-                  <div className="pl-field-row">
-                    <label className="pl-field-label">Status</label>
-                    <Controller
-                      name="status"
-                      control={control}
-                      render={({ field }) => (
-                        // <CapitalizedInput
-                        //   value={field.value}
-                        //   field="status"
-                        //   isCapitalized
-                        //   onChange={(_, value) => field.onChange(value)}
-                        //   placeholder="Enter status"
-                        //   maxWidth="100%"
-                        // />
-                        <NativeSelectWrapper 
-                          value={field.value ?? ""}
-                          onChange={(value)=>field.onChange(value)}
-                          items={ProjectStatuses}
-                          fontSize="sm"
-                          className="border-[#222]"
-                          placeholder="Select status"
-                          css={{
-                            border :"1px solid #DDD",
-                            bg :"#EEE"
-                          }}
-                        />
-
-                      )}
-                    />
+                  <div className={ui("pl-field-row")}>
+                    <label className={ui("pl-field-label")}>Status</label>
+                    <Controller name="status" control={control} render={({
+                  field
+                }) =>
+                // <CapitalizedInput
+                //   value={field.value}
+                //   field="status"
+                //   isCapitalized
+                //   onChange={(_, value) => field.onChange(value)}
+                //   placeholder="Enter status"
+                //   maxWidth="100%"
+                // />
+                <NativeSelectWrapper value={field.value ?? ""} onChange={value => field.onChange(value)} items={ProjectStatuses} className={ui("border-[#222]" + " " + "[font-size:var(--font-sm)]!")} placeholder="Select status" css={{
+                  border: "1px solid #DDD",
+                  bg: "#EEE"
+                }} />} />
                   </div>
 
-                  <div className="pl-field-row">
-                    <label className="pl-field-label">Type</label>
-                    <Controller
-                      name="type"
-                      control={control}
-                      render={({ field }) => (
-                        // <CapitalizedInput
-                        //   value={field.value}
-                        //   field="type"
-                        //   isCapitalized
-                        //   onChange={(_, value) => field.onChange(value)}
-                        //   placeholder="Enter type"
-                        //   maxWidth="100%"
-                        // />
-                        <NativeSelectWrapper
-                          value={field.value ?? ""}
-                          fontSize="sm"
-                          onChange={(e) => field.onChange(e.target.value)}
-                          items={TypeCollections}
-                          className="border-[#222]"
-                          css={{
-                            border: "1px solid #DDD",
-                            bg: "#EEE"
-                          }}
-                        />
-                      )}
-                    />
+                  <div className={ui("pl-field-row")}>
+                    <label className={ui("pl-field-label")}>Type</label>
+                    <Controller name="type" control={control} render={({
+                  field
+                }) =>
+                // <CapitalizedInput
+                //   value={field.value}
+                //   field="type"
+                //   isCapitalized
+                //   onChange={(_, value) => field.onChange(value)}
+                //   placeholder="Enter type"
+                //   maxWidth="100%"
+                // />
+                <NativeSelectWrapper value={field.value ?? ""} onChange={e => field.onChange(e.target.value)} items={TypeCollections} className={ui("border-[#222]" + " " + "[font-size:var(--font-sm)]!")} css={{
+                  border: "1px solid #DDD",
+                  bg: "#EEE"
+                }} />} />
                   </div>
 
-                  <div className="pl-field-row">
-                    <label className="pl-field-label">Active</label>
-                    <Controller
-                      name="active"
-                      control={control}
-                      render={({ field }) => (
-                        <SwitchInput
-                          value={field.value}
-                          onChange={field.onChange}
-                          labels={{ on: "Active", off: "Inactive" }}
-                          size="sm"
-                        />
-                      )}
-                    />
+                  <div className={ui("pl-field-row")}>
+                    <label className={ui("pl-field-label")}>Active</label>
+                    <Controller name="active" control={control} render={({
+                  field
+                }) => <SwitchInput value={field.value} onChange={field.onChange} labels={{
+                  on: "Active",
+                  off: "Inactive"
+                }} size="sm" />} />
                   </div>
                 </div>
               </div>
 
-              <div className="pl-modal-footer">
-                <button
-                  type="button"
-                  className="pl-btn-secondary"
-                  onClick={() => setOpen(false)}
-                >
+              <div className={ui("pl-modal-footer")}>
+                <button type="button" className={ui("pl-btn-secondary")} onClick={() => setOpen(false)}>
                   Cancel
                 </button>
 
-                <button
-                  type="submit"
-                  className="pl-btn-primary"
-                  disabled={isPending}
-                >
+                <button type="submit" className={ui("pl-btn-primary")} disabled={isPending}>
                   <Pencil size={12} />
 
-                  {isPending
-                    ? "Saving..."
-                    : editRow
-                    ? "Update Link"
-                    : "Create Link"}
+                  {isPending ? "Saving..." : editRow ? "Update Link" : "Create Link"}
                 </button>
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Delete Confirm */}
 
-      <ConfirmDialog
-        open={!!deleteRow}
-        message={`Are you sure you want to delete link #${deleteRow?.linkId}?`}
-        isPending={deleteMutation.isPending}
-        onConfirm={confirmDelete}
-        onCancel={() => setDeleteRow(null)}
-      />
-    </>
-  );
+      <ConfirmDialog open={!!deleteRow} message={`Are you sure you want to delete link #${deleteRow?.linkId}?`} isPending={deleteMutation.isPending} onConfirm={confirmDelete} onCancel={() => setDeleteRow(null)} />
+    </>;
 }

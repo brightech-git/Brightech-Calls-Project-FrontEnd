@@ -28,13 +28,11 @@ export const useLogin = () => {
 
   return useMutation({
     mutationFn: (payload: LoginPayload) => {
-      console.log("Hook received login payload:", payload);
       return loginUser(payload);
     },
 
 
     onSuccess: (data: ApiResponse<AuthResponse>) => {
-      console.log("Login Success:", data);
 
       localStorage.setItem("isLoggedIn",  "true");
       localStorage.setItem("calls_token",       data?.data?.token ?? "");
@@ -54,7 +52,8 @@ export const useLogin = () => {
         localStorage.removeItem("menuIds");
       }
 
-      queryClient.invalidateQueries({ queryKey: ["auth-login"] });
+      queryClient.clear();
+      window.dispatchEvent(new Event("calls-session-change"));
     },
 
     onError: (error) => {
@@ -69,12 +68,10 @@ export const useRegister = () => {
 
   return useMutation({
     mutationFn: (payload: RegisterPayload) => {
-      console.log("Hook received register payload:", payload);
       return registerUser(payload);
     },
 
     onSuccess: (data: ApiResponse<AuthResponse>) => {
-      console.log("Register Success:", data);
 
       localStorage.setItem("calls_token", data?.data?.token ?? "");
       localStorage.setItem("user", JSON.stringify(data));

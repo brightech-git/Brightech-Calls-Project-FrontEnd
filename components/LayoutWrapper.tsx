@@ -1,40 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import AppShell from "@/components/AppShell";
-import { useAccessibleMenu } from "@/hooks/ApiHooks/Menu/useAccessibleMenu";
-
-export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
+import { ui } from "@/utils/ui";
+import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import AppShell from '@/components/AppShell';
+import { useAccessibleMenu } from '@/hooks/ApiHooks/Menu/useAccessibleMenu';
+import { useSession } from '@/hooks/Auth/useSession';
+export default function LayoutWrapper({
+  children
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const router = useRouter();
-  const [checked, setChecked] = useState(false);
-  const { loading: menuLoading, isRouteAllowed } = useAccessibleMenu();
-
-  const isLoginPage = pathname === "/Login" || pathname === "/login";
-  const isNotFoundPage = pathname === "/404";
-
+  const {
+    loggedIn
+  } = useSession();
+  const {
+    isRouteAllowed
+  } = useAccessibleMenu();
+  const loginPage = pathname === '/Login' || pathname === '/login';
+  const allowed = isRouteAllowed(pathname);
   useEffect(() => {
-    if (!isLoginPage) {
-      const loggedIn = localStorage.getItem("isLoggedIn");
-      if (!loggedIn) {
-        router.replace("/Login");
-        return;
-      }
-    }
-    setChecked(true);
-  }, [pathname]);
-
-  // ROLE/MENU ACCESS GUARD - a logged-in user may only open pages that are
-  // in their assigned menuIds (see useAccessibleMenu / AuthResponse.menuIds).
-  // Anything else (typed URL, stale bookmark, etc.) bounces to the 404 page
-  // instead of silently rendering the page or falling back to Home.
-  useEffect(() => {
-    if (!checked || isLoginPage || isNotFoundPage || menuLoading) return;
-    if (!isRouteAllowed(pathname)) router.replace("/404");
-  }, [checked, isLoginPage, isNotFoundPage, menuLoading, pathname]);
-
-  if (isLoginPage) return <>{children}</>;
-
+    if (!loginPage && loggedIn === false) router.replace('/Login');else if (!loginPage && loggedIn && !allowed && pathname !== '/404') router.replace('/404');
+  }, [loginPage, loggedIn, allowed, pathname, router]);
+  if (loginPage) return children;
+  if (!loggedIn || !allowed) return <div className={ui("session-loading")} role="status">Opening your workspace…</div>;
   return <AppShell>{children}</AppShell>;
 }

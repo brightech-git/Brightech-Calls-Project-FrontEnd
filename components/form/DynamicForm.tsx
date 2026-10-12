@@ -46,7 +46,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     errors = {}, // Default to empty object
     layout,
     minLabelWidth = "100px",
-    labelFontSize = "x-small",
+    labelFontSize = "var(--font-sm)",
     gap= 4,
     errorToShow = true
    
@@ -158,9 +158,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         onEnter={() => focusNext(field.name)}
                         onKeyDown={(e) => handleKeyDown(e, field.name)}
                         onBlur={() => handleBlur(field.name)}
-                        maxWidth={field.maxWidth || field.maxW || field.width}
+                        maxWidth={field.maxWidth || field.maxW || field.width || "100%"}
                         size={field.size || "xs"}
-                        fontSize={field.fontSize || "2xs"}
+                        fontSize={field.fontSize || "var(--font-sm)"}
                     />
                 );
 
@@ -183,8 +183,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                                 onEnter={() => focusNext(field.name)}
                                 onKeyDown={(e) => handleKeyDown(e, field.name)}
                                 onBlur={() => handleBlur(field.name)}
-                                maxWidth={field.maxWidth || field.maxW || field.width}
-                                fontSize={field.fontSize || "2xs"}
+                                maxWidth={field.maxWidth || field.maxW || field.width || "100%"}
+                                fontSize={field.fontSize || "var(--font-sm)"}
 
                             />
                         </Box>
@@ -227,7 +227,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             onBlur={() => handleBlur(field.name)}
                             onKeyDown={(e) => handleKeyDown(e, field.name)}
                             defaultValue ={field.defaultValue}
-                            maxWidth={field.maxWidth || field.maxW || field.width}
+                            maxWidth={field.maxWidth || field.maxW || field.width || "100%"}
                         
                             
                         />
@@ -306,7 +306,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             disabled={isDisabled}
                             size={field.size || "xs"}
                             placeholder={field.placeholder}
-                            maxWidth={field.maxWidth || field.maxW || field.width}
+                            maxWidth={field.maxWidth || field.maxW || field.width || "100%"}
                             minWidth={field.minWidth}
                             rounded={field.rounded}
                             // fontSize={field.fontSize}
@@ -342,7 +342,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                                 disabled={isDisabled}
                                 size={field.size || "xs"}
                                 placeholder={field.placeholder}
-                                maxWidth={field.maxWidth || field.maxW || field.width}
+                                maxWidth={field.maxWidth || field.maxW || field.width || "100%"}
                                 minWidth={field.minWidth}
                                 rounded={field.rounded}
                                 onEnter={() => focusNext(field.name)}
@@ -364,7 +364,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             disabled={isDisabled}
                             size={field.size || "xs"}
                             placeholder={field.placeholder}
-                            maxWidth={field.maxWidth || field.maxW || field.width}
+                            maxWidth={field.maxWidth || field.maxW || field.width || "100%"}
                             minWidth={field.minWidth}
                             rounded={field.rounded}
                             // fontSize={field.fontSize}

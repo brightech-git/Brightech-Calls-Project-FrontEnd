@@ -1,149 +1,41 @@
-// ============================================
-// 🎨 THEME — Central design tokens
-// Change values here to update the entire app
-// ============================================
-
-// ===== TEXT (black-based scale for clear, readable body copy) =====
-const TEXT_PRIMARY = "#0a0a0a";
-const TEXT_SECONDARY = "#1a1a1a";
-const TEXT_MUTED = "#4b5563";
-const TEXT_DISABLED = "#9ca3af";
-const TEXT_INVERSE = "#E5E7EB";
-const TEXT_WHITE = "#FFF"
-
-// ===== BRAND NAVY =====
-const NAVY = "#0f3569";
-const NAVY_HOVER = "#082347";
-const NAVY_LIGHT = "#eaf0f9";
-
+const token = (name: string) => `var(--${name})`;
 export const COLORS = {
-  // ===== BRAND =====
-  primary:            NAVY,
-  primaryHover:       NAVY_HOVER,
-  primaryLight:       NAVY_LIGHT,
-  secondary:          NAVY,
-  secondaryHover:     NAVY_HOVER,
-  secondaryLight:     NAVY_LIGHT,
-
-  // ===== SHELL (Sidebar + Topbar share these) =====
-  shellBg:            "#03163d",
-  shellBorder:        "#e5e7eb",
-  contentBg:          "#f5f5f5",
-
-  // ===== SIDEBAR =====
-  sidebarLogoIconBg:      "#071638",
-  sidebarLogoIconColor:   "#ffffff",
-  sidebarLogoText:        TEXT_WHITE,
-  sidebarLogoSub:         TEXT_INVERSE,
-  sidebarSectionLabel:    TEXT_WHITE,
-  sidebarNavText:         TEXT_INVERSE,
-  sidebarNavHoverBg:      TEXT_WHITE,
-  sidebarNavHoverText:    TEXT_WHITE,
-  sidebarNavActiveBg:     TEXT_WHITE,
-  sidebarNavActiveText:   TEXT_PRIMARY,
-  sidebarChevron:         TEXT_INVERSE,
-  sidebarChevronActive:   TEXT_WHITE,
-  sidebarChildDot:        "#d1d5db",
-  sidebarChildDotActive:  TEXT_WHITE,
-  sidebarScrollThumb:     TEXT_WHITE,
-  sidebarUserName:        TEXT_WHITE,
-  sidebarUserRole:        TEXT_INVERSE,
-  sidebarUserHoverBg:      TEXT_WHITE,
-  sidebarLogoutBg:        "#f3f4f6",
-  sidebarLogoutColor:     TEXT_SECONDARY,
-  sidebarLogoutHoverBg:   "#fee2e2",
-  sidebarLogoutHoverColor:"#ef4444",
-
-  // ===== TOPBAR =====
-  topbarTitle:          TEXT_WHITE,
-  topbarSubtitle:         TEXT_INVERSE,
-  topbarDivider:          "#e5e7eb",
-  topbarIconBg:           "#f9fafb",
-  topbarIconColor: TEXT_INVERSE,
-  topbarIconHoverBg:      "#f3f4f6",
-  topbarIconHoverColor: TEXT_WHITE,
-
-  // ===== TEXT =====
-  textPrimary:   TEXT_PRIMARY,
-  textSecondary: TEXT_SECONDARY,
-  textMuted:     TEXT_MUTED,
-  textDisabled:  TEXT_DISABLED,
-
-  // ===== GRAY SCALE =====
-  gray50:  "#f9fafb",
-  gray100: "#f3f4f6",
-  gray200: "#e5e7eb",
-  gray300: "#d1d5db",
-  gray400: TEXT_MUTED,
-  gray500: TEXT_SECONDARY,
-  gray600: "#4b5563",
-  gray700: "#374151",
-  gray800: "#1f2937",
-  gray900: TEXT_PRIMARY,
-
-  // ===== STATUS =====
-  success:    "#16a34a",
-  successBg:  "#dcfce7",
-  error:      "#ef4444",
-  errorBg:    "#fee2e2",
-  warning:    "#b45309",
-  warningBg:  "#fef9c3",
-  info:       "#3b82f6",
-  infoBg:     "#dbeafe",
-
-  // ===== CARD =====
-  cardBg:     "#ffffff",
-  cardBorder: "#e5e7eb",
-  cardShadow: "rgba(0,0,0,0.06)",
-
-  // ===== INPUT =====
-  inputBg:           "#ffffff",
-  inputBorder:       "#d1d5db",
-  inputBorderFocus:  NAVY,
-  inputPlaceholder:  TEXT_MUTED,
-  inputText:         TEXT_PRIMARY,
-
-  // ===== BUTTON =====
-  btnPrimaryBg:       NAVY,
-  btnPrimaryText:     "#ffffff",
-  btnPrimaryHover:    NAVY_HOVER,
-  btnSecondaryBg:     "#ffffff",
-  btnSecondaryText:   NAVY,
-  btnSecondaryBorder: "#d1d5db",
-  btnSecondaryHover:  NAVY_LIGHT,
-
-  // ===== LINK =====
-  link:       NAVY,
-  linkHover:  NAVY_HOVER,
+  primary: token('primary'), primaryHover: token('primary-hover'), primaryLight: token('primary-light'),
+  secondary: token('secondary'), secondaryHover: token('secondary'), secondaryLight: token('primary-light'),
+  shellBg: token('sidebar'), shellBorder: token('border'), contentBg: token('bg'),
+  sidebarLogoIconBg: token('primary'), sidebarLogoIconColor: '#fff', sidebarLogoText: '#fff', sidebarLogoSub: '#aebcda',
+  sidebarSectionLabel: '#91a1c3', sidebarNavText: '#c5cfe4', sidebarNavHoverBg: 'rgba(255,255,255,.08)', sidebarNavHoverText: '#fff',
+  sidebarNavActiveBg: token('primary'), sidebarNavActiveText: '#fff', sidebarChevron: '#aebcda', sidebarChevronActive: '#fff',
+  sidebarChildDot: '#91a1c3', sidebarChildDotActive: '#fff', sidebarScrollThumb: '#485875',
+  sidebarUserName: '#fff', sidebarUserRole: '#aebcda', sidebarUserHoverBg: 'rgba(255,255,255,.08)',
+  sidebarLogoutBg: 'rgba(255,255,255,.08)', sidebarLogoutColor: '#c5cfe4', sidebarLogoutHoverBg: '#422533', sidebarLogoutHoverColor: '#fda4af',
+  topbarTitle: token('text-main'), topbarSubtitle: token('text-muted'), topbarDivider: token('border'),
+  topbarIconBg: token('surface'), topbarIconColor: token('text-muted'), topbarIconHoverBg: token('primary-light'), topbarIconHoverColor: token('primary'),
+  textPrimary: token('text-main'), textSecondary: '#34445d', textMuted: token('text-muted'), textDisabled: '#94a3b8',
+  gray50: '#f8fafc', gray100: '#f1f5f9', gray200: token('border'), gray300: '#cbd5e1', gray400: '#94a3b8',
+  gray500: '#64748b', gray600: '#475569', gray700: '#334155', gray800: '#1e293b', gray900: '#0f172a',
+  success: '#15803d', successBg: '#ecfdf3', error: '#be123c', errorBg: '#fff1f2', warning: '#a16207', warningBg: '#fffbeb', info: '#1d4ed8', infoBg: '#eff6ff',
+  cardBg: token('surface'), cardBorder: token('border'), cardShadow: 'rgba(15,23,42,.05)',
+  inputBg: token('surface'), inputBorder: '#cbd5e1', inputBorderFocus: token('primary'), inputPlaceholder: '#77859b', inputText: token('text-main'),
+  btnPrimaryBg: token('primary'), btnPrimaryText: '#fff', btnPrimaryHover: token('primary-hover'),
+  btnSecondaryBg: token('surface'), btnSecondaryText: token('text-main'), btnSecondaryBorder: token('border'), btnSecondaryHover: token('primary-light'),
+  link: token('primary'), linkHover: token('primary-hover'),
 };
-
-// Medium, readable sizing — one notch up across the board from the old
-// 10–18px scale, which read as cramped/too-small throughout the app.
 export const FONT = {
-  family: "'DM Sans', 'Inter', sans-serif",
-  size: {
-    xs:  "12px",
-    sm:  "13px",
-    md:  "15px",
-    lg:  "16px",
-    xl:  "18px",
-    xxl: "22px",
-  },
-  weight: {
-    regular:  400,
-    medium:   500,
-    semibold: 600,
-    bold:     700,
-  },
+  family: "var(--font-poppins), 'Poppins', sans-serif",
+  size: { xs: 'var(--font-xs)', sm: 'var(--font-sm)', md: 'var(--font-md)', lg: 'var(--font-lg)', xl: 'var(--font-xl)', xxl: 'var(--font-xxl)' },
+  weight: { regular: 400, medium: 400, semibold: 400, bold: 400 },
 };
-
-export const RADIUS = {
-  sm:   "6px",
-  md:   "8px",
-  lg:   "12px",
-  xl:   "14px",
-  full: "9999px",
-};
-
+export const RADIUS = { sm: '6px', md: '10px', lg: '14px', xl: '20px', full: '9999px' };
+export const THEME_PRESETS = {
+  ocean: { name: 'Ocean', primary: '#2859d8', secondary: '#0e7490', sidebar: '#111e38' },
+  forest: { name: 'Forest', primary: '#087f5b', secondary: '#0e7490', sidebar: '#102c29' },
+  violet: { name: 'Violet', primary: '#7040c8', secondary: '#2563eb', sidebar: '#201a38' },
+  ember: { name: 'Ember', primary: '#b93c60', secondary: '#b45309', sidebar: '#321d2b' },
+} as const;
+export type ThemePreset = keyof typeof THEME_PRESETS;
+export type Appearance = { preset: ThemePreset; density: 'comfortable' | 'compact'; textSize: 'standard' | 'large' };
+export const DEFAULT_APPEARANCE: Appearance = { preset: 'ocean', density: 'comfortable', textSize: 'standard' };
+export const APPEARANCE_KEY = 'calls-appearance';
 const theme = { COLORS, FONT, RADIUS };
 export default theme;

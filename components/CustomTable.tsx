@@ -27,41 +27,17 @@
  *     onDelete={(row) => deleteRow(row.id)}
  *   />
  */
-
-import {
-  Box,
-  HStack,
-  VStack,
-  Text,
-  Input,
-  Badge,
-  Checkbox,
-  Spinner,
-  Button,
-  IconButton,
-} from "@chakra-ui/react";
-import {
-  ChevronUp,
-  ChevronDown,
-  ChevronsUpDown,
-  Search,
-  Pencil,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Inbox,
-  List,
-  ChevronRightCircle,
-} from "lucide-react";
+import { ui } from "@/utils/ui";
+import { Box, HStack, VStack, Text, Input, Badge, Checkbox, Spinner, Button, IconButton } from "@chakra-ui/react";
+import { ChevronUp, ChevronDown, ChevronsUpDown, Search, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Inbox, List, ChevronRightCircle } from "lucide-react";
 import { useState, useMemo, useCallback, Fragment } from "react";
 import { COLORS, FONT, RADIUS } from "@/utils/theme";
+import { usePathname } from "next/navigation";
+import { PAGE_CONFIG } from "@/config/pageConfig";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type SortDir = "asc" | "desc" | null;
-
 export interface TableColumn<T = Record<string, unknown>> {
   /** Maps to the key in your data object */
   key: keyof T | string;
@@ -78,14 +54,12 @@ export interface TableColumn<T = Record<string, unknown>> {
   /** Auto-apply status badge coloring if value matches status words */
   isStatus?: boolean;
 }
-
 export interface RowAction<T = Record<string, unknown>> {
   label: string;
   icon?: React.ReactNode;
   onClick: (row: T) => void;
   colorScheme?: "blue" | "red" | "green" | "amber";
 }
-
 export interface CustomTableProps<T extends Record<string, unknown>> {
   columns: TableColumn<T>[];
   data: T[];
@@ -121,68 +95,105 @@ export interface CustomTableProps<T extends Record<string, unknown>> {
    * rendering whatever this returns. Expansion state is managed internally.
    */
   expandedRowRender?: (row: T) => React.ReactNode;
-  showSearch?:boolean
+  showSearch?: boolean;
 }
 
 // ─── Status badge coloring ────────────────────────────────────────────────────
 
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  active:    { bg: COLORS.successBg, color: COLORS.success },
-  inactive:  { bg: COLORS.errorBg, color: COLORS.error },
-  pending:   { bg: COLORS.warningBg, color: COLORS.warning },
-  approved:  { bg: COLORS.successBg, color: COLORS.success },
-  rejected:  { bg: COLORS.errorBg, color: COLORS.error },
-  cancelled: { bg: COLORS.errorBg, color: COLORS.error },
-  draft:     { bg: COLORS.gray100, color: COLORS.textMuted },
-  paid:      { bg: COLORS.successBg, color: COLORS.success },
-  unpaid:    { bg: COLORS.errorBg, color: COLORS.error },
-  processing:{ bg: COLORS.warningBg, color: COLORS.warning },
-  y:         { bg: COLORS.successBg, color: COLORS.success },
-  n:         { bg: COLORS.errorBg, color: COLORS.error },
+const STATUS_COLORS: Record<string, {
+  bg: string;
+  color: string;
+}> = {
+  active: {
+    bg: COLORS.successBg,
+    color: COLORS.success
+  },
+  inactive: {
+    bg: COLORS.errorBg,
+    color: COLORS.error
+  },
+  pending: {
+    bg: COLORS.warningBg,
+    color: COLORS.warning
+  },
+  approved: {
+    bg: COLORS.successBg,
+    color: COLORS.success
+  },
+  rejected: {
+    bg: COLORS.errorBg,
+    color: COLORS.error
+  },
+  cancelled: {
+    bg: COLORS.errorBg,
+    color: COLORS.error
+  },
+  draft: {
+    bg: COLORS.gray100,
+    color: COLORS.textMuted
+  },
+  paid: {
+    bg: COLORS.successBg,
+    color: COLORS.success
+  },
+  unpaid: {
+    bg: COLORS.errorBg,
+    color: COLORS.error
+  },
+  processing: {
+    bg: COLORS.warningBg,
+    color: COLORS.warning
+  },
+  y: {
+    bg: COLORS.successBg,
+    color: COLORS.success
+  },
+  n: {
+    bg: COLORS.errorBg,
+    color: COLORS.error
+  }
 };
-
-function StatusBadge({ value }: { value: string }) {
+function StatusBadge({
+  value
+}: {
+  value: string;
+}) {
   const key = String(value).toLowerCase();
-  const style = STATUS_COLORS[key] ?? { bg: COLORS.gray100, color: COLORS.textMuted };
-  return (
-    <Badge
-      px="9px"
-      py="3px"
-      borderRadius="20px"
-      bg={style.bg}
-      color={style.color}
-      fontSize={FONT.size.xs}
-      fontWeight={FONT.weight.semibold}
-      letterSpacing="0.02em"
-    >
+  const style = STATUS_COLORS[key] ?? {
+    bg: COLORS.gray100,
+    color: COLORS.textMuted
+  };
+  return <Badge bg={style.bg} color={style.color} className={ui("[padding-left:9px]! [padding-right:9px]! [padding-top:3px]! [padding-bottom:3px]! [border-radius:20px]! [font-size:var(--font-xs)]! font-normal! [letter-spacing:0.02em]!")}>
       {String(value)}
-    </Badge>
-  );
+    </Badge>;
 }
 
 // ─── Sort icon ────────────────────────────────────────────────────────────────
 
-function SortIcon({ dir }: { dir: SortDir }) {
-  if (dir === "asc")  return <ChevronUp size={13}  color={COLORS.primary} />;
-  if (dir === "desc") return <ChevronDown size={13} color={COLORS.primary} />;
-  return <ChevronsUpDown size={13} color={COLORS.primaryLight} />;
+function SortIcon({
+  dir
+}: {
+  dir: SortDir;
+}) {
+  if (dir === "asc") return <ChevronUp size={13} className={ui("[color:var(--primary)]!")} />;
+  if (dir === "desc") return <ChevronDown size={13} className={ui("[color:var(--primary)]!")} />;
+  return <ChevronsUpDown size={13} className={ui("[color:var(--primary-light)]!")} />;
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-function SkeletonRow({ cols }: { cols: number }) {
-  return (
-    <Box as="tr" borderTop={`1px solid ${COLORS.gray100}`}>
-      {Array.from({ length: cols }).map((_, i) => (
-        <Box as="td" key={i} px="16px" py="11px">
-          <Box h="12px" borderRadius={RADIUS.sm} bg={COLORS.gray200}
-            w={i === 0 ? "60%" : i % 2 === 0 ? "80%" : "50%"}
-            style={{ animation: "pulse 1.5s ease-in-out infinite" }} 
-            />
-        </Box>
-      ))}
-    </Box>
-  );
+function SkeletonRow({
+  cols
+}: {
+  cols: number;
+}) {
+  return <Box as="tr" borderTop={`1px solid ${COLORS.gray100}`}>
+      {Array.from({
+      length: cols
+    }).map((_, i) => <Box as="td" key={i} className={ui("[padding-left:16px]! [padding-right:16px]! [padding-top:11px]! [padding-bottom:11px]!")}>
+          <Box w={i === 0 ? "60%" : i % 2 === 0 ? "80%" : "50%"} className={ui("[height:12px]! [border-radius:6px]! [background:var(--border)]! [animation:pulse_1.5s_ease-in-out_infinite]")} />
+        </Box>)}
+    </Box>;
 }
 
 // ─── Get nested value ─────────────────────────────────────────────────────────
@@ -216,8 +227,10 @@ export function CustomTable<T extends Record<string, unknown>>({
   title,
   toolbarRight,
   expandedRowRender,
-  showSearch = true,
+  showSearch = true
 }: CustomTableProps<T>) {
+  const pathname = usePathname();
+  const tableTitle = title || PAGE_CONFIG[pathname]?.title || "Records";
   // ── State ──
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -226,10 +239,9 @@ export function CustomTable<T extends Record<string, unknown>>({
   const [pageSize, setPageSize] = useState(defaultPageSize);
   const [selected, setSelected] = useState<Set<unknown>>(new Set());
   const [expandedKeys, setExpandedKeys] = useState<Set<unknown>>(new Set());
-
   const toggleExpanded = (row: T) => {
     const key = row[rowKey];
-    setExpandedKeys((prev) => {
+    setExpandedKeys(prev => {
       const next = new Set(prev);
       if (next.has(key)) {
         next.delete(key);
@@ -241,72 +253,57 @@ export function CustomTable<T extends Record<string, unknown>>({
   };
 
   // ── Derived data ──
-  const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-
+  const rows = useMemo(() => Array.isArray(data) ? data : [], [data]);
   const filtered = useMemo(() => {
     if (!search.trim()) return rows;
     const q = search.toLowerCase();
-    return rows.filter((row) =>
-      columns.some((col) => {
-        const val = getVal(row, col.key as string);
-        return String(val ?? "").toLowerCase().includes(q);
-      })
-    );
+    return rows.filter(row => columns.some(col => {
+      const val = getVal(row, col.key as string);
+      return String(val ?? "").toLowerCase().includes(q);
+    }));
   }, [data, search, columns]);
-
   const sorted = useMemo(() => {
     if (!sortKey || !sortDir) return filtered;
     return [...filtered].sort((a, b) => {
       const av = getVal(a, sortKey);
       const bv = getVal(b, sortKey);
       const cmp = String(av ?? "").localeCompare(String(bv ?? ""), undefined, {
-        numeric: true,
+        numeric: true
       });
       return sortDir === "asc" ? cmp : -cmp;
     });
   }, [filtered, sortKey, sortDir]);
-
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const safePage   = Math.min(page, totalPages);
-  const paged      = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const safePage = Math.min(page, totalPages);
+  const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   // ── Sort handler ──
-  const handleSort = useCallback(
-    (key: string) => {
-      if (sortKey !== key) {
-        setSortKey(key);
-        setSortDir("asc");
-      } else if (sortDir === "asc") {
-        setSortDir("desc");
-      } else {
-        setSortKey(null);
-        setSortDir(null);
-      }
-      setPage(1);
-    },
-    [sortKey, sortDir]
-  );
+  const handleSort = useCallback((key: string) => {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir("asc");
+    } else if (sortDir === "asc") {
+      setSortDir("desc");
+    } else {
+      setSortKey(null);
+      setSortDir(null);
+    }
+    setPage(1);
+  }, [sortKey, sortDir]);
 
   // ── Selection ──
-  const selectedRows = useMemo(
-    () => data.filter((r) => selected.has(r[rowKey])),
-    [data, selected, rowKey]
-  );
-
-  const allPageSelected =
-    paged.length > 0 && paged.every((r) => selected.has(r[rowKey]));
-
+  const selectedRows = useMemo(() => data.filter(r => selected.has(r[rowKey])), [data, selected, rowKey]);
+  const allPageSelected = paged.length > 0 && paged.every(r => selected.has(r[rowKey]));
   const toggleAll = () => {
     const next = new Set(selected);
     if (allPageSelected) {
-      paged.forEach((r) => next.delete(r[rowKey]));
+      paged.forEach(r => next.delete(r[rowKey]));
     } else {
-      paged.forEach((r) => next.add(r[rowKey]));
+      paged.forEach(r => next.add(r[rowKey]));
     }
     setSelected(next);
-    onSelectionChange?.(data.filter((r) => next.has(r[rowKey])));
+    onSelectionChange?.(data.filter(r => next.has(r[rowKey])));
   };
-
   const toggleRow = (row: T) => {
     const next = new Set(selected);
     if (next.has(row[rowKey])) {
@@ -315,9 +312,8 @@ export function CustomTable<T extends Record<string, unknown>>({
       next.add(row[rowKey]);
     }
     setSelected(next);
-    onSelectionChange?.(data.filter((r) => next.has(r[rowKey])));
+    onSelectionChange?.(data.filter(r => next.has(r[rowKey])));
   };
-
   const clearSelection = () => {
     setSelected(new Set());
     onSelectionChange?.([]);
@@ -325,429 +321,210 @@ export function CustomTable<T extends Record<string, unknown>>({
 
   // ── Actions present? ──
   const hasActions = !!onEdit || !!onDelete || extraActions.length > 0 || !!expandedRowRender;
-  const colCount   = columns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0);
+  const colCount = columns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0);
 
   // ── Page number window ──
   const pageWindow = useMemo(() => {
     const delta = 2;
     const range: number[] = [];
-    for (
-      let i = Math.max(1, safePage - delta);
-      i <= Math.min(totalPages, safePage + delta);
-      i++
-    ) {
+    for (let i = Math.max(1, safePage - delta); i <= Math.min(totalPages, safePage + delta); i++) {
       range.push(i);
     }
     return range;
   }, [safePage, totalPages]);
 
   // ─────────────────────────────────────────────────────────────────────────────
-  return (
-    <>
-      <style>{`
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .ct-table { width: 100%; border-collapse: collapse; }
-        .ct-th {
-          font-size: ${FONT.size.xs}; font-weight: ${FONT.weight.bold}; letter-spacing: 0.09em;
-          text-transform: uppercase; color: ${COLORS.textSecondary};
-          padding: 10px 16px; text-align: left; white-space: nowrap;
-          border-bottom: 1px solid ${COLORS.gray200}; background: ${COLORS.gray50};
-          position: sticky; top: 0; z-index: 0;
-        }
-        .ct-th.sortable { cursor: pointer; user-select: none; }
-        .ct-th.sortable:hover { color: ${COLORS.textPrimary}; }
-        .ct-th.active { color: ${COLORS.textPrimary}; }
-        .ct-td {
-          font-size: ${FONT.size.sm}; color: ${COLORS.textSecondary};
-          padding: 10px 14px; border-top: 1px solid ${COLORS.gray100};
-          vertical-align: middle; white-space: nowrap;
-        }
-        .ct-td.primary { color: ${COLORS.textPrimary}; font-weight: ${FONT.weight.semibold}; }
-        .ct-tr:hover .ct-td { background: ${COLORS.gray50}; }
-        .ct-actions-btn {
-          display: inline-flex; align-items: center; justify-content: center;
-          width: 28px; height: 28px; border-radius: 7px; border: none;
-          cursor: pointer; transition: background 0.15s, color 0.15s;
-          background: transparent; color: ${COLORS.textMuted};
-        }
-        .ct-actions-btn:hover { background: ${COLORS.gray100}; color: ${COLORS.textPrimary}; }
-        .ct-actions-btn.delete:hover { background: ${COLORS.errorBg}; color: ${COLORS.error}; }
-        .ct-actions-btn.edit:hover   { background: ${COLORS.gray100}; color: ${COLORS.textPrimary}; }
-        .ct-page-btn {
-          min-width: 30px; height: 30px; border-radius: 7px;
-          border: 1px solid transparent; background: transparent;
-          color: ${COLORS.textSecondary}; font-size: ${FONT.size.xs}; font-family: inherit;
-          cursor: pointer; display: inline-flex; align-items: center;
-          justify-content: center; transition: background 0.15s, color 0.15s; padding: 0 6px;
-        }
-        .ct-page-btn:hover:not(:disabled) { background: ${COLORS.gray100}; color: ${COLORS.textPrimary}; }
-        .ct-page-btn.active { background: ${COLORS.primary}; color: #fff; border-color: ${COLORS.primary}; font-weight: ${FONT.weight.semibold}; }
-        .ct-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .ct-search {
-          background: #ffffff; border: 1px solid ${COLORS.inputBorder}; border-radius: ${RADIUS.md};
-          color: ${COLORS.textPrimary}; font-size: ${FONT.size.sm}; padding: 0 12px 0 34px;
-          height: 34px; outline: none; width: 220px;
-          transition: border-color 0.15s; font-family: inherit;
-        }
-        .ct-search::placeholder { color: ${COLORS.textMuted}; }
-        .ct-search:focus { border-color: ${COLORS.textSecondary}; }
-        .ct-size-select {
-          background: #ffffff; border: 1px solid ${COLORS.inputBorder}; border-radius: 7px;
-          color: ${COLORS.textSecondary}; font-size: ${FONT.size.xs}; padding: 4px 8px;
-          outline: none; cursor: pointer; font-family: inherit;
-        }
-        .ct-size-select option { background: #ffffff; }
-      `}</style>
+  return <>
+      
 
-      <Box bg={COLORS.cardBg} border={`1px solid ${COLORS.cardBorder}`} borderRadius={RADIUS.lg}
-        fontFamily={FONT.family}
-        boxShadow={`0 1px 4px ${COLORS.cardShadow}`}
-        display="flex" flexDirection="column"
-        minH="480px"
-      >
+      <Box className={ui("data-table-card" + " " + "[background:var(--surface)]! [border-radius:14px]! [font-family:var(--font-poppins),_'Poppins',_sans-serif]! [display:flex]! [flex-direction:column]! [min-height:320px]!")} border={`1px solid ${COLORS.cardBorder}`} boxShadow={`0 1px 4px ${COLORS.cardShadow}`}>
         {/* ── Toolbar ── */}
-        <HStack
-          px="16px"
-          py="12px"
-          borderBottom={`1px solid ${COLORS.cardBorder}`}
-          justify="space-between"
-          flexWrap="wrap"
-          gap="8px"
-        >
-          <HStack gap="8px">
-            {title && (
-              <Text fontSize={FONT.size.md} fontWeight={FONT.weight.bold} color={COLORS.textPrimary} mr="4px">
-                {title}
-              </Text>
-            )}
+        <HStack className={ui("table-toolbar" + " " + "[padding-left:16px]! [padding-right:16px]! [padding-top:12px]! [padding-bottom:12px]! [justify-content:space-between]! [flex-wrap:wrap]! [gap:8px]!")} borderBottom={`1px solid ${COLORS.cardBorder}`}>
+          <HStack className={ui("table-title-group" + " " + "[gap:8px]!")}>
+            {tableTitle && <Text className={ui("[font-size:var(--font-md)]! font-normal! [color:var(--text-main)]! [margin-right:4px]!")}>
+                {tableTitle}
+              </Text>}
+            <span className={ui("table-record-count")}>{isLoading ? "…" : sorted.length.toLocaleString()}</span>
             {/* Search */}
-            {showSearch && 
-            
-              <Box position="relative">
-                <Box
-                  position="absolute"
-                  left="10px"
-                  top="50%"
-                  transform="translateY(-50%)"
-                  color={COLORS.textMuted}
-                  pointerEvents="none"
-                >
+            {showSearch && <Box className={ui("[position:relative]!")}>
+                <Box className={ui("[position:absolute]! [left:10px]! [top:50%]! [transform:translateY(-50%)]! [color:var(--text-muted)]! [pointer-events:none]!")}>
                   <Search size={13} />
                 </Box>
-                <input
-                  type="text"
-                  className="ct-search"
-                  placeholder={searchPlaceholder}
-                  value={search}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                />
-              </Box>
-              }
+                <input type="text" aria-label={searchPlaceholder || "Search records"} className={ui("ct-search")} placeholder={searchPlaceholder} value={search} onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }} />
+              </Box>}
          
           </HStack>
 
-          <HStack gap="8px">
-            {selected.size > 0 && bulkActionSlot && (
-              <Box>{bulkActionSlot(selectedRows, clearSelection)}</Box>
-            )}
+          <HStack className={ui("[gap:8px]!")}>
+            {selected.size > 0 && bulkActionSlot && <Box>{bulkActionSlot(selectedRows, clearSelection)}</Box>}
             {toolbarRight}
           </HStack>
         </HStack>
 
         {/* ── Bulk selection banner ── */}
-        {selected.size > 0 && !bulkActionSlot && (
-          <HStack px="16px" py="8px" bg={COLORS.infoBg} borderBottom={`1px solid ${COLORS.infoBg}`} gap="8px">
-            <Text fontSize={FONT.size.xs} color={COLORS.info} fontWeight={FONT.weight.medium}>
+        {selected.size > 0 && !bulkActionSlot && <HStack borderBottom={`1px solid ${COLORS.infoBg}`} className={ui("[padding-left:16px]! [padding-right:16px]! [padding-top:8px]! [padding-bottom:8px]! [background:#eff6ff]! [gap:8px]!")}>
+            <Text className={ui("[font-size:var(--font-xs)]! [color:#1d4ed8]! font-normal!")}>
               {selected.size} row{selected.size > 1 ? "s" : ""} selected
             </Text>
-            <button type="button"
-              style={{ fontSize: FONT.size.xs, color: COLORS.textMuted, cursor: "pointer", background: "transparent", border: "none" }}
-              onClick={clearSelection}>Clear</button>
-          </HStack>
-        )}
+            <button type="button" onClick={clearSelection} className={ui("[font-size:var(--font-xs)] [color:var(--text-muted)] [cursor:pointer] [background:transparent] [border:none]")}>Clear</button>
+          </HStack>}
 
         {/* ── Table ── */}
-        <Box overflowX="auto" flex="1">
-          <Box as="table" className="ct-table" style={{ height: "100%" }}>
+        <Box className={ui("[overflow-x:auto]! [flex:1]!")}>
+          <Box as="table" className={ui("ct-table")} aria-label={title || "Records"}>
             <Box as="thead">
               <Box as="tr">
-                {selectable && (
-                  <Box as="th" className="ct-th" w="40px" textAlign="center">
-                    <Checkbox.Root
-                      checked={allPageSelected && paged.length > 0}
-                      onCheckedChange={toggleAll}
-                    >
+                {selectable && <Box as="th" className={ui("ct-th" + " " + "[width:40px]! [text-align:center]!")}>
+                    <Checkbox.Root checked={allPageSelected && paged.length > 0} onCheckedChange={toggleAll}>
                       <Checkbox.HiddenInput />
-                      <Checkbox.Control w="15px" h="15px" borderRadius="4px" border="1px solid"
-                        borderColor={allPageSelected ? COLORS.primary : COLORS.primaryLight}
-                        bg={allPageSelected ? COLORS.primaryLight : "transparent"}>
-                        <Checkbox.Indicator color={COLORS.primary} />
+                      <Checkbox.Control borderColor={allPageSelected ? COLORS.primary : COLORS.primaryLight} bg={allPageSelected ? COLORS.primaryLight : "transparent"} className={ui("[width:15px]! [height:15px]! [border-radius:4px]! border! border-solid!")}>
+                        <Checkbox.Indicator className={ui("[color:var(--primary)]!")} />
                       </Checkbox.Control>
                     </Checkbox.Root>
-                  </Box>
-                )}
+                  </Box>}
 
-                {hasActions && (
-                  <Box as="th" className="ct-th" style={{ textAlign: "left", width: "70px" }}>
+                {hasActions && <Box as="th" className={ui("ct-th" + " " + "[text-align:left] [width:70px]")}>
                     Actions
-                  </Box>
-                )}
+                  </Box>}
 
-                {columns.map((col) => {
-                  const isSortActive = sortKey === col.key;
-                  return (
-                    <Box
-                      as="th"
-                      key={col.key as string}
-                      className={`ct-th${col.sortable ? " sortable" : ""}${
-                        isSortActive ? " active" : ""
-                      }`}
-                      style={{
-                        textAlign: col.align ?? "left",
-                        width: col.width,
-                      }}
-                      onClick={col.sortable ? () => handleSort(col.key as string) : undefined}
-                    >
-                      <HStack
-                        gap="4px"
-                        justify={
-                          col.align === "center"
-                            ? "center"
-                            : col.align === "right"
-                            ? "flex-end"
-                            : "flex-start"
-                        }
-                      >
+                {columns.map(col => {
+                const isSortActive = sortKey === col.key;
+                return <Box as="th" key={col.key as string} className={ui(`ct-th${col.sortable ? " sortable" : ""}${isSortActive ? " active" : ""}`)} style={{
+                  textAlign: col.align ?? "left",
+                  width: col.width
+                }} onClick={col.sortable ? () => handleSort(col.key as string) : undefined}>
+                      <HStack justify={col.align === "center" ? "center" : col.align === "right" ? "flex-end" : "flex-start"} className={ui("[gap:4px]!")}>
                         {col.header}
-                        {col.sortable && (
-                          <SortIcon dir={isSortActive ? sortDir : null} />
-                        )}
+                        {col.sortable && <SortIcon dir={isSortActive ? sortDir : null} />}
                       </HStack>
-                    </Box>
-                  );
-                })}
+                    </Box>;
+              })}
 
               </Box>
             </Box>
 
             <Box as="tbody">
-              {isLoading ? (
-                Array.from({ length: pageSize > 5 ? 5 : pageSize }).map((_, i) => (
-                  <SkeletonRow key={i} cols={colCount} />
-                ))
-              ) : paged.length === 0 ? (
-                <Box as="tr">
-                  <td colSpan={colCount} style={{ padding: "48px 0", textAlign: "center" }}>
-                    <VStack gap="8px" color={COLORS.textMuted}>
+              {isLoading ? Array.from({
+              length: pageSize > 5 ? 5 : pageSize
+            }).map((_, i) => <SkeletonRow key={i} cols={colCount} />) : paged.length === 0 ? <Box as="tr">
+                  <td colSpan={colCount} className={ui("[padding:48px_0] [text-align:center]")}>
+                    <VStack className={ui("[gap:8px]! [color:var(--text-muted)]!")}>
                       <Inbox size={32} strokeWidth={1.2} />
-                      <Text fontSize={FONT.size.sm}>{emptyMessage}</Text>
+                      <Text className={ui("[font-size:var(--font-sm)]!")}>{emptyMessage}</Text>
                     </VStack>
                   </td>
-                </Box>
-              ) : (
-                paged.map((row, rowIdx) => {
-                  const isSelected = selected.has(row[rowKey]);
-                  const isExpanded = expandedRowRender ? expandedKeys.has(row[rowKey]) : false;
-                  return (
-                    <Fragment key={String(row[rowKey] ?? rowIdx)}>
-                      <Box
-                        as="tr"
-                        className="ct-tr"
-                        bg={isSelected ? COLORS.infoBg : "transparent"}
-                      >
-                        {selectable && (
-                          <Box as="td" className="ct-td" textAlign="center">
-                            <Checkbox.Root
-                              checked={isSelected}
-                              onCheckedChange={() => toggleRow(row)}
-                            >
+                </Box> : paged.map((row, rowIdx) => {
+              const isSelected = selected.has(row[rowKey]);
+              const isExpanded = expandedRowRender ? expandedKeys.has(row[rowKey]) : false;
+              return <Fragment key={String(row[rowKey] ?? rowIdx)}>
+                      <Box as="tr" className={ui("ct-tr")} bg={isSelected ? COLORS.infoBg : "transparent"}>
+                        {selectable && <Box as="td" className={ui("ct-td" + " " + "[text-align:center]!")}>
+                            <Checkbox.Root checked={isSelected} onCheckedChange={() => toggleRow(row)}>
                               <Checkbox.HiddenInput />
-                              <Checkbox.Control w="15px" h="15px" borderRadius="4px" border="1px solid"
-                                borderColor={isSelected ? COLORS.primary : COLORS.primaryLight}
-                                bg={isSelected ? COLORS.primaryLight : "transparent"}>
-                                <Checkbox.Indicator color={COLORS.primary} />
+                              <Checkbox.Control borderColor={isSelected ? COLORS.primary : COLORS.primaryLight} bg={isSelected ? COLORS.primaryLight : "transparent"} className={ui("[width:15px]! [height:15px]! [border-radius:4px]! border! border-solid!")}>
+                                <Checkbox.Indicator className={ui("[color:var(--primary)]!")} />
                               </Checkbox.Control>
                             </Checkbox.Root>
-                          </Box>
-                        )}
+                          </Box>}
 
-                        {hasActions && (
-                          <Box as="td" className="ct-td" style={{ textAlign: "left" }}>
-                            <HStack gap="1px" justify="flex-start">
-                              {expandedRowRender && (
-                                <button
-                                  type="button"
-                                  className="ct-actions-btn"
-                                  title={isExpanded ? "Hide details" : "Show details"}
-                                  onClick={() => toggleExpanded(row)}
-                                  style={isExpanded ? { background: COLORS.gray100, color: COLORS.textPrimary } : undefined}
-                                >
+                        {hasActions && <Box as="td" className={ui("ct-td" + " " + "[text-align:left]")}>
+                            <HStack className={ui("[gap:1px]! [justify-content:flex-start]!")}>
+                              {expandedRowRender && <button type="button" className={ui("ct-actions-btn")} title={isExpanded ? "Hide details" : "Show details"} onClick={() => toggleExpanded(row)} style={isExpanded ? {
+                        background: COLORS.gray100,
+                        color: COLORS.textPrimary
+                      } : undefined}>
                                   <ChevronRightCircle size={20} />
-                                </button>
-                              )}
-                              {extraActions.map((act, ai) => (
-                                <button type="button" key={ai} className="ct-actions-btn" title={act.label} onClick={() => act.onClick(row)}>
+                                </button>}
+                              {extraActions.map((act, ai) => <button type="button" key={ai} className={ui("ct-actions-btn")} title={act.label} onClick={() => act.onClick(row)}>
                                   {act.icon}
-                                </button>
-                              ))}
-                              {onEdit && (
-                                <button type="button" className="ct-actions-btn edit" title="Edit" onClick={() => onEdit(row)}>
+                                </button>)}
+                              {onEdit && <button type="button" className={ui("ct-actions-btn edit")} title="Edit" onClick={() => onEdit(row)}>
                                   <Pencil size={13} />
-                                </button>
-                              )}
-                              {onDelete && (
-                                <button type="button" className="ct-actions-btn delete" title="Delete" onClick={() => onDelete(row)}>
+                                </button>}
+                              {onDelete && <button type="button" className={ui("ct-actions-btn delete")} title="Delete" onClick={() => onDelete(row)}>
                                   <Trash2 size={13} />
-                                </button>
-                              )}
+                                </button>}
                             </HStack>
-                          </Box>
-                        )}
+                          </Box>}
 
                         {columns.map((col, colIdx) => {
-                          const rawVal = getVal(row, col.key as string);
-                          return (
-                            <Box
-                              as="td"
-                              key={col.key as string}
-                              className={`ct-td${colIdx === 0 ? " primary" : ""}`}
-                              style={{ textAlign: col.align ?? "left" }}
-                            >
-                              {col.render ? (
-                                col.render(row, rowIdx)
-                              ) : col.isStatus ? (
-                                <StatusBadge value={String(rawVal ?? "")} />
-                              ) : (
-                                <span>{String(rawVal ?? "—")}</span>
-                              )}
-                            </Box>
-                          );
-                        })}
+                    const rawVal = getVal(row, col.key as string);
+                    return <Box as="td" key={col.key as string} className={ui(`ct-td${colIdx === 0 ? " primary" : ""}`)} style={{
+                      textAlign: col.align ?? "left"
+                    }}>
+                              {col.render ? col.render(row, rowIdx) : col.isStatus ? <StatusBadge value={String(rawVal ?? "")} /> : <span>{String(rawVal ?? "—")}</span>}
+                            </Box>;
+                  })}
                       </Box>
 
-                      {expandedRowRender && isExpanded && (
-                        <Box as="tr" className="ct-expanded-row">
-                          <td colSpan={colCount} style={{ padding: 0, borderTop: `1px solid ${COLORS.gray100}` }}>
-                            <Box bg={COLORS.gray50} px="16px" py="14px">
+                      {expandedRowRender && isExpanded && <Box as="tr" className={ui("ct-expanded-row")}>
+                          <td colSpan={colCount} style={{
+                    borderTop: `1px solid ${COLORS.gray100}`
+                  }} className={ui("[padding:0]")}>
+                            <Box className={ui("[background:#f8fafc]! [padding-left:16px]! [padding-right:16px]! [padding-top:14px]! [padding-bottom:14px]!")}>
                               {expandedRowRender(row)}
                             </Box>
                           </td>
-                        </Box>
-                      )}
-                    </Fragment>
-                  );
-                })
-              )}
+                        </Box>}
+                    </Fragment>;
+            })}
             </Box>
           </Box>
         </Box>
 
         {/* ── Footer / Pagination ── */}
-        <HStack
-          px="16px"
-          py="10px"
-          borderTop={`1px solid ${COLORS.cardBorder}`}
-          justify="space-between"
-          flexWrap="wrap"
-          gap="8px"
-        >
+        <HStack borderTop={`1px solid ${COLORS.cardBorder}`} className={ui("[padding-left:16px]! [padding-right:16px]! [padding-top:10px]! [padding-bottom:10px]! [justify-content:space-between]! [flex-wrap:wrap]! [gap:8px]!")}>
           {/* Row count + page size */}
-          <HStack gap="10px">
-            <Text fontSize={FONT.size.xs} color={COLORS.textSecondary}>
-              {sorted.length === 0
-                ? "0 records"
-                : `${(safePage - 1) * pageSize + 1}–${Math.min(
-                    safePage * pageSize,
-                    sorted.length
-                  )} of ${sorted.length}`}
+          <HStack className={ui("[gap:10px]!")}>
+            <Text className={ui("[font-size:var(--font-xs)]! [color:#34445d]!")}>
+              {sorted.length === 0 ? "0 records" : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, sorted.length)} of ${sorted.length}`}
             </Text>
-            <select
-              className="ct-size-select"
-              value={pageSize}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                setPageSize(Number(e.target.value));
-                setPage(1);
-              }}
-            >
-              {pageSizeOptions.map((s) => (
-                <option key={s} value={s}>
+            <select className={ui("ct-size-select")} aria-label="Rows per page" value={pageSize} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+            setPageSize(Number(e.target.value));
+            setPage(1);
+          }}>
+              {pageSizeOptions.map(s => <option key={s} value={s}>
                   {s} / page
-                </option>
-              ))}
+                </option>)}
             </select>
           </HStack>
 
           {/* Page buttons */}
-          <HStack gap="3px">
-            <button
-              className="ct-page-btn"
-              onClick={() => setPage(1)}
-              disabled={safePage === 1}
-              title="First page"
-            >
+          <HStack className={ui("[gap:3px]!")}>
+            <button className={ui("ct-page-btn")} onClick={() => setPage(1)} disabled={safePage === 1} title="First page">
               <ChevronsLeft size={13} />
             </button>
-            <button
-              className="ct-page-btn"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={safePage === 1}
-              title="Previous"
-            >
+            <button className={ui("ct-page-btn")} onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1} title="Previous">
               <ChevronLeft size={13} />
             </button>
 
-            {pageWindow[0] > 1 && (
-              <>
-                <button className="ct-page-btn" onClick={() => setPage(1)}>1</button>
-                {pageWindow[0] > 2 && (
-                  <span style={{ fontSize: FONT.size.xs, color: COLORS.textMuted, padding: "0 2px" }}>…</span>
-                )}
-              </>
-            )}
+            {pageWindow[0] > 1 && <>
+                <button className={ui("ct-page-btn")} onClick={() => setPage(1)}>1</button>
+                {pageWindow[0] > 2 && <span className={ui("[font-size:var(--font-xs)] [color:var(--text-muted)] [padding:0_2px]")}>…</span>}
+              </>}
 
-            {pageWindow.map((p) => (
-              <button
-                key={p}
-                className={`ct-page-btn${p === safePage ? " active" : ""}`}
-                onClick={() => setPage(p)}
-              >
+            {pageWindow.map(p => <button key={p} className={ui(`ct-page-btn${p === safePage ? " active" : ""}`)} onClick={() => setPage(p)}>
                 {p}
-              </button>
-            ))}
+              </button>)}
 
-            {pageWindow[pageWindow.length - 1] < totalPages && (
-              <>
-                {pageWindow[pageWindow.length - 1] < totalPages - 1 && (
-                  <span style={{ fontSize: FONT.size.xs, color: COLORS.textMuted, padding: "0 2px" }}>…</span>
-                )}
-                <button className="ct-page-btn" onClick={() => setPage(totalPages)}>
+            {pageWindow[pageWindow.length - 1] < totalPages && <>
+                {pageWindow[pageWindow.length - 1] < totalPages - 1 && <span className={ui("[font-size:var(--font-xs)] [color:var(--text-muted)] [padding:0_2px]")}>…</span>}
+                <button className={ui("ct-page-btn")} onClick={() => setPage(totalPages)}>
                   {totalPages}
                 </button>
-              </>
-            )}
+              </>}
 
-            <button
-              className="ct-page-btn"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage === totalPages}
-              title="Next"
-            >
+            <button className={ui("ct-page-btn")} onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} title="Next">
               <ChevronRight size={13} />
             </button>
-            <button
-              className="ct-page-btn"
-              onClick={() => setPage(totalPages)}
-              disabled={safePage === totalPages}
-              title="Last page"
-            >
+            <button className={ui("ct-page-btn")} onClick={() => setPage(totalPages)} disabled={safePage === totalPages} title="Last page">
               <ChevronsRight size={13} />
             </button>
           </HStack>
         </HStack>
       </Box>
-    </>
-  );
+    </>;
 }

@@ -38,18 +38,57 @@ const CALLS_BOOKING_KEY = [
 // stale cached page.
 export const useCallsBookingList = (
   params?: CallsBookingListParams
-) =>
-  useQuery({
+) => {
+  const {
+    page = 0,
+    size = 100,
+    fromDate = "",
+    toDate = "",
+    asOn = false,
+    asOnDate = "",
+    clientId = "",
+    userId = "",
+    status = "",
+    projectId = "",
+    moduleId = "",
+    } = params ?? {};
+
+  return useQuery({
     queryKey: [
       ...CALLS_BOOKING_KEY,
-      params?.page ?? 0,
-      params?.size ?? 100,
-      params?.fromDate ?? null,
-      params?.toDate ?? null,
+      {
+        page,
+        size,
+        fromDate: asOn ? "" : fromDate,
+        toDate: asOn ? "" : toDate,
+        asOn,
+        asOnDate: asOn ? asOnDate : "",
+        clientId,
+        userId,
+        status,
+        projectId,
+        moduleId
+      },
     ],
+
     queryFn: () =>
-      getAllCallsBookings(params),
+      getAllCallsBookings({
+        page,
+        size,
+        fromDate,
+        toDate,
+        asOn,
+        asOnDate,
+        clientId,
+        userId,
+        status,
+        projectId,
+        moduleId
+      }),
+
+    placeholderData: (previousData) => previousData,
   });
+};
 
 // GET BY ID
 export const useGetCallsBookingById = (

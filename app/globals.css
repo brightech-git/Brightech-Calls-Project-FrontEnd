@@ -1,27 +1,54 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-brand: var(--primary);
+  --color-brand-hover: var(--primary-hover);
+  --color-brand-soft: var(--primary-light);
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-line: var(--border);
+  --color-ink: var(--text-main);
+  --color-muted: var(--text-muted);
+  --color-sidebar: var(--sidebar);
+  --font-sans: var(--font-poppins), 'Poppins', sans-serif;
+  --text-xs: var(--font-xs);
+  --text-sm: var(--font-sm);
+  --text-base: var(--font-md);
+  --text-lg: var(--font-lg);
+  --text-xl: var(--font-xl);
+  --text-2xl: var(--font-xxl);
+  --spacing-control: var(--control-height);
+  --spacing-row: var(--row-padding);
+  --spacing-page: var(--page-space);
+}
+
 :root {
-  --bg: #111;
-  --surface: #ffffff;
-  --border: #e5e7eb;
-  --primary: #222;
-  --primary-hover: #082347;
-  --primary-light: #eaf0f9;
-  --secondary: #444;
-  --secondary-hover: #082347;
-  --secondary-light: #eaf0f9;
-  --text-main: #0a0a0a;
-  --text-muted: #4b5563;
-  --text-faint: #9ca3af;
+  --bg: #f6f8fc; --surface: #fff; --border: #e9edf5;
+  --primary: #2859d8; --secondary: #0e7490; --sidebar: #111e38;
+  --primary-hover: color-mix(in srgb, var(--primary) 85%, #000);
+  --primary-light: color-mix(in srgb, var(--primary) 8%, white);
+  --secondary-hover: var(--secondary); --secondary-light: var(--primary-light);
+  --text-main: #25324b; --text-muted: #64748b; --text-faint: #94a3b8;
+  --font-xs: 12px; --font-sm: 13px; --font-md: 14px;
+  --font-lg: 16px; --font-xl: 22px; --font-xxl: 30px;
+  --control-height: 42px; --row-padding: 16px; --page-space: 32px;
 }
-
-*, *::before, *::after { box-sizing: border-box; }
-
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  background: var(--surface);
-  color: var(--text-main);
-  font-family: var(--font-sans, var(--font-dm-sans), var(--font-inter), 'DM Sans', 'Inter', Arial, sans-serif);
-  font-size: 15px;
-  -webkit-font-smoothing: antialiased;
+:root[data-text-size="large"] {
+  --font-xs: 13px; --font-sm: 14px; --font-md: 16px;
+  --font-lg: 18px; --font-xl: 24px; --font-xxl: 32px;
 }
+:root[data-density="compact"] { --control-height: 34px; --row-padding: 8px; --page-space: 14px; }
+
+@layer base {
+  body { @apply min-h-screen bg-canvas font-sans text-base font-normal text-ink antialiased; }
+  body, body *, button, input, select, textarea, h1, h2, h3, h4, strong, b, th, label {
+    font-family: var(--font-poppins), 'Poppins', sans-serif !important;
+    font-weight: 400 !important;
+    font-synthesis: none;
+  }
+  button:not(:disabled), select { @apply cursor-pointer; }
+  button:disabled { @apply cursor-not-allowed; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-brand; }
+  ::selection { @apply bg-brand-soft text-brand; }
+}
+@media (max-width: 768px) { :root { --page-space: 18px; } }

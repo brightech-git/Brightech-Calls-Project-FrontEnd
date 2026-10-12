@@ -10,20 +10,20 @@ export const UserRoleMaster = (
 ): FormField[] => [
         {
             name: "USERID",
-            label: "USERNAME",
+            label: "User",
         type: 'combobox',
         required: true,
         options: prop.users,
-        placeholder: 'Select State',
+        placeholder: 'Select user',
         size: 'xs',
         },
         {
             name: "ROLEID",
-            label: "ROLE NAME",
+            label: "Role name",
             type: 'combobox',
             required: true,
             options: prop.roles,
-            placeholder: 'Select State',
+            placeholder: 'Select role',
             size: 'xs',
         },
     ];
