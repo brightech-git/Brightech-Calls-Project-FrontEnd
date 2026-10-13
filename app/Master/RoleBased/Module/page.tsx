@@ -377,7 +377,7 @@ export default function RoleTranPage() {
                   <Text className={ui("font-normal! [font-size:13.5px]! [color:var(--color-gray-700)]!")}>
                     {editingModuleId ? "Edit Module" : "New Module"}
                   </Text>
-                  {editingModuleId && <button onClick={resetModuleEdit} className={ui("[background:none] [border:none] [cursor:pointer] [color:#9CA3AF] [font-size:11px] [display:flex] [align-items:center] [gap:4px]")}>
+                  {editingModuleId && <button onClick={resetModuleEdit} className={ui("[background:none] [border:none] [cursor:pointer] [color:var(--text-muted)] [font-size:11px] [display:flex] [align-items:center] [gap:4px]")}>
                       <RefreshCw size={11} /> Reset
                     </button>}
                 </HStack>
@@ -449,7 +449,7 @@ export default function RoleTranPage() {
                   <Text className={ui("font-normal! [font-size:13.5px]! [color:var(--color-gray-700)]!")}>
                     {editingSubModuleId ? "Edit Sub Module" : "New Sub Module"}
                   </Text>
-                  {editingSubModuleId && <button onClick={resetSubEdit} className={ui("[background:none] [border:none] [cursor:pointer] [color:#9CA3AF] [font-size:11px] [display:flex] [align-items:center] [gap:4px]")}>
+                  {editingSubModuleId && <button onClick={resetSubEdit} className={ui("[background:none] [border:none] [cursor:pointer] [color:var(--text-muted)] [font-size:11px] [display:flex] [align-items:center] [gap:4px]")}>
                       <RefreshCw size={11} /> Reset
                     </button>}
                 </HStack>
@@ -530,7 +530,7 @@ export default function RoleTranPage() {
                   <Text className={ui("font-normal! [font-size:13.5px]! [color:var(--color-gray-700)]!")}>
                     {editingContentId ? "Edit Content" : "New Content"}
                   </Text>
-                  {editingContentId && <button onClick={resetContentEdit} className={ui("[background:none] [border:none] [cursor:pointer] [color:#9CA3AF] [font-size:11px] [display:flex] [align-items:center] [gap:4px]")}>
+                  {editingContentId && <button onClick={resetContentEdit} className={ui("[background:none] [border:none] [cursor:pointer] [color:var(--text-muted)] [font-size:11px] [display:flex] [align-items:center] [gap:4px]")}>
                       <RefreshCw size={11} /> Reset
                     </button>}
                 </HStack>
@@ -549,7 +549,7 @@ export default function RoleTranPage() {
                 </Box>
 
                 {selectedModuleId > 0 && <Box>
-                    <FieldLabel>Sub Module <span className={ui("[color:#9CA3AF] [font-weight:400] [text-transform:none] [letter-spacing:0]")}>(optional)</span></FieldLabel>
+                    <FieldLabel>Sub Module <span className={ui("[color:var(--text-muted)] [font-weight:400] [text-transform:none] [letter-spacing:0]")}>(optional)</span></FieldLabel>
                     <select value={selectedSubModuleId} onChange={e => {
                 setSelectedSubModuleId(Number(e.target.value));
                 setContentName("");

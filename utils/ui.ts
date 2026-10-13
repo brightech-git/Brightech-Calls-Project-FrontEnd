@@ -1,7 +1,7 @@
 /** Shared, statically discoverable Tailwind utilities. Marker classes are retained only for focus/navigation hooks. */
 const button = "inline-flex! min-h-control! items-center! justify-center! gap-2! rounded-lg! border! border-line! bg-white! px-4! py-2! text-sm! text-ink! transition-colors! hover:border-brand! hover:bg-brand-soft! disabled:cursor-not-allowed! disabled:opacity-50!";
 const primary = "border-brand! bg-brand! text-white! shadow-sm! hover:bg-brand-hover!";
-const input = "min-h-control! w-full! rounded-lg! border! border-line! bg-white! px-3! py-2! text-sm! text-ink! outline-none! placeholder:text-slate-400! focus:border-brand! focus:ring-3! focus:ring-brand-soft! disabled:bg-slate-50! disabled:text-slate-400!";
+const input = "min-h-control! w-full! rounded-lg! border! border-line! bg-white! px-3! py-2! text-sm! text-ink! outline-none! placeholder:text-muted! focus:border-brand! focus:ring-3! focus:ring-brand-soft! disabled:bg-slate-50! disabled:text-slate-600!";
 const card = "rounded-2xl! border! border-line! bg-white! shadow-[0_4px_20px_#23375003]!";
 const modal = "flex! max-h-[calc(100dvh-48px)]! w-full! max-w-3xl! flex-col! overflow-hidden! rounded-2xl! border-0! bg-white! shadow-2xl! max-sm:max-h-[calc(100dvh-16px)]! [&_form]:flex! [&_form]:min-h-0! [&_form]:flex-1! [&_form]:flex-col!";
 const overlay = "fixed! inset-0! z-1000! flex! items-start! justify-center! overflow-y-auto! bg-slate-900/35! p-6! backdrop-blur-sm! max-sm:p-2!";
@@ -15,22 +15,22 @@ const UI: Record<string, string> = {
   'skip-link': "fixed! -top-24! left-4! z-[2000]! rounded-lg! bg-white! px-5! py-3! text-brand! focus:top-3!",
   'topbar-root': "relative! z-30! flex! h-[82px]! shrink-0! items-center! gap-5! border-b! border-line! bg-white! px-page! max-md:h-[68px]! max-md:gap-3!",
   'mobile-menu': '[&]:hidden! [&]:max-md:flex!',
-  'shell-icon-button': "inline-flex! size-10! shrink-0! items-center! justify-center! rounded-full! border-0! bg-slate-50! text-slate-500! transition-colors! hover:bg-brand-soft! hover:text-brand!",
+  'shell-icon-button': "inline-flex! size-10! shrink-0! items-center! justify-center! rounded-full! border-0! bg-slate-50! text-muted! transition-colors! hover:bg-brand-soft! hover:text-brand!",
   'shell-breadcrumb': "flex! min-w-0! items-center! gap-3! text-xs! text-muted! [&>strong]:truncate! [&>strong]:text-slate-600! max-md:hidden! [&>span]:max-lg:hidden! [&>svg]:max-lg:hidden!",
-  'workspace-search': "relative! ml-auto! flex! w-80! items-center! gap-2.5! rounded-full! bg-slate-50! px-4! text-slate-400! focus-within:ring-2! focus-within:ring-brand-soft! max-md:w-auto! max-md:flex-1! [&>input]:h-10! [&>input]:min-w-0! [&>input]:w-full! [&>input]:border-0! [&>input]:bg-transparent! [&>input]:text-xs! [&>input]:text-ink! [&>input]:outline-none! [&>kbd]:whitespace-nowrap! [&>kbd]:rounded! [&>kbd]:border! [&>kbd]:border-line! [&>kbd]:bg-white! [&>kbd]:px-1! [&>kbd]:text-[9px]! [&>kbd]:max-md:hidden!",
+  'workspace-search': "relative! ml-auto! flex! w-80! items-center! gap-2.5! rounded-full! bg-slate-50! px-4! text-slate-600! focus-within:ring-2! focus-within:ring-brand-soft! max-md:w-auto! max-md:flex-1! [&>input]:h-10! [&>input]:min-w-0! [&>input]:w-full! [&>input]:border-0! [&>input]:bg-transparent! [&>input]:text-xs! [&>input]:text-ink! [&>input]:outline-none! [&>kbd]:whitespace-nowrap! [&>kbd]:rounded! [&>kbd]:border! [&>kbd]:border-line! [&>kbd]:bg-white! [&>kbd]:px-1! [&>kbd]:text-[9px]! [&>kbd]:max-md:hidden!",
   'workspace-search-results': "absolute! top-[calc(100%+10px)]! right-0! w-[340px]! max-w-[calc(100vw-32px)]! rounded-2xl! border! border-line! bg-white! p-3! shadow-xl! [&>a]:flex! [&>a]:items-center! [&>a]:gap-2.5! [&>a]:rounded-lg! [&>a]:px-3! [&>a]:py-2.5! [&>a]:text-sm! [&>a:hover]:bg-brand-soft! [&>a:hover]:text-brand! [&>a>svg:last-child]:ml-auto! [&>p]:p-3! [&>p]:text-sm!",
   'ui-eyebrow': "text-[10px]! tracking-widest! text-muted! uppercase!",
   'page-heading': "mb-7! flex! items-center! gap-4! [&_h1]:my-1.5! [&_h1]:text-3xl! [&_h1]:leading-tight! [&_h1]:tracking-tight! [&_p]:max-w-xl! [&_p]:text-sm! [&_p]:text-muted! max-sm:gap-3! [&_h1]:max-sm:text-2xl!",
   'page-title-mark': "grid! size-15! shrink-0! place-items-center! rounded-2xl! border! border-brand/10! bg-brand-soft! text-brand! max-sm:size-12!",
   'ui-button': button,
   'ui-error': "mb-5! flex! items-center! justify-between! gap-3! rounded-xl! border! border-rose-200! bg-rose-50! px-5! py-4! text-sm! text-rose-800!",
-  'sidebar-root': "flex! h-dvh! w-[248px]! shrink-0! flex-col! border-r! border-line! bg-white! text-slate-500! transition-[width]!",
+  'sidebar-root': "flex! h-dvh! w-[248px]! shrink-0! flex-col! border-r! border-line! bg-white! text-muted! transition-[width]!",
   'sidebar-desktop': "max-md:hidden!",
   'sidebar-drawer-content': "max-w-[min(300px,88vw)]!",
   'sidebar-brand': "flex! h-[82px]! shrink-0! items-center! gap-2.5! border-b! border-line! px-5! py-4!",
   'sidebar-brand-mark': "grid! size-[38px]! shrink-0! place-items-center! rounded-xl! border! border-brand/10! bg-brand-soft! text-brand!",
   'sidebar-brand-copy': "min-w-0! [&>strong]:block! [&>strong]:text-lg! [&>strong]:tracking-tight! [&>strong>span]:ml-1! [&>strong>span]:text-brand! [&>small]:text-[7px]! [&>small]:tracking-widest! [&>small]:text-muted!",
-  'sidebar-toggle': "ml-auto! grid! h-8! w-7! shrink-0! place-items-center! rounded-md! border-0! bg-transparent! text-slate-400! hover:bg-slate-50! hover:text-brand!",
+  'sidebar-toggle': "ml-auto! grid! h-8! w-7! shrink-0! place-items-center! rounded-md! border-0! bg-transparent! text-slate-600! hover:bg-slate-50! hover:text-brand!",
   'sidebar-nav': "flex-1! overflow-x-hidden! overflow-y-auto! px-3.5! py-5! [scrollbar-width:thin]!",
   'sidebar-section-label': "block! px-3! pb-3! text-[9px]! tracking-widest! text-muted! uppercase!",
   'sidebar-nav-link': "mb-1! flex! min-h-10! items-center! gap-3! rounded-lg! px-3! py-2.5! text-sm! text-muted! no-underline! hover:bg-slate-50! hover:text-brand!",
@@ -46,7 +46,7 @@ const UI: Record<string, string> = {
   'sidebar-user-card': "flex! items-center! gap-2.5! rounded-xl! border! border-line! bg-slate-50! p-2.5!",
   'sidebar-avatar': "grid! size-9! shrink-0! place-items-center! rounded-full! bg-brand-soft! text-xs! text-brand!",
   'sidebar-user-info': "min-w-0! flex-1! [&>strong]:block! [&>strong]:truncate! [&>strong]:text-xs! [&>small]:block! [&>small]:truncate! [&>small]:text-[10px]! [&>small]:text-muted!",
-  'sidebar-logout-btn': "grid! h-8! w-7! shrink-0! place-items-center! rounded-lg! border-0! bg-transparent! text-slate-400! hover:bg-rose-50! hover:text-rose-600!",
+  'sidebar-logout-btn': "grid! h-8! w-7! shrink-0! place-items-center! rounded-lg! border-0! bg-transparent! text-slate-600! hover:bg-rose-50! hover:text-rose-600!",
   'rotated': "rotate-180!",
   'appearance-root': "relative!",
   'appearance-panel': "absolute! top-[calc(100%+12px)]! right-0! w-80! max-w-[calc(100vw-32px)]! rounded-2xl! border! border-line! bg-white! p-6! shadow-xl! [&_fieldset]:my-5! [&_legend]:mb-2.5! [&_legend]:text-xs! [&_legend]:text-muted!",
@@ -102,7 +102,7 @@ const UI: Record<string, string> = {
   'ct-th': "sticky! top-0! z-0! border-b! border-line! bg-slate-50/70! px-5! py-3.5! text-left! text-xs! tracking-wide! text-muted! uppercase! whitespace-nowrap!",
   'ct-td': "border-t! border-slate-100! px-5! py-row! align-middle! text-sm! whitespace-nowrap! text-slate-600!",
   'ct-tr': "hover:bg-slate-50!",
-  'ct-actions-btn': "mr-1! inline-flex! size-8! items-center! justify-center! rounded-lg! border! border-line! bg-white! text-slate-400! transition-colors! hover:border-brand-soft! hover:bg-brand-soft! hover:text-brand!",
+  'ct-actions-btn': "mr-1! inline-flex! size-8! items-center! justify-center! rounded-lg! border! border-line! bg-white! text-slate-600! transition-colors! hover:border-brand-soft! hover:bg-brand-soft! hover:text-brand!",
   'ct-page-btn': "inline-flex! h-7! min-w-7! items-center! justify-center! rounded-md! border! border-transparent! bg-transparent! px-1.5! text-xs! text-muted! hover:bg-slate-50! disabled:cursor-not-allowed! disabled:opacity-30!",
   'ct-search': `${input} h-9! min-h-9! w-[220px]! max-w-full! bg-slate-50/50! pl-8! text-xs! max-sm:w-full!`,
   'ct-size-select': "rounded-md! border! border-line! bg-white! px-2! py-1! text-xs! text-muted!",
@@ -195,7 +195,7 @@ const tones: Record<string, string> = {
   progress: "bg-blue-50! text-blue-700!",
   complete: "bg-emerald-50! text-emerald-700!",
   cancelled: "bg-rose-50! text-rose-700!",
-  neutral: "bg-slate-100! text-slate-500!"
+  neutral: "bg-slate-100! text-muted!"
 };
 /** Returns literal utility sets so Tailwind can scan them at build time; no runtime-generated utility names. */
 export function ui(value: string): string {

@@ -334,7 +334,7 @@ export default function UserMasterPage() {
               <Text className={ui("[font-size:13.5px]! font-normal! [color:#111827]!")}>
                 {isEditMode ? "Edit User" : "Register User"}
               </Text>
-              <Text className={ui("[font-size:11px]! [color:#6b7280]! [margin-top:2px]!")}>
+              <Text className={ui("[font-size:11px]! [color:var(--text-muted)]! [margin-top:2px]!")}>
                 {isEditMode ? `Editing user ID: ${editId}` : "Create a new user account"}
               </Text>
             </div>

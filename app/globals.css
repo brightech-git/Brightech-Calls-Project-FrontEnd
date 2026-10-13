@@ -28,7 +28,7 @@
   --primary-hover: color-mix(in srgb, var(--primary) 85%, #000);
   --primary-light: color-mix(in srgb, var(--primary) 8%, white);
   --secondary-hover: var(--secondary); --secondary-light: var(--primary-light);
-  --text-main: #25324b; --text-muted: #64748b; --text-faint: #94a3b8;
+  --text-main: #0f172a; --text-muted: #334155; --text-faint: #475569;
   --font-xs: 12px; --font-sm: 13px; --font-md: 14px;
   --font-lg: 16px; --font-xl: 22px; --font-xxl: 30px;
   --control-height: 42px; --row-padding: 16px; --page-space: 32px;
@@ -48,6 +48,7 @@
   }
   button:not(:disabled), select { @apply cursor-pointer; }
   button:disabled { @apply cursor-not-allowed; }
+  input::placeholder, textarea::placeholder { @apply text-muted opacity-100; }
   :focus-visible { @apply outline-2 outline-offset-2 outline-brand; }
   ::selection { @apply bg-brand-soft text-brand; }
 }
