@@ -183,7 +183,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                     </Combobox.IndicatorGroup>
                 </Combobox.Control>
                 {!disable && <Portal>
-                        <Combobox.Positioner mt={-1.5} className={ui("[z-index:1]!")}>
+                        <Combobox.Positioner mt={-1.5} className={ui("[z-1001]!")}>
                             <Combobox.Content maxHeight="260px" className={ui("[overflow-y:auto]! [border-radius:10px]! border! border-solid! [border-color:var(--border)]!")}>
                                 <Combobox.Empty fontSize={fontSize}>
                                     No items found

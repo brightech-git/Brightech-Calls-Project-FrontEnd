@@ -55,7 +55,7 @@ function SidebarBody({
     window.location.assign('/Login');
   };
   return <>
-    <div className={ui("sidebar-brand")}><span className={ui("sidebar-brand-mark")}><Headphones size={22} /></span><div className={ui("sidebar-brand-copy")}><strong>brightech<span>calls</span></strong><small>YOUR SERVICE WORKSPACE</small></div>{onNavigate ? <button className={ui("sidebar-toggle")} aria-label="Close navigation" onClick={onNavigate}><X size={18} /></button> : <button className={ui("sidebar-toggle")} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'} onClick={onToggleCollapse}>{collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}</button>}</div>
+    <div className={ui("sidebar-brand")}><span className={ui("sidebar-brand-mark")}><Headphones size={22} /></span><div className={ui("sidebar-brand-copy")}><strong>Brightech<span>Calls</span></strong><small>YOUR SERVICE WORKSPACE</small></div>{onNavigate ? <button className={ui("sidebar-toggle")} aria-label="Close navigation" onClick={onNavigate}><X size={18} /></button> : <button className={ui("sidebar-toggle")} aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'} onClick={onToggleCollapse}>{collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}</button>}</div>
     <nav className={ui("sidebar-nav")} aria-label="Main navigation"><span className={ui("sidebar-section-label")}>Workspace</span>{accessibleMenu.map(entry => {
         const Icon = entry.icon;
         const active = pathname === entry.href;

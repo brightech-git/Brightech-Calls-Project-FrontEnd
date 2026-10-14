@@ -28,7 +28,7 @@ export default function LoginPage() {
     });
   };
   return <main className={ui("login-page")}><section className={ui("login-story")} aria-label="Brightech Calls">
-    <div className={ui("login-brand")}><span><Headphones size={24} /></span><strong>brightech <em>calls</em></strong></div>
+    <div className={ui("login-brand")}><span><Headphones size={24} /></span><strong>Brightech <em>Calls</em></strong></div>
     <div className={ui("login-story-content")}><div className={ui("login-story-tag")}>A BETTER DAY AT WORK</div><h1>Great service.<br />One call at a time.</h1><p>A focused workspace for your clients, projects, and the people who keep things moving.</p><div className={ui("login-features")}><span><Workflow size={18} />Keep every task on track</span><span><Users size={18} />Stay connected with your clients</span><span><CheckCircle2 size={18} />Turn follow-ups into resolutions</span></div></div>
     <div className={ui("login-story-footer")}>Brightech Software · Calls Management</div>
   </section><section className={ui("login-form-side")}><div className={ui("login-card")}><div className={ui("login-mobile-brand")}><Headphones size={23} />Brightech Calls</div><div className={ui("ui-eyebrow")}>YOUR WORKSPACE AWAITS</div><h2>Welcome back</h2><p className={ui("login-intro")}>Sign in to manage your calls and assignments.</p>
