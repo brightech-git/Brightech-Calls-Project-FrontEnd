@@ -146,6 +146,7 @@ function CallStatusPageInner() {
     data: bookings = [],
     isLoading
   } = useActiveBookingsWithLastStatus();
+  
   const {
     data: detail,
     isLoading: detailLoading

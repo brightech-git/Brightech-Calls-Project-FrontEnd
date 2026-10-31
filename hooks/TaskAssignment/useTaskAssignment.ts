@@ -41,7 +41,7 @@ export const useCallsBookingList = (
 ) => {
   const {
     page = 0,
-    size = 100,
+    size = 1000,
     fromDate = "",
     toDate = "",
     asOn = false,

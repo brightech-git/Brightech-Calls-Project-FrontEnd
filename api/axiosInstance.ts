@@ -2,7 +2,7 @@ import axios from 'axios';
 import { ApiResponse } from '@/types/ApiResponse';
 import { CompanyRecord } from '@/types/CompanyMaster/CompanyMaster';
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL ||  'https://calls.brightechsoftware.com/api/v1' ||'http://localhost:8111/api/v1';
+const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8111/api/v1'||'https://calls.brightechsoftware.com/api/v1' 
 export const axiosInstance = axios.create({ baseURL, timeout: 30000, headers: { 'Content-Type': 'application/json', Accept: 'application/json' } });
 let companyPromise: Promise<CompanyRecord | null> | null = null;
 function getCompany() {

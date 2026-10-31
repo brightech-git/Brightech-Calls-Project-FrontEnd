@@ -219,7 +219,7 @@ export default function CallsBookingPage() {
   // matching dataset, not just the currently loaded page.
 
   const [appliedFilters, setAppliedFilters] = useState({
-    asOn: false,
+    asOn: true,
     asOnDate: today,
     fromDate: today,
     toDate: today,
@@ -232,6 +232,15 @@ export default function CallsBookingPage() {
   const [searchFilters, setSearchFilters] = useState(appliedFilters);
   const isClientUser = typeof window !== "undefined" && localStorage.getItem("isClient") === "Y";
   const myClientId = isClientUser ? Number(localStorage.getItem("clientId") || 0) || 0 : 0;
+  const userId = Number(localStorage.getItem("userId") || 0) || 0 ;
+  console.log(userId, isClientUser,'userId')
+
+  useEffect(()=>{
+
+    setSearchFilters((prev) => ({ ...prev, userId: String(userId)}));
+    setSearchFilters((prev) => ({ ...prev, userId: String(userId)}));
+  }, [userId])
+
   const {
     data: companies = []
   } = useCompanyList();
@@ -289,7 +298,7 @@ export default function CallsBookingPage() {
       clientId: "",
       projectId: "",
       moduleId: "",
-      status: ""
+      status: "P"
     });
   };
   const {
@@ -369,7 +378,7 @@ export default function CallsBookingPage() {
     value: "C"
   }, {
     label: "Both",
-    value: "B"
+    value: ""
   }];
 
   // ── List filters (toolbar) ──
@@ -396,10 +405,7 @@ export default function CallsBookingPage() {
 
   const openCreate = () => {
     setEditRow(null);
-    reset(isClientUser ? {
-      ...DEFAULTS,
-      clientId: myClientId
-    } : DEFAULTS);
+    reset(DEFAULTS);
     setMedia(prev => {
       revokeMediaItems(prev);
       return [];
@@ -440,6 +446,8 @@ export default function CallsBookingPage() {
     setViewId(String(row.sno));
   };
 
+
+
   // ─────────────────────────
 
   const onSubmit = async (data: CallsBookingForm) => {
@@ -463,7 +471,8 @@ export default function CallsBookingPage() {
     const payload = {
       ...data,
       compId: editRow?.compId ?? defaultCompId,
-      active: editRow ? data.active ?? editRow.active ?? "Y" : "Y"
+      active: editRow ? data.active ?? editRow.active ?? "Y" : "Y",
+      clientId : myClientId
     };
     try {
       if (editRow) {
@@ -728,15 +737,18 @@ export default function CallsBookingPage() {
             </>}
 
           {/* Staff */}
+        {userId ==2 &&
           <VStack spaceX="4px" className={ui("[align-items:stretch]! [min-width:150px]!")}>
             <Text className={ui("[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!")}>
               Staff
             </Text>
 
-            <SelectCombobox value={appliedFilters.userId || undefined} onChange={val => handleChange("userId", val)} items={staffFilterItems} placeholder="Select staff" size="sm" label="" className={ui("[max-width:180px]! [font-size:var(--font-sm)]!")} />
+          <SelectCombobox value={appliedFilters.userId || undefined} onChange={val => handleChange("userId", val)} items={staffFilterItems} placeholder="Select staff" size="sm" label="" className={ui("[max-width:180px]! [font-size:var(--font-sm)]!")} disable={userId != 2} />
           </VStack>
-
-          {/* Client */}
+          }
+          
+          {!isClientUser &&
+      
           <VStack spaceX="4px" className={ui("[align-items:stretch]! [min-width:200px]!")}>
             <Text className={ui("[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!")}>
               Client
@@ -744,6 +756,7 @@ export default function CallsBookingPage() {
 
             <SelectCombobox value={appliedFilters.clientId || undefined} onChange={val => handleChange("clientId", val)} items={clientFilterItems} placeholder="Select client" size="sm" label="" className={ui("[max-width:250px]! [min-width:200px]! [font-size:var(--font-sm)]!")} />
           </VStack>
+}
           <VStack spaceX="4px" className={ui("[align-items:stretch]! [min-width:200px]!")}>
             <Text className={ui("[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!")}>
               Project
@@ -851,13 +864,17 @@ export default function CallsBookingPage() {
                 </div>
 
                 <div className={ui("cb-grid-2 workspace-form-grid")}>
+
+                  {!isClientUser && 
                   <div className={ui("cb-field-row")}>
                     <label className={ui("cb-field-label")}>Client *</label>
                     <Controller name="clientId" control={control} render={({
-                  field
-                }) => <SelectCombobox ref={registerField("clientId")} value={field.value ? String(field.value) : undefined} onChange={val => field.onChange(val ? Number(val) : 0)} onEnter={() => focusNext("clientId")} editId={editRow?.sno ?? null} items={clientItems} placeholder="Select client" size="md" disable={isClientUser} className={ui("[max-width:100%]! [font-size:var(--font-sm)]!")} />} />
+                      field
+                    }) => <SelectCombobox ref={registerField("clientId")} value={field.value ? String(field.value) : undefined} onChange={val => field.onChange(val ? Number(val) : 0)} onEnter={() => focusNext("clientId")} editId={editRow?.sno ?? null} items={clientItems} placeholder="Select client" size="md" disable={isClientUser} className={ui("[max-width:100%]! [font-size:var(--font-sm)]!")} />} />
                     {errors.clientId && <span className={ui("cb-field-error")}>{errors.clientId.message}</span>}
                   </div>
+                }
+                 
 
                   <div className={ui("cb-field-row")}>
                     <label className={ui("cb-field-label")}>Project</label>
