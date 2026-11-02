@@ -5,12 +5,12 @@
 // Left/Right buttons (and arrow keys) to step through the adjacent
 // items in that same group. Used anywhere a small media thumbnail is
 // shown (Task Assignment media, Call Status media/history).
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
-import { COLORS, RADIUS, FONT } from "@/utils/theme";
-import { ResolveImage } from "@/utils/format/resolveImage";
+import { useEffect } from 'react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { COLORS, RADIUS, FONT } from '@/utils/theme';
+import { ResolveImage } from '@/utils/format/resolveImage';
 
 export interface LightboxItem {
   mediaUrl?: string | null;
@@ -30,9 +30,8 @@ export function MediaLightbox({
   index,
   onClose,
   onIndexChange,
-  baseUrl ,
+  baseUrl,
 }: MediaLightboxProps) {
-
   const count = items.length;
 
   const goPrev = () => onIndexChange((index - 1 + count) % count);
@@ -40,37 +39,37 @@ export function MediaLightbox({
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft" && count > 1) goPrev();
-      if (e.key === "ArrowRight" && count > 1) goNext();
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft' && count > 1) goPrev();
+      if (e.key === 'ArrowRight' && count > 1) goNext();
     };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, count]);
 
   if (!count) return null;
 
-  const base = baseUrl ?? process.env.NEXT_PUBLIC_IMAGE_URL ?? "";
+  const base = baseUrl ?? process.env.NEXT_PUBLIC_IMAGE_URL ?? '';
   const item = items[index];
-  const type = (item.mediaType ?? "").toUpperCase();
-  const url = ResolveImage(item.mediaUrl)
+  const type = (item.mediaType ?? '').toUpperCase();
+  const url = ResolveImage(item.mediaUrl);
 
-  const navBtnStyle = (side: "left" | "right"): React.CSSProperties => ({
-    position: "fixed",
+  const navBtnStyle = (side: 'left' | 'right'): React.CSSProperties => ({
+    position: 'fixed',
     [side]: 16,
-    top: "50%",
-    transform: "translateY(-50%)",
+    top: '50%',
+    transform: 'translateY(-50%)',
     width: 44,
     height: 44,
-    borderRadius: "50%",
-    border: "none",
-    background: "rgba(255,255,255,0.15)",
-    color: "#fff",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: '50%',
+    border: 'none',
+    background: 'rgba(255,255,255,0.15)',
+    color: '#fff',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 2001,
   });
 
@@ -78,13 +77,13 @@ export function MediaLightbox({
     <div
       onClick={onClose}
       style={{
-        position: "fixed",
+        position: 'fixed',
         inset: 0,
-        background: "rgba(0,0,0,0.85)",
+        background: 'rgba(0,0,0,0.85)',
         zIndex: 2000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       <button
@@ -94,19 +93,19 @@ export function MediaLightbox({
         }}
         title="Close"
         style={{
-          position: "fixed",
+          position: 'fixed',
           top: 16,
           right: 16,
           width: 36,
           height: 36,
-          borderRadius: "50%",
-          border: "none",
-          background: "rgba(255,255,255,0.15)",
-          color: "#fff",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          borderRadius: '50%',
+          border: 'none',
+          background: 'rgba(255,255,255,0.15)',
+          color: '#fff',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           zIndex: 2001,
         }}
       >
@@ -120,7 +119,7 @@ export function MediaLightbox({
             goPrev();
           }}
           title="Previous"
-          style={navBtnStyle("left")}
+          style={navBtnStyle('left')}
         >
           <ChevronLeft size={24} />
         </button>
@@ -129,35 +128,45 @@ export function MediaLightbox({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: "90vw",
-          maxHeight: "85vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
+          maxWidth: '90vw',
+          maxHeight: '85vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
           gap: 10,
         }}
       >
-        {type.startsWith("IMAGE") ? (
+        {type.startsWith('IMAGE') ? (
           <img
             src={url}
             alt={`media-${index}`}
-            style={{ maxWidth: "90vw", maxHeight: "80vh", objectFit: "contain", borderRadius: RADIUS.md }}
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '80vh',
+              objectFit: 'contain',
+              borderRadius: RADIUS.md,
+            }}
           />
-        ) : type.startsWith("VIDEO") ? (
+        ) : type.startsWith('VIDEO') ? (
           <video
             src={url}
             controls
             autoPlay
-            style={{ maxWidth: "90vw", maxHeight: "80vh", borderRadius: RADIUS.md }}
+            style={{ maxWidth: '90vw', maxHeight: '80vh', borderRadius: RADIUS.md }}
           />
         ) : (
-          <a href={url} target="_blank" rel="noreferrer" style={{ color: "#fff", fontFamily: FONT.family }}>
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: '#fff', fontFamily: FONT.family }}
+          >
             Open file
           </a>
         )}
 
         {count > 1 && (
-          <div style={{ color: "#fff", fontSize: 12, fontFamily: FONT.family }}>
+          <div style={{ color: '#fff', fontSize: 12, fontFamily: FONT.family }}>
             {index + 1} / {count}
           </div>
         )}
@@ -170,7 +179,7 @@ export function MediaLightbox({
             goNext();
           }}
           title="Next"
-          style={navBtnStyle("right")}
+          style={navBtnStyle('right')}
         >
           <ChevronRight size={24} />
         </button>

@@ -1,18 +1,20 @@
-import { axiosInstance } from "@/api/axiosInstance";
-import { StaffPayload, StaffRecord } from "@/types/StaffMaster/StaffMaster";
-import { ApiResponse } from "@/types/ApiResponse";
+import { axiosInstance } from '@/api/axiosInstance';
+import { StaffPayload, StaffRecord } from '@/types/StaffMaster/StaffMaster';
+import { ApiResponse } from '@/types/ApiResponse';
 
 // CREATE
 export const createStaff = async (payload: StaffPayload): Promise<StaffRecord> => {
-  const response = await axiosInstance.post("/staff", payload);
+  const response = await axiosInstance.post('/staff', payload);
   return response.data;
 };
 
 // GET ALL
 export const getAllStaff = async (): Promise<StaffRecord[]> => {
-  const response = await axiosInstance.get<StaffRecord[] | ApiResponse<StaffRecord[]>>("/staff");
+  const response = await axiosInstance.get<StaffRecord[] | ApiResponse<StaffRecord[]>>(
+    '/staff',
+  );
   const records = Array.isArray(response.data) ? response.data : response.data.data;
-  if (!Array.isArray(records)) throw new Error("The staff response could not be read.");
+  if (!Array.isArray(records)) throw new Error('The staff response could not be read.');
   return records;
 };
 
@@ -23,7 +25,10 @@ export const getStaffById = async (id: string): Promise<StaffRecord> => {
 };
 
 // UPDATE BY STAFFID
-export const updateStaff = async (id: string, payload: StaffPayload): Promise<StaffRecord> => {
+export const updateStaff = async (
+  id: string,
+  payload: StaffPayload,
+): Promise<StaffRecord> => {
   const response = await axiosInstance.put(`/staff/${id}`, payload);
   return response.data;
 };

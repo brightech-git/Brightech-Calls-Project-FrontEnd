@@ -2,12 +2,12 @@
 // services/ProjectTypeMasterService.ts
 // ─────────────────────────────────────────────
 
-import { axiosInstance } from "@/api/axiosInstance";
+import { axiosInstance } from '@/api/axiosInstance';
 
 import {
   ProjectTypePayload,
   ProjectTypeRecord,
-} from "@/types/ProjectTypeMaster/ProjectTypeMaster";
+} from '@/types/ProjectTypeMaster/ProjectTypeMaster';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -17,11 +17,11 @@ interface ApiResponse<T> {
 
 // CREATE
 export const createProjectType = async (
-  payload: ProjectTypePayload
+  payload: ProjectTypePayload,
 ): Promise<ProjectTypeRecord> => {
   const response = await axiosInstance.post<ApiResponse<ProjectTypeRecord>>(
-    "/projecttype",
-    payload
+    '/projecttype',
+    payload,
   );
 
   return response.data.data;
@@ -29,23 +29,21 @@ export const createProjectType = async (
 
 // GET ALL
 export const getAllProjectTypes = async (
-  active?: boolean
+  active?: boolean,
 ): Promise<ProjectTypeRecord[]> => {
   const response = await axiosInstance.get<ApiResponse<ProjectTypeRecord[]>>(
-    "/projecttype",
-    { params: active !== undefined ? { active } : undefined }
+    '/projecttype',
+    { params: active !== undefined ? { active } : undefined },
   );
-  console.log(response,'response')
+  console.log(response, 'response');
 
   return response.data.data;
 };
 
 // GET BY ID
-export const getProjectTypeById = async (
-  id: string
-): Promise<ProjectTypeRecord> => {
+export const getProjectTypeById = async (id: string): Promise<ProjectTypeRecord> => {
   const response = await axiosInstance.get<ApiResponse<ProjectTypeRecord>>(
-    `/projecttype/${id}`
+    `/projecttype/${id}`,
   );
 
   return response.data.data;
@@ -54,22 +52,20 @@ export const getProjectTypeById = async (
 // UPDATE
 export const updateProjectType = async (
   id: string,
-  payload: ProjectTypePayload
+  payload: ProjectTypePayload,
 ): Promise<ProjectTypeRecord> => {
   const response = await axiosInstance.put<ApiResponse<ProjectTypeRecord>>(
     `/projecttype/${id}`,
-    payload
+    payload,
   );
 
   return response.data.data;
 };
 
 // DELETE
-export const deleteProjectType = async (
-  id: string
-): Promise<ProjectTypeRecord> => {
+export const deleteProjectType = async (id: string): Promise<ProjectTypeRecord> => {
   const response = await axiosInstance.delete<ApiResponse<ProjectTypeRecord>>(
-    `/projecttype/${id}`
+    `/projecttype/${id}`,
   );
 
   return response.data.data;

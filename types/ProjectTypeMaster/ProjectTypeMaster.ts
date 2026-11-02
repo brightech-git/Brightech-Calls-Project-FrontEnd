@@ -5,7 +5,7 @@
 export interface ProjectTypePayload {
   projectTypeName: string;
   displayOrder?: number | null;
-  active?:  boolean ;
+  active?: boolean;
 }
 
 export interface ProjectTypeRecord {

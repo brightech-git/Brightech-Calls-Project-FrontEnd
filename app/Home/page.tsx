@@ -1,130 +1,468 @@
-"use client";
+'use client';
+import { formatDate } from '@/utils/format/date';
 
-import { ui } from "@/utils/ui";
+import { useState } from 'react';
 import Link from 'next/link';
-import CallStatusBadge from '@/components/CallStatusBadge';
-import { describeCallStatus } from '@/utils/callStatus';
-import { useMemo, useState } from 'react';
-import { ChevronRightCircle, ArrowUpRight, CheckCircle2, Clock3, Headphones, RefreshCw, CircleDot } from 'lucide-react';
-import { CustomTable, TableColumn } from '@/components/CustomTable';
+import { useQuery } from '@tanstack/react-query';
+import { RefreshCw, Headphones, CheckCircle2, Clock3, CircleDot } from 'lucide-react';
+import { ui } from '@/utils/ui';
 import { usePageHeader } from '@/context/PageHeaderContext';
-import { useMyTasks } from '@/hooks/TaskAssignment/useTaskAssignment';
-import { CallsBookingRecord_Table } from '@/types/TaskAssignment/TaskAssignment';
 import { useSession } from '@/hooks/Auth/useSession';
 import { useAccessibleMenu } from '@/hooks/ApiHooks/Menu/useAccessibleMenu';
-import { useRouter } from 'next/navigation';
-// Legacy call codes and full status names share one mapping.
-const COLUMNS: TableColumn<CallsBookingRecord_Table>[] = [{
-  key: 'tktId',
-  header: 'Ticket',
-  sortable: true,
-  render: row => <span className={ui("ticket-number")}>#{row.tktId ?? row.sno}</span>
-}, {
-  key: 'clientName',
-  header: 'Client',
-  sortable: true,
-  render: row => row.clientName || '—'
-}, {
-  key: 'projectName',
-  header: 'Project',
-  sortable: true
-}, {
-  key: 'status',
-  header: 'Status',
-  sortable: true,
-  render: row => <CallStatusBadge value={row.status} />
-}];
+import { getAllUsers } from '@/services/AuthService';
+import {
+  getDashboardCalls,
+  DashboardCall,
+  durationLabel,
+} from '@/services/DashboardService';
+import { describeCallStatus } from '@/utils/callStatus';
+import CallStatusBadge from '@/components/CallStatusBadge';
+import { CustomTable, TableColumn } from '@/components/CustomTable';
+
+const columns: TableColumn<DashboardCall>[] = [
+  {
+    key: 'tktId',
+    header: 'Ticket',
+    sortable: true,
+    render: (row) => <span className={ui('ticket-number')}>#{row.tktId ?? row.sno}</span>,
+  },
+  {
+    key: 'tktDate',
+    header: 'Booked',
+    sortable: true,
+    render: (row) =>
+      row.tktDate && Number.isFinite(Date.parse(row.tktDate))
+        ? formatDate(row.tktDate)
+        : 'Not recorded',
+  },
+  { key: 'clientName', header: 'Client', sortable: true },
+  { key: 'projectName', header: 'Project', sortable: true },
+  {
+    key: 'status',
+    header: 'Status',
+    render: (row) => <CallStatusBadge value={row.status} />,
+  },
+  {
+    key: 'assignedUsers',
+    header: 'Assigned to',
+    render: (row) =>
+      Object.values(row.userMap ?? {}).join(', ') ||
+      row.assignedNames ||
+      (row.assignedUsers
+        ? row.assignedUsers
+            .split(',')
+            .map((id) => `User #${id.trim()}`)
+            .join(', ')
+        : row.historyAvailable
+          ? 'Unassigned'
+          : 'Unavailable'),
+  },
+  {
+    key: 'completedBy',
+    header: 'Completed by',
+    render: (row) =>
+      describeCallStatus(row.status).group === 'complete' ? row.completedBy : '—',
+  },
+  {
+    key: 'resolutionHours',
+    header: 'Resolution time',
+    render: (row) =>
+      describeCallStatus(row.status).group === 'complete'
+        ? durationLabel(row.resolutionHours)
+        : '—',
+  },
+];
+type Employee = Record<string, unknown> & {
+  id: string;
+  name: string;
+  active: string;
+  total: number;
+  open: number;
+  progress: number;
+  complete: number;
+  resolvedBy: number;
+};
+const employeeColumns: TableColumn<Employee>[] = [
+  { key: 'name', header: 'Employee', sortable: true },
+  { key: 'active', header: 'Account', sortable: true },
+  { key: 'total', header: 'Assigned', sortable: true },
+  { key: 'open', header: 'Open', sortable: true },
+  { key: 'progress', header: 'Processing', sortable: true },
+  { key: 'complete', header: 'Completed assignments', sortable: true },
+  { key: 'resolvedBy', header: 'Recorded completions', sortable: true },
+];
+
 export default function DashboardPage() {
-  usePageHeader({
-    title: 'Overview',
-    subtitle: 'Your calls, at a glance'
-  });
-  const router = useRouter();
+  usePageHeader({ title: 'Overview', subtitle: 'Calls and resolution overview' });
   const {
     userId = '',
-    username = ''
+    username = '',
+    isClient: clientFlag,
+    clientId = '',
   } = useSession();
-  const {
-    isRouteAllowed
-  } = useAccessibleMenu();
-  const {
-    data: myTasks = [],
-    isLoading,
-    isError,
-    isFetching,
-    refetch
-  } = useMyTasks(userId);
+  const isAdmin = userId === '999';
+  const isClient = !isAdmin && clientFlag?.toUpperCase() === 'Y';
+  const { isRouteAllowed } = useAccessibleMenu();
+  const allowed = (path: string) => isAdmin || isRouteAllowed(path);
   const [filter, setFilter] = useState('all');
-  const active = useMemo(() => myTasks.filter(task => task.active === 'Y'), [myTasks]);
-  const completed = active.filter(task => describeCallStatus(task.status).group === 'complete').length;
-  const progress = active.filter(task => describeCallStatus(task.status).group === 'progress').length;
-  const open = active.filter(task => describeCallStatus(task.status).group === 'open').length;
-  const filtered = active.filter(task => filter === "all" || describeCallStatus(task.status).group === filter);
-  const stats = [{
-    label: 'Assigned to you',
-    value: active.length,
-    Icon: Headphones,
-    tone: 'blue',
-    caption: 'All active assignments'
-  }, {
-    label: 'Open calls',
-    value: open,
-    Icon: CircleDot,
-    tone: 'amber',
-    caption: 'Ready for your attention'
-  }, {
-    label: 'In progress',
-    value: progress,
-    Icon: Clock3,
-    tone: 'violet',
-    caption: 'Work currently underway'
-  }, {
-    label: 'Completed',
-    value: completed,
-    Icon: CheckCircle2,
-    tone: 'green',
-    caption: 'Resolved active assignments'
-  }];
-  const logsAllowed = isRouteAllowed('/ProjectManagement/CallStatus');
-  return <>
-    <section className={ui("dashboard-welcome")}><div><div className={ui("ui-eyebrow")}>YOUR DAILY OVERVIEW</div><h1>{username ? `Welcome back, ${username.toLowerCase()}.` : 'Your work, in focus.'}</h1><p>Keep calls moving and give every client your best.</p></div><div className={ui("dashboard-welcome-actions")}><button className={ui("ui-button")} onClick={() => refetch()} disabled={isFetching} aria-label="Refresh dashboard"><RefreshCw size={16} className={ui(isFetching ? 'refresh-spinning' : '')} />Refresh</button>{isRouteAllowed('/ProjectManagement/TaskAssignment') && <Link href="/ProjectManagement/TaskAssignment" className={ui("ui-button primary")}>Calls booking<ArrowUpRight size={16} /></Link>}</div></section>
-    {isError && <div className={ui("ui-error")} role="alert"><span>We couldn’t load your tasks. Please try again.</span><button className={ui("ui-button")} onClick={() => refetch()}>Retry</button></div>}
-    <section className={ui("dashboard-stats")} aria-label="Your assignment statistics">{stats.map(({
-        label,
-        value,
-        Icon,
-        tone,
-        caption
-      }) => <article className={ui("stat-card")} key={label}><div className={ui("stat-top")}><span>{label}</span><span className={ui(`stat-icon ${tone}`)}><Icon size={19} /></span></div><strong>{isLoading || isError ? '—' : value.toLocaleString()}</strong><p>{caption}</p></article>)}</section>
-    <div className={ui("dashboard-layout")}><section className={ui("dashboard-work")}><div className={ui("dashboard-section-heading")}><div><h2>Your task queue</h2><p>Active assignments, with everything you need to follow up.</p></div><div className={ui("task-filters")} aria-label="Filter tasks">{[{
-              key: 'all',
-              label: 'All tasks'
-            }, {
-              key: 'open',
-              label: 'Open'
-            }, {
-              key: 'progress',
-              label: 'In progress'
-            }, {
-              key: 'complete',
-              label: 'Completed'
-            }].map(item => <button key={item.key} aria-pressed={filter === item.key} onClick={() => setFilter(item.key)}>{item.label}</button>)}</div></div>
-      <CustomTable title="Assigned calls" columns={COLUMNS} data={filtered as CallsBookingRecord_Table[]} rowKey="sno" isLoading={isLoading} emptyMessage={isError ? 'Tasks are unavailable. Use Retry above.' : filter === 'all' ? 'You’re all caught up. New assignments will appear here.' : 'No assignments match this status.'} extraActions={logsAllowed ? [{
-          label: 'View call history',
-          icon: <ChevronRightCircle size={18} />,
-          onClick: row => router.push(`/ProjectManagement/CallStatus?tktId=${row.tktId}`)
-        }] : []} />
-    </section>
-    <aside className={ui("dashboard-aside")}><section className={ui("workload-card")}><h2>Your workload</h2><p>Resolution progress across your active assignments.</p><div className={ui("workload-value")}><strong>{isLoading || isError ? "—" : active.length ? Math.round(completed / active.length * 100) : 0}</strong><span>%</span></div><progress aria-label="Assignment completion" value={completed} max={active.length || 1} /><div className={ui("workload-breakdown")}><div><i />Pending & open<strong>{isError ? "—" : open}</strong></div><div><i />In progress<strong>{isError ? "—" : progress}</strong></div><div><i />Completed<strong>{isError ? "—" : completed}</strong></div></div></section><section className={ui("shortcut-card")}><h2>Quick access</h2><p>Go straight to your next workflow.</p>{[{
-            href: "/Master/ClientVisitMaster",
-            label: "Client visits"
-          }, {
-            href: "/ProjectManagement/CallStatus",
-            label: "Call history"
-          }, {
-            href: "/ProjectManagement/ProjectMaster",
-            label: "Projects"
-          }].filter(item => isRouteAllowed(item.href)).map(item => <Link key={item.href} href={item.href}>{item.label}<ArrowUpRight size={14} /></Link>)}</section></aside></div>
-    <div className={ui("dashboard-footer")}><span><span className={ui("dashboard-footer-dot")} />Live data from your assigned calls</span><span>Brightech · Calls workspace</span></div>
-  </>;
+  const [employee, setEmployee] = useState('all');
+  const query = useQuery({
+    queryKey: ['dashboard-calls', userId, isAdmin, isClient, clientId],
+    queryFn: () => getDashboardCalls(userId, isAdmin, isClient, clientId),
+    enabled: !!userId,
+    staleTime: 60000,
+  });
+  const users = useQuery({
+    queryKey: ['dashboard-employees', userId],
+    queryFn: getAllUsers,
+    enabled: isAdmin,
+    staleTime: 60000,
+  });
+  const calls = query.data ?? [];
+  const group = (call: DashboardCall) => describeCallStatus(call.status).group;
+  const assigned = (call: DashboardCall, id: string) =>
+    call.assignedUsers
+      .split(',')
+      .map((value) => value.trim())
+      .includes(id);
+  const roster: Employee[] = (users.data?.data ?? [])
+    .filter(
+      (user) => user.ISCLIENT?.toUpperCase() !== 'Y' && String(user.USERID) !== '999',
+    )
+    .map((user) => {
+      const id = String(user.USERID);
+      const tasks = calls.filter((call) => assigned(call, id));
+      return {
+        id,
+        name: user.USERNAME,
+        active: user.ACTIVE === 'Y' ? 'Active' : 'Inactive',
+        total: tasks.length,
+        open: tasks.filter((call) => group(call) === 'open').length,
+        progress: tasks.filter((call) => group(call) === 'progress').length,
+        complete: tasks.filter((call) => group(call) === 'complete').length,
+        resolvedBy: calls.filter(
+          (call) => group(call) === 'complete' && call.completedById === id,
+        ).length,
+      };
+    })
+    .sort((a, b) => b.open + b.progress - a.open - a.progress);
+  const scoped =
+    employee === 'all' || !isAdmin
+      ? calls
+      : calls.filter((call) => assigned(call, employee));
+  const completed = scoped.filter((call) => group(call) === 'complete');
+  const progress = scoped.filter((call) => group(call) === 'progress').length;
+  const open = scoped.filter((call) => group(call) === 'open').length;
+  const timed = completed.filter((call) => call.resolutionHours !== null);
+  const average = timed.length
+    ? timed.reduce((sum, call) => sum + call.resolutionHours!, 0) / timed.length
+    : null;
+  const unavailable = calls.filter((call) => !call.historyAvailable).length;
+  const filtered = scoped.filter((call) => filter === 'all' || group(call) === filter);
+  const refresh = () => {
+    void query.refetch();
+    if (isAdmin) void users.refetch();
+  };
+  const stats = [
+    {
+      label: isAdmin
+        ? 'All calls booked'
+        : isClient
+          ? 'Your calls booked'
+          : 'Assigned calls',
+      value: scoped.length,
+      Icon: Headphones,
+      tone: 'blue',
+    },
+    { label: 'Open / pending', value: open, Icon: CircleDot, tone: 'amber' },
+    { label: 'Processing', value: progress, Icon: Clock3, tone: 'violet' },
+    {
+      label: 'Resolved / completed',
+      value: completed.length,
+      Icon: CheckCircle2,
+      tone: 'green',
+    },
+  ];
+  return (
+    <>
+      <section className={ui('dashboard-welcome')}>
+        <div>
+          <div className={ui('ui-eyebrow')}>
+            {isAdmin
+              ? 'ADMINISTRATOR OVERVIEW'
+              : isClient
+                ? 'CLIENT OVERVIEW'
+                : 'YOUR WORK OVERVIEW'}
+          </div>
+          <h1>{username ? `Welcome back, ${username}.` : 'Calls, in focus.'}</h1>
+          <p>
+            {isAdmin
+              ? 'Monitor employee workloads and every booked call.'
+              : isClient
+                ? 'Track your bookings, progress and completed calls.'
+                : 'Track your assigned calls and resolutions.'}
+          </p>
+        </div>
+        <div className={ui('dashboard-welcome-actions')}>
+          <button
+            className={ui('ui-button')}
+            onClick={refresh}
+            disabled={query.isFetching || users.isFetching}
+          >
+            <RefreshCw size={16} />
+            Refresh
+          </button>
+          {allowed('/ProjectManagement/TaskAssignment') && (
+            <Link
+              className={ui('ui-button primary')}
+              href="/ProjectManagement/TaskAssignment"
+            >
+              Calls booking
+            </Link>
+          )}
+        </div>
+      </section>
+      {query.isError && (
+        <div
+          className={ui('ui-error')}
+          role="alert"
+        >
+          {query.error instanceof Error
+            ? query.error.message
+            : 'Calls could not be loaded.'}
+          <button
+            className={ui('ui-button')}
+            onClick={refresh}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      {isAdmin && (
+        <section className="mb-7 space-y-4">
+          <div className={ui('dashboard-section-heading')}>
+            <div>
+              <h2>Employee management</h2>
+              <p>
+                {users.isPending || users.isError
+                  ? 'Employee totals unavailable'
+                  : `${roster.length} employee accounts · ${roster.filter((user) => user.active === 'Active').length} active · ${roster.filter((user) => user.total === 0).length} without assignments`}{' '}
+                ·{' '}
+                {query.isPending || query.isError
+                  ? 'Call totals unavailable'
+                  : `${calls.filter((call) => !call.assignedUsers.trim() && call.historyAvailable).length} unassigned calls`}
+              </p>
+            </div>
+            {allowed('/Master/UserMaster') && (
+              <Link
+                className={ui('ui-button')}
+                href="/Master/UserMaster"
+              >
+                Manage employees
+              </Link>
+            )}
+          </div>
+          {users.isError && (
+            <div
+              className={ui('ui-error')}
+              role="alert"
+            >
+              Employee accounts could not be loaded.
+              <button
+                className={ui('ui-button')}
+                onClick={() => users.refetch()}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          <CustomTable
+            title="Employee workload"
+            columns={employeeColumns}
+            data={query.isError ? [] : roster}
+            rowKey="id"
+            isLoading={users.isPending || query.isPending}
+            emptyMessage={
+              users.isError || query.isError
+                ? 'Employee workloads are unavailable.'
+                : 'No employee accounts found.'
+            }
+          />
+          <p className="text-xs text-muted">
+            Employees are non-client user accounts, including inactive accounts. Shared
+            calls count for each assignee; recorded completions identify the user who
+            logged the latest completion.
+          </p>
+        </section>
+      )}
+      <section className={ui('dashboard-stats')}>
+        {stats.map(({ label, value, Icon, tone }) => (
+          <article
+            className={ui('stat-card')}
+            key={label}
+          >
+            <div className={ui('stat-top')}>
+              <span>{label}</span>
+              <span className={ui(`stat-icon ${tone}`)}>
+                <Icon size={19} />
+              </span>
+            </div>
+            <strong>
+              {query.isPending || query.isError ? '—' : value.toLocaleString()}
+            </strong>
+          </article>
+        ))}
+      </section>
+      <div className={ui('dashboard-layout')}>
+        <section className={ui('dashboard-work')}>
+          <div className={ui('dashboard-section-heading')}>
+            <div>
+              <h2>
+                {isClient
+                  ? 'Your booked calls'
+                  : isAdmin
+                    ? 'All booked calls'
+                    : 'Your assigned calls'}
+              </h2>
+              <p>All dates and activity states. Search by ticket, client or project.</p>
+            </div>
+            {isAdmin && (
+              <label>
+                Employee{' '}
+                <select
+                  className="rounded-lg border border-line p-2"
+                  value={employee}
+                  onChange={(event) => setEmployee(event.target.value)}
+                >
+                  <option value="all">All employees</option>
+                  {roster.map((user) => (
+                    <option
+                      key={user.id}
+                      value={user.id}
+                    >
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <div className={ui('task-filters')}>
+              {[
+                ['all', 'All'],
+                ['open', 'Open'],
+                ['progress', 'Processing'],
+                ['complete', 'Completed'],
+                ['cancelled', 'Cancelled'],
+                ['other', 'Other'],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  aria-pressed={filter === key}
+                  onClick={() => setFilter(key)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <CustomTable
+            title="Calls"
+            columns={columns}
+            data={filtered}
+            rowKey="sno"
+            isLoading={query.isPending}
+            emptyMessage={
+              query.isError
+                ? 'Calls are unavailable. Please retry.'
+                : 'No calls match this view.'
+            }
+            extraActions={
+              allowed('/ProjectManagement/CallStatus')
+                ? [
+                    {
+                      label: 'View call history',
+                      onClick: (row) => {
+                        if (row.tktId != null)
+                          window.location.assign(
+                            `/ProjectManagement/CallStatus?tktId=${row.tktId}`,
+                          );
+                      },
+                    },
+                  ]
+                : []
+            }
+          />
+        </section>
+        <aside className={ui('dashboard-aside')}>
+          <section className={ui('workload-card')}>
+            <h2>Resolution overview</h2>
+            <p>Across the selected calls.</p>
+            <div className={ui('workload-value')}>
+              <strong>
+                {query.isPending || query.isError
+                  ? '—'
+                  : scoped.length
+                    ? Math.round((completed.length / scoped.length) * 100)
+                    : 0}
+              </strong>
+              <span>% completed</span>
+            </div>
+            <progress
+              aria-label="Call completion"
+              value={completed.length}
+              max={scoped.length || 1}
+            />
+            <div className={ui('workload-breakdown')}>
+              <div>
+                Average resolution
+                <strong>
+                  {query.isPending || query.isError ? '—' : durationLabel(average)}
+                </strong>
+              </div>
+            </div>
+            <p>
+              Booking to latest completion, based on {timed.length} calls with valid
+              timestamps. Cancelled and other statuses remain in the total.
+            </p>
+          </section>
+          <section className={ui('shortcut-card')}>
+            <h2>Quick access</h2>
+            {[
+              { href: '/ProjectManagement/TaskAssignment', label: 'Calls booking' },
+              { href: '/ProjectManagement/CallStatus', label: 'Call history' },
+            ]
+              .filter((item) => allowed(item.href))
+              .map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                >
+                  {item.label}
+                </Link>
+              ))}
+          </section>
+        </aside>
+      </div>
+      {unavailable > 0 && (
+        <p
+          role="status"
+          className="mt-4 text-sm text-amber-700"
+        >
+          History is unavailable for {unavailable} calls. Their booking status is shown;
+          completion details may be missing. Refresh to retry.
+        </p>
+      )}
+      <div className={ui('dashboard-footer')}>
+        <span>
+          Live data ·{' '}
+          {isAdmin
+            ? 'All clients and employees'
+            : isClient
+              ? 'Your client account'
+              : 'Your assignments'}
+        </span>
+        <span>Brightech · Calls workspace</span>
+      </div>
+    </>
+  );
 }

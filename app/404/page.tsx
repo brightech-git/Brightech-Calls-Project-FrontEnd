@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import NotFoundView from "@/components/NotFoundView";
+import NotFoundView from '@/components/NotFoundView';
 
 // Explicit redirect target used by LayoutWrapper's role/menu access guard:
 // when a logged-in user tries to open a page their assigned role doesn't

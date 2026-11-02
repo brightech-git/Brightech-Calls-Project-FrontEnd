@@ -1,5 +1,5 @@
 // ================= TYPES =================
-  // types/RoleTran/RoleTran.ts
+// types/RoleTran/RoleTran.ts
 // Every controller under com.calls.calls.MODULE returns this envelope.
 export interface ApiResponse<T> {
   success: boolean;

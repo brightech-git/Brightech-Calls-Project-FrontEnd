@@ -1,15 +1,18 @@
 // service/UserRoleService.ts
 
-import { axiosInstance } from "@/api/axiosInstance";
-import { UserRole, UserRolePayload } from "@/types/UserRole/UserRole";
-import { ApiResponse } from "@/types/ApiResponse";
+import { axiosInstance } from '@/api/axiosInstance';
+import { UserRole, UserRolePayload } from '@/types/UserRole/UserRole';
+import { ApiResponse } from '@/types/ApiResponse';
 
-const BASE_URL = "/userrole";
+const BASE_URL = '/userrole';
 
 export const fetchUserRoles = async () => {
-  const { data } = await axiosInstance.get<UserRole[] | ApiResponse<UserRole[]>>(BASE_URL);
+  const { data } = await axiosInstance.get<UserRole[] | ApiResponse<UserRole[]>>(
+    BASE_URL,
+  );
   const records = Array.isArray(data) ? data : data.data;
-  if (!Array.isArray(records)) throw new Error("The user roles response could not be read.");
+  if (!Array.isArray(records))
+    throw new Error('The user roles response could not be read.');
   return records;
 };
 

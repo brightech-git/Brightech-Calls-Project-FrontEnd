@@ -9,7 +9,7 @@ export interface StaffPayload {
   ADDRESS2?: string | null;
   ADDRESS3?: string | null;
   DOJ?: string | null;
-  ACTIVE: "Y" | "N";
+  ACTIVE: 'Y' | 'N';
 }
 
 export interface StaffRecord extends StaffPayload {

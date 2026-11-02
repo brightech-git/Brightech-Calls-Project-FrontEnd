@@ -2,7 +2,8 @@
 // hooks/auth/useAuth.ts
 // ─────────────────────────────────────────────
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { saveSession } from '@/lib/auth/session';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   loginUser,
@@ -11,7 +12,7 @@ import {
   getUserById,
   updateUser,
   deleteUser,
-} from "@/services/AuthService";
+} from '@/services/AuthService';
 
 import {
   LoginPayload,
@@ -19,8 +20,8 @@ import {
   UpdateUserPayload,
   AuthResponse,
   UserRecord,
-} from "@/types/Auth/Auth";
-import { ApiResponse } from "@/types/ApiResponse";
+} from '@/types/Auth/Auth';
+import { ApiResponse } from '@/types/ApiResponse';
 
 // LOGIN HOOK
 export const useLogin = () => {
@@ -31,33 +32,30 @@ export const useLogin = () => {
       return loginUser(payload);
     },
 
-
     onSuccess: (data: ApiResponse<AuthResponse>) => {
-
-      localStorage.setItem("isLoggedIn",  "true");
-      localStorage.setItem("calls_token",       data?.data?.token ?? "");
-      localStorage.setItem("userId",      String(data?.data?.userId ?? ""));
-      localStorage.setItem("staffId",     String(data?.data?.staffId ?? ""));
-      localStorage.setItem("username",    data?.data?.username ?? "");
-      localStorage.setItem("staffName",   data?.data?.staffName ?? "");
-      localStorage.setItem("role",        data?.data?.role ?? "");
-      localStorage.setItem("mobileNo",    data?.data?.mobileNo ?? "");
-      localStorage.setItem("active",      data?.data?.active ?? "");
-      localStorage.setItem("isClient",    data?.data?.isClient ?? "N");
-      localStorage.setItem("clientId",    String(data?.data?.clientId ?? ""));
-      localStorage.setItem("user",        JSON.stringify(data));
-      if (data?.data?.menuIds) {
-        localStorage.setItem("menuIds", JSON.stringify(data?.data?.menuIds));
-      } else {
-        localStorage.removeItem("menuIds");
-      }
+      const session = data.data;
+      saveSession({
+        isLoggedIn: 'true',
+        calls_token: session.token ?? '',
+        userId: String(session.userId ?? ''),
+        staffId: String(session.staffId ?? ''),
+        username: session.username ?? '',
+        staffName: session.staffName ?? '',
+        role: session.roleName ?? session.role ?? '',
+        mobileNo: session.mobileNo ?? '',
+        active: session.active ?? '',
+        isClient: session.isClient ?? 'N',
+        clientId: String(session.clientId ?? ''),
+        menuIds: session.menuIds ? JSON.stringify(session.menuIds) : null,
+        user: JSON.stringify({ ...data, data: { ...session, token: undefined } }),
+      });
 
       queryClient.clear();
-      window.dispatchEvent(new Event("calls-session-change"));
+      window.dispatchEvent(new Event('calls-session-change'));
     },
 
     onError: (error) => {
-      console.log("Login Error:", error);
+      console.log('Login Error:', error);
     },
   });
 };
@@ -71,18 +69,16 @@ export const useRegister = () => {
       return registerUser(payload);
     },
 
-    onSuccess: (data: ApiResponse<AuthResponse>) => {
-
-      localStorage.setItem("calls_token", data?.data?.token ?? "");
-      localStorage.setItem("user", JSON.stringify(data));
-
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['all-users'] });
+      void queryClient.invalidateQueries({ queryKey: ['dashboard-employees'] });
       queryClient.invalidateQueries({
-        queryKey: ["auth-register"],
+        queryKey: ['auth-register'],
       });
     },
 
     onError: (error) => {
-      console.log("Register Error:", error);
+      console.log('Register Error:', error);
     },
   });
 };
@@ -90,16 +86,16 @@ export const useRegister = () => {
 // GET ALL USERS HOOK
 export const useGetAllUsers = () => {
   return useQuery<ApiResponse<UserRecord[]>, Error, UserRecord[]>({
-    queryKey: ["all-users"],
+    queryKey: ['all-users'],
     queryFn: getAllUsers,
-    select: (res) => res?.data ?? []
+    select: (res) => res?.data ?? [],
   });
 };
 
 // GET USER BY ID HOOK
 export const useGetUserById = (id: string) => {
   return useQuery<UserRecord>({
-    queryKey: ["user", id],
+    queryKey: ['user', id],
     queryFn: () => getUserById(id),
     enabled: !!id,
   });
@@ -112,7 +108,7 @@ export const useUpdateUser = () => {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateUserPayload }) =>
       updateUser(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["all-users"] });
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
     },
   });
 };
@@ -123,7 +119,7 @@ export const useDeleteUser = () => {
   return useMutation({
     mutationFn: (id: string) => deleteUser(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["all-users"] });
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
     },
   });
 };

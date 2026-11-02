@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   createContext,
@@ -7,12 +7,12 @@ import {
   useEffect,
   useCallback,
   ReactNode,
-} from "react";
+} from 'react';
 import {
   menuConfig as APP_MENU_CONFIG,
   hasChildren,
   type MenuEntryConfig,
-} from "@/config/menu/menuConfig";
+} from '@/config/menu/menuConfig';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -20,13 +20,13 @@ import {
 
 // A leaf route at section level (no group wrapper)
 export type SectionDirectItem = {
-  id : string;
-  type: "direct";
+  id: string;
+  type: 'direct';
   label: string;
   route: string;
   icon: React.ElementType;
   title?: string;
-  description?:string;
+  description?: string;
 };
 
 // A group with icon and items
@@ -41,11 +41,11 @@ export type SectionContent = MenuGroup | SectionDirectItem;
 // Keep existing types
 export type DirectMenuItem = {
   id: string;
-  type: "direct";
+  type: 'direct';
   label: string;
   route: string;
   icon: React.ElementType;
-  title?:string;
+  title?: string;
   description?: string;
 };
 
@@ -53,7 +53,7 @@ export type ParentMenuItem = {
   id: string;
   title?: string;
   description?: string;
-  type: "parent";
+  type: 'parent';
   label: string;
   icon: React.ElementType;
   children: ChildMenuItem[];
@@ -81,9 +81,9 @@ export type SidebarConfig = {
 
 /** Everything a consumer component can read / call. */
 export type SidebarContextType = {
-  currentSection: string|null;
+  currentSection: string | null;
   setCurrentSection: (section: string) => void;
-  multiWindow: boolean ;
+  multiWindow: boolean;
   handleMultiWindow: () => void;
   expandedNodes: Record<string, boolean>;
   toggleNode: (key: string) => void;
@@ -104,8 +104,8 @@ export const useSidebar = (): SidebarContextType => {
   const ctx = useContext(SidebarContext);
   if (!ctx) {
     throw new Error(
-      "[useSidebar] must be called inside <SidebarProvider>. " +
-      "Wrap your layout root with <SidebarProvider>."
+      '[useSidebar] must be called inside <SidebarProvider>. ' +
+        'Wrap your layout root with <SidebarProvider>.',
     );
   }
   return ctx;
@@ -128,8 +128,8 @@ function buildMenuFromConfig(entries: MenuEntryConfig[]): SidebarMenu {
       const section: Record<string, SectionContent> = {};
       if (entry.href) {
         section[entry.id] = {
-          type: "direct",
-          id : entry.id,
+          type: 'direct',
+          id: entry.id,
           label: entry.label,
           route: entry.href,
           icon: entry.icon,
@@ -137,10 +137,10 @@ function buildMenuFromConfig(entries: MenuEntryConfig[]): SidebarMenu {
       }
       entry.children!.forEach((child) => {
         section[child.id] = {
-          id : child.id,
-          type: "direct",
+          id: child.id,
+          type: 'direct',
           label: child.label,
-          route: child.href ?? "",
+          route: child.href ?? '',
           icon: child.icon,
         };
       });
@@ -148,10 +148,10 @@ function buildMenuFromConfig(entries: MenuEntryConfig[]): SidebarMenu {
     } else {
       menu[entry.label] = {
         [entry.id]: {
-          id : entry.id,
-          type: "direct",
+          id: entry.id,
+          type: 'direct',
           label: entry.label,
-          route: entry.href ?? "",
+          route: entry.href ?? '',
           icon: entry.icon,
         },
       };
@@ -168,49 +168,42 @@ const STATIC_MENU: SidebarMenu = buildMenuFromConfig(APP_MENU_CONFIG);
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** localStorage key used to persist the sidebar collapsed state. */
-const LS_COLLAPSED_KEY = "sidebar-collapsed";
+const LS_COLLAPSED_KEY = 'sidebar-collapsed';
 
 export const SidebarProvider = ({ children }: { children: ReactNode }) => {
   const [menuData] = useState<SidebarMenu>(STATIC_MENU);
 
-  const [multiWindow , setMultiWindow] = useState<boolean>(false);
+  const [multiWindow, setMultiWindow] = useState<boolean>(false);
 
-  const [currentSection, _setCurrentSection] = useState<string|null>(null);
+  const [currentSection, _setCurrentSection] = useState<string | null>(null);
 
-
-  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
 
   const [sidebarConfig, setSidebarConfig] = useState<SidebarConfig>({
-    collapsedWidth: "64px",
-    expandedWidth: "260px",
+    collapsedWidth: '64px',
+    expandedWidth: '260px',
   });
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
 
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Hydrate sidebar-collapsed state from localStorage once on mount
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
     const stored = localStorage.getItem(LS_COLLAPSED_KEY);
-    if (stored !== null) setSidebarCollapsed(stored === "true");
+    if (stored !== null) setSidebarCollapsed(stored === 'true');
     setIsHydrated(true);
   }, []);
 
   const handleMultiWindow = () => {
-    setMultiWindow(prev => !prev);
+    setMultiWindow((prev) => !prev);
   };
 
-  const setCurrentSection = useCallback(
-    (section: string) => {
-      _setCurrentSection((prev) => (prev === section ? "" : section));
-      setExpandedNodes({});
-    },
-    []
-  );
+  const setCurrentSection = useCallback((section: string) => {
+    _setCurrentSection((prev) => (prev === section ? '' : section));
+    setExpandedNodes({});
+  }, []);
 
   const toggleNode = useCallback((key: string) => {
     setExpandedNodes((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -224,12 +217,9 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
-  const updateSidebarConfig = useCallback(
-    (config: Partial<SidebarConfig>) => {
-      setSidebarConfig((prev) => ({ ...prev, ...config }));
-    },
-    []
-  );
+  const updateSidebarConfig = useCallback((config: Partial<SidebarConfig>) => {
+    setSidebarConfig((prev) => ({ ...prev, ...config }));
+  }, []);
 
   if (!isHydrated) return null;
 

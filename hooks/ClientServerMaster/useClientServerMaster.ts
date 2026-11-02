@@ -2,7 +2,7 @@
 // hooks/ClientServerMaster/useClientServerMaster.ts
 // ─────────────────────────────────────────────
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ClientServerFilters,
   createClientServer,
@@ -10,10 +10,10 @@ import {
   getAllClientServers,
   getClientServerById,
   updateClientServer,
-} from "@/services/ClientServerMasterService";
-import { ClientServerPayload } from "@/types/ClientServerMaster/ClientServerMaster";
+} from '@/services/ClientServerMasterService';
+import { ClientServerPayload } from '@/types/ClientServerMaster/ClientServerMaster';
 
-const CLIENT_SERVER_KEY = ["client-server-list"];
+const CLIENT_SERVER_KEY = ['client-server-list'];
 
 // GET ALL
 export const useClientServerList = (filters?: ClientServerFilters) =>
@@ -26,7 +26,7 @@ export const useClientServerList = (filters?: ClientServerFilters) =>
 // GET BY ID
 export const useGetClientServerById = (id: string) =>
   useQuery({
-    queryKey: ["client-server", id],
+    queryKey: ['client-server', id],
     queryFn: () => getClientServerById(id),
     enabled: !!id,
   });

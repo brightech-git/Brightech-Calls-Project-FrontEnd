@@ -1,755 +1,901 @@
-import React, {
-    useState, useRef, useCallback, useMemo, useEffect, memo,
-} from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect, memo } from 'react';
 import { SwitchInput } from '@/components/ui/SwitchInput';
 import { COLORS, FONT } from '@/utils/theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ColumnDef {
-    key: string;
-    label: string;
-    width?: number;
-    align?: 'left' | 'center' | 'right';
-    required?: boolean;
-    decimalScale?: number;
-    computed?: boolean;
-    disabled?: boolean;
-    sticky?: boolean;
-    max?:number;
+  key: string;
+  label: string;
+  width?: number;
+  align?: 'left' | 'center' | 'right';
+  required?: boolean;
+  decimalScale?: number;
+  computed?: boolean;
+  disabled?: boolean;
+  sticky?: boolean;
+  max?: number;
 }
 
 export interface CellCoord {
-    rowIndex: number;
-    colKey: string;
+  rowIndex: number;
+  colKey: string;
 }
 
 export interface RenderCellParams {
-    row: Record<string, any>;
-    rowIndex: number;
-    col: ColumnDef;
-    value: any;
-    isEditing: boolean;         // this specific cell is the active edit cell
-    isFocused: boolean;         // this cell is in the focused row
-    isError: boolean;
-    errorMessage?: string;
-    isTouched: boolean;
-    onChange: (value: any) => void;
-    onCommit: () => void;       // confirm value + move to next cell
-    onCancel: () => void;       // escape — revert + blur
-    inputRef: React.RefObject<any>;
+  row: Record<string, any>;
+  rowIndex: number;
+  col: ColumnDef;
+  value: any;
+  isEditing: boolean; // this specific cell is the active edit cell
+  isFocused: boolean; // this cell is in the focused row
+  isError: boolean;
+  errorMessage?: string;
+  isTouched: boolean;
+  onChange: (value: any) => void;
+  onCommit: () => void; // confirm value + move to next cell
+  onCancel: () => void; // escape — revert + blur
+  inputRef: React.RefObject<any>;
 }
 
 export interface RenderRowParams {
-    row: Record<string, any>;
-    rowIndex: number;
-    columns: ColumnDef[];
-    isActiveRow: boolean;
-    activeColKey: string | null;
-    renderCell: (col: ColumnDef) => React.ReactNode;
-    onRowClick: () => void;
-    onDeleteRow: () => void;
-    onDuplicateRow?: () => void;
-    rowStyle: React.CSSProperties;
+  row: Record<string, any>;
+  rowIndex: number;
+  columns: ColumnDef[];
+  isActiveRow: boolean;
+  activeColKey: string | null;
+  renderCell: (col: ColumnDef) => React.ReactNode;
+  onRowClick: () => void;
+  onDeleteRow: () => void;
+  onDuplicateRow?: () => void;
+  rowStyle: React.CSSProperties;
 }
 
 export interface ExcelGridProps {
-    // Data
-    columns: ColumnDef[];
-    rows: Record<string, any>[];
+  // Data
+  columns: ColumnDef[];
+  rows: Record<string, any>[];
 
-    // Cell rendering — parent owns all input rendering
-    renderCell: (params: RenderCellParams) => React.ReactNode;
+  // Cell rendering — parent owns all input rendering
+  renderCell: (params: RenderCellParams) => React.ReactNode;
 
-    // Row rendering — optional full row override
-    renderRow?: (params: RenderRowParams) => React.ReactNode;
+  // Row rendering — optional full row override
+  renderRow?: (params: RenderRowParams) => React.ReactNode;
 
-    // Callbacks — table has ZERO state mutation; parent owns all data
-    onCellChange: (rowIndex: number, colKey: string, value: any) => void;
-    onRowAdd?: () => void;
-    onRowDelete?: (rowIndex: number) => void;
-    onRowDuplicate?: (rowIndex: number) => void;
-    onActiveChange?: (coord: CellCoord | null) => void;
+  // Callbacks — table has ZERO state mutation; parent owns all data
+  onCellChange: (rowIndex: number, colKey: string, value: any) => void;
+  onRowAdd?: () => void;
+  onRowDelete?: (rowIndex: number) => void;
+  onRowDuplicate?: (rowIndex: number) => void;
+  onActiveChange?: (coord: CellCoord | null) => void;
 
-    // Validation — fully external
-    errors?: Record<string, string>;      // key: `${rowIndex}_${colKey}`
-    touched?: Record<string, boolean>;    // key: `${rowIndex}_${colKey}`
+  // Validation — fully external
+  errors?: Record<string, string>; // key: `${rowIndex}_${colKey}`
+  touched?: Record<string, boolean>; // key: `${rowIndex}_${colKey}`
 
-    // Navigation
-    showEnterNavigate?: boolean;
+  // Navigation
+  showEnterNavigate?: boolean;
 
-    // Display
-    title?: string;
-    showTotals?: boolean;
-    showAddRow?: boolean;
-    showDeleteRow?: boolean;
-    showDuplicateRow?: boolean;
-    maxVisibleRows?: number;
-    accentColor?: string;
-    getCellStyle?: (rowIndex: number, col: ColumnDef) => React.CSSProperties;
-    getRowStyle?: (rowIndex: number, row: Record<string, any>) => React.CSSProperties;
-    getHeaderStyle?: (rowIndex: number, row: Record<string, any>) => React.CSSProperties;
+  // Display
+  title?: string;
+  showTotals?: boolean;
+  showAddRow?: boolean;
+  showDeleteRow?: boolean;
+  showDuplicateRow?: boolean;
+  maxVisibleRows?: number;
+  accentColor?: string;
+  getCellStyle?: (rowIndex: number, col: ColumnDef) => React.CSSProperties;
+  getRowStyle?: (rowIndex: number, row: Record<string, any>) => React.CSSProperties;
+  getHeaderStyle?: (rowIndex: number, row: Record<string, any>) => React.CSSProperties;
 
-    // Computed column values — parent provides the formula
-    computeCell?: (colKey: string, row: Record<string, any>) => any;
+  // Computed column values — parent provides the formula
+  computeCell?: (colKey: string, row: Record<string, any>) => any;
 
-    // Totals — parent decides what to show
-    renderTotalCell?: (col: ColumnDef, rows: Record<string, any>[]) => React.ReactNode;
+  // Totals — parent decides what to show
+  renderTotalCell?: (col: ColumnDef, rows: Record<string, any>[]) => React.ReactNode;
 
-    // Focus control
-    initialFocusCell?: CellCoord;        // focus this cell on mount
-    initialFocusCol?: string;            // colKey to focus on new row add; falls back to initialFocusCell?.colKey then first navigable col
-    focusAfterModal?: { cell: CellCoord; trigger: number }; // focus after modal closes; trigger increments on each close
-    disableEnterOnMount?: boolean;       // block Enter for 300ms after mount (prevents modal-open Enter bleed)
+  // Focus control
+  initialFocusCell?: CellCoord; // focus this cell on mount
+  initialFocusCol?: string; // colKey to focus on new row add; falls back to initialFocusCell?.colKey then first navigable col
+  focusAfterModal?: { cell: CellCoord; trigger: number }; // focus after modal closes; trigger increments on each close
+  disableEnterOnMount?: boolean; // block Enter for 300ms after mount (prevents modal-open Enter bleed)
 
-    // Editing state
-    // tranEditing: true  → a transaction row is selected/being viewed (rows loaded from API)
-    // isModifying: true  → user is actively editing an existing transaction
-    //
-    // Auto-focus on mount is ONLY triggered when BOTH are false (i.e. fresh/new transaction).
-    // Enter → moveNext and Tab navigation ALWAYS work regardless of these flags.
-    tranEditing: boolean;
-    isModifying?: boolean;
-    manualEntry?:boolean;
+  // Editing state
+  // tranEditing: true  → a transaction row is selected/being viewed (rows loaded from API)
+  // isModifying: true  → user is actively editing an existing transaction
+  //
+  // Auto-focus on mount is ONLY triggered when BOTH are false (i.e. fresh/new transaction).
+  // Enter → moveNext and Tab navigation ALWAYS work regardless of these flags.
+  tranEditing: boolean;
+  isModifying?: boolean;
+  manualEntry?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function errKey(ri: number, colKey: string) { return `${ri}_${colKey}`; }
+function errKey(ri: number, colKey: string) {
+  return `${ri}_${colKey}`;
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 // Thin wrapper: memoises each row so only the changed row re-renders
 const GridRow = memo(function GridRow({
-    renderRowContent,
+  renderRowContent,
 }: {
-    renderRowContent: () => React.ReactNode;
+  renderRowContent: () => React.ReactNode;
 }) {
-    return <>{renderRowContent()}</>;
+  return <>{renderRowContent()}</>;
 });
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const ExcelGrid: React.FC<ExcelGridProps> = ({
-    columns,
-    rows,
-    renderCell,
-    renderRow,
-    onCellChange,
-    onRowAdd,
-    onRowDelete,
-    onRowDuplicate,
-    onActiveChange,
-    errors = {},
-    touched = {},
-    showEnterNavigate = false,
-    title,
-    showTotals = false,
-    showAddRow = true,
-    showDeleteRow = true,
-    showDuplicateRow = false,
-    maxVisibleRows = 10,
-    accentColor = '#185FA5',
-    getCellStyle,
-    getRowStyle,
-    getHeaderStyle,
-    computeCell,
-    renderTotalCell,
-    initialFocusCell,
-    initialFocusCol,
-    focusAfterModal,
-    disableEnterOnMount = false,
-    tranEditing,
-    isModifying = false,
-    manualEntry =true,
+  columns,
+  rows,
+  renderCell,
+  renderRow,
+  onCellChange,
+  onRowAdd,
+  onRowDelete,
+  onRowDuplicate,
+  onActiveChange,
+  errors = {},
+  touched = {},
+  showEnterNavigate = false,
+  title,
+  showTotals = false,
+  showAddRow = true,
+  showDeleteRow = true,
+  showDuplicateRow = false,
+  maxVisibleRows = 10,
+  accentColor = '#185FA5',
+  getCellStyle,
+  getRowStyle,
+  getHeaderStyle,
+  computeCell,
+  renderTotalCell,
+  initialFocusCell,
+  initialFocusCol,
+  focusAfterModal,
+  disableEnterOnMount = false,
+  tranEditing,
+  isModifying = false,
+  manualEntry = true,
 }) => {
+  const [activeCell, setActiveCell] = useState<CellCoord | null>(null);
+  const [enterNavigation, setEnterNavigation] = useState<'column' | 'row'>('column');
 
-    const [activeCell, setActiveCell] = useState<CellCoord | null>(null);
-    const [enterNavigation, setEnterNavigation] = useState<"column" | "row">("column");
+  // ── Block Enter briefly after mount (modal open Enter bleed-through) ──────
+  const enterBlockedRef = useRef(false);
+  const enterLockRef = useRef(false);
 
-    // ── Block Enter briefly after mount (modal open Enter bleed-through) ──────
-    const enterBlockedRef = useRef(false);
-    const enterLockRef = useRef(false);
+  useEffect(() => {
+    if (!disableEnterOnMount) return;
+    enterBlockedRef.current = true;
+    const t = setTimeout(() => {
+      enterBlockedRef.current = false;
+    }, 300);
+    return () => clearTimeout(t);
+  }, [disableEnterOnMount]);
 
-    useEffect(() => {
-        if (!disableEnterOnMount) return;
-        enterBlockedRef.current = true;
-        const t = setTimeout(() => { enterBlockedRef.current = false; }, 300);
-        return () => clearTimeout(t);
-    }, [disableEnterOnMount]);
+  // inputRefs keyed by `${rowIndex}_${colKey}` — stable across renders
+  const inputRefs = useRef<Record<string, React.RefObject<any>>>({});
+  function getInputRef(ri: number, colKey: string) {
+    const k = errKey(ri, colKey);
+    if (!inputRefs.current[k]) inputRefs.current[k] = React.createRef();
+    return inputRefs.current[k];
+  }
 
-    // inputRefs keyed by `${rowIndex}_${colKey}` — stable across renders
-    const inputRefs = useRef<Record<string, React.RefObject<any>>>({});
-    function getInputRef(ri: number, colKey: string) {
-        const k = errKey(ri, colKey);
-        if (!inputRefs.current[k]) inputRefs.current[k] = React.createRef();
-        return inputRefs.current[k];
+  // Navigable (editable) columns only
+  const navigableCols = useMemo(
+    () => columns.filter((c) => !c.computed && !c.disabled),
+    [columns],
+  );
+
+  // ── Resolve which col to focus on new row ─────────────────────────────────
+  // Priority: initialFocusCol → initialFocusCell.colKey → first navigable col
+  const newRowFocusCol = useMemo(() => {
+    if (initialFocusCol) return initialFocusCol;
+    if (initialFocusCell?.colKey) return initialFocusCell.colKey;
+    return navigableCols.find((c) => !c.disabled)?.key ?? navigableCols[0]?.key;
+  }, [initialFocusCol, initialFocusCell, navigableCols]);
+
+  // ── Focus a cell ──────────────────────────────────────────────────────────
+  const focusCell = useCallback(
+    (ri: number, colKey: string, delay = 20, shouldFocus = true) => {
+      const coord: CellCoord = { rowIndex: ri, colKey };
+
+      setActiveCell(coord);
+      onActiveChange?.(coord);
+
+      // only DOM focus is blocked, NOT navigation/state
+      if (!shouldFocus) return;
+
+      setTimeout(() => {
+        const ref = inputRefs.current[errKey(ri, colKey)];
+        ref?.current?.focus?.();
+        ref?.current?.select?.();
+      }, delay);
+    },
+    [onActiveChange],
+  );
+
+  const hasAutoFocused = useRef(false);
+
+  useEffect(() => {
+    hasAutoFocused.current = false;
+  }, [tranEditing]);
+
+  useEffect(() => {
+    if (tranEditing && !isModifying) return;
+
+    if (hasAutoFocused.current) return;
+
+    hasAutoFocused.current = true;
+    focusCell(0, initialFocusCell?.colKey ?? 'ITEM', 50, true);
+  }, [tranEditing, isModifying]);
+
+  // ── Initial focus on mount (only for new transactions) ───────────────────
+  useEffect(() => {
+    if (!initialFocusCell) return;
+    if (tranEditing && !isModifying) return;
+
+    const t = setTimeout(() => {
+      focusCell(initialFocusCell.rowIndex, initialFocusCell.colKey);
+    }, 100);
+    return () => clearTimeout(t);
+  }, []);
+
+  // ── Focus cell after modal closes ─────────────────────────────────────────
+  useEffect(() => {
+    if (!focusAfterModal) return;
+    if (tranEditing && !isModifying) return;
+
+    const t = setTimeout(() => {
+      focusCell(focusAfterModal.cell.rowIndex, focusAfterModal.cell.colKey);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [focusAfterModal?.trigger]);
+
+  const prevRowCountRef = useRef(rows.length);
+  const rowAddedByNavigationRef = useRef(false);
+
+  useEffect(() => {
+    const prev = prevRowCountRef.current;
+    const curr = rows.length;
+    prevRowCountRef.current = curr;
+
+    if (curr <= prev) return; // not a new row addition
+
+    // moveNext already handled focus — skip
+    if (rowAddedByNavigationRef.current) {
+      rowAddedByNavigationRef.current = false;
+      return;
     }
 
-    // Navigable (editable) columns only
-    const navigableCols = useMemo(
-        () => columns.filter(c => !c.computed && !c.disabled),
-        [columns]
-    );
+    // External add: toolbar "+ Add Row" or programmatic parent add.
+    // This is always a user-initiated action so focus regardless of isModifying.
 
-    // ── Resolve which col to focus on new row ─────────────────────────────────
-    // Priority: initialFocusCol → initialFocusCell.colKey → first navigable col
-    const newRowFocusCol = useMemo(() => {
-        if (initialFocusCol) return initialFocusCol;
-        if (initialFocusCell?.colKey) return initialFocusCell.colKey;
-        return navigableCols.find(c => !c.disabled)?.key ?? navigableCols[0]?.key;
-    }, [initialFocusCol, initialFocusCell, navigableCols]);
+    // if (newRowFocusCol && !tranEditing && isModifying) {
+    //     focusCell(curr - 1, newRowFocusCol);
+    // }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows.length]);
 
-    // ── Focus a cell ──────────────────────────────────────────────────────────
-    const focusCell = useCallback(
-        (ri: number, colKey: string, delay = 20, shouldFocus = true) => {
-            const coord: CellCoord = { rowIndex: ri, colKey };
+  // ── Navigate: Enter / Tab ─────────────────────────────────────────────────
+  // NOTE: moveNext has NO awareness of tranEditing / isModifying.
+  // It must always work freely — those flags only control initial auto-focus.
+  const moveNext = useCallback(
+    (ri: number, colKey: string) => {
+      const ci = navigableCols.findIndex((c) => c.key === colKey);
 
-            setActiveCell(coord);
-            onActiveChange?.(coord);
-
-            // only DOM focus is blocked, NOT navigation/state
-            if (!shouldFocus) return;
-
-            setTimeout(() => {
-                const ref = inputRefs.current[errKey(ri, colKey)];
-                ref?.current?.focus?.();
-                ref?.current?.select?.();
-            }, delay);
-        },
-        [onActiveChange]
-    );
-
-    const hasAutoFocused = useRef(false);
-
-    useEffect(() => {
-        hasAutoFocused.current = false;
-    }, [tranEditing]);
-
-    useEffect(() => {
-        if (tranEditing && !isModifying) return;
-
-        if (hasAutoFocused.current) return;
-
-        hasAutoFocused.current = true;
-        focusCell(0, initialFocusCell?.colKey ?? "ITEM", 50, true);
-
-    }, [tranEditing, isModifying]);
-
-    // ── Initial focus on mount (only for new transactions) ───────────────────
-    useEffect(() => {
-
-        if (!initialFocusCell) return;
-        if (tranEditing && !isModifying) return;
-
-        const t = setTimeout(() => {
-            focusCell(initialFocusCell.rowIndex, initialFocusCell.colKey);
-        }, 100);
-        return () => clearTimeout(t);
-    }, []); 
-
-    // ── Focus cell after modal closes ─────────────────────────────────────────
-    useEffect(() => {
-        if (!focusAfterModal) return;
-        if(tranEditing && !isModifying) return ;
-        
-        const t = setTimeout(() => {
-            focusCell(focusAfterModal.cell.rowIndex, focusAfterModal.cell.colKey);
-        }, 150);
-        return () => clearTimeout(t);
-    }, [focusAfterModal?.trigger]);
-
-
-    const prevRowCountRef = useRef(rows.length);
-    const rowAddedByNavigationRef = useRef(false);
-
-    useEffect(() => {
-        const prev = prevRowCountRef.current;
-        const curr = rows.length;
-        prevRowCountRef.current = curr;
-
-        if (curr <= prev) return; // not a new row addition
-
-        // moveNext already handled focus — skip
-        if (rowAddedByNavigationRef.current) {
-            rowAddedByNavigationRef.current = false;
-            return;
+      if (enterNavigation === 'column') {
+        // COLUMN MODE: Find next focusable column to the right
+        let nextColIdx = ci + 1;
+        while (
+          nextColIdx < navigableCols.length &&
+          navigableCols[nextColIdx].disabled === true
+        ) {
+          nextColIdx++;
         }
 
-        // External add: toolbar "+ Add Row" or programmatic parent add.
-        // This is always a user-initiated action so focus regardless of isModifying.
-
-        // if (newRowFocusCol && !tranEditing && isModifying) {
-        //     focusCell(curr - 1, newRowFocusCol);
-        // }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rows.length]);
-
-    // ── Navigate: Enter / Tab ─────────────────────────────────────────────────
-    // NOTE: moveNext has NO awareness of tranEditing / isModifying.
-    // It must always work freely — those flags only control initial auto-focus.
-    const moveNext = useCallback((ri: number, colKey: string) => {
-        const ci = navigableCols.findIndex(c => c.key === colKey);
-
-        if (enterNavigation === 'column') {
-            // COLUMN MODE: Find next focusable column to the right
-            let nextColIdx = ci + 1;
-            while (nextColIdx < navigableCols.length && navigableCols[nextColIdx].disabled === true) {
-                nextColIdx++;
-            }
-
-            if (nextColIdx < navigableCols.length) {
-                // Found a focusable column in current row
-                focusCell(ri, navigableCols[nextColIdx].key);
-            } else if (ri < rows.length - 1) {
-                // Move to next row, first focusable column
-                focusCell(ri + 1, newRowFocusCol ?? navigableCols[0].key);
-            } else {
-                // Last row — add new row, moveNext owns the focus
-                rowAddedByNavigationRef.current = true;
-                onRowAdd?.();
-                setTimeout(() => {
-                    focusCell(rows.length, newRowFocusCol ?? navigableCols[0].key);
-                }, 20);
-            }
+        if (nextColIdx < navigableCols.length) {
+          // Found a focusable column in current row
+          focusCell(ri, navigableCols[nextColIdx].key);
+        } else if (ri < rows.length - 1) {
+          // Move to next row, first focusable column
+          focusCell(ri + 1, newRowFocusCol ?? navigableCols[0].key);
         } else {
-            // ROW MODE: Move down within column
-            if (ri < rows.length - 1 && !navigableCols[ci]?.disabled) {
-                focusCell(ri + 1, colKey);
-            } else {
-                // Find next focusable column
-                let nextColIdx = ci + 1;
-                while (nextColIdx < navigableCols.length && navigableCols[nextColIdx].disabled === true) {
-                    nextColIdx++;
-                }
-
-                if (nextColIdx < navigableCols.length) {
-                    focusCell(0, navigableCols[nextColIdx].key);
-                } else {
-                    // No more — add new row, moveNext owns the focus
-                    rowAddedByNavigationRef.current = true;
-                    onRowAdd?.();
-                    setTimeout(() => focusCell(rows.length, newRowFocusCol ?? colKey), 20);
-                }
-            }
+          // Last row — add new row, moveNext owns the focus
+          rowAddedByNavigationRef.current = true;
+          onRowAdd?.();
+          setTimeout(() => {
+            focusCell(rows.length, newRowFocusCol ?? navigableCols[0].key);
+          }, 20);
         }
-    }, [navigableCols, enterNavigation, rows.length, focusCell, onRowAdd, newRowFocusCol]);
+      } else {
+        // ROW MODE: Move down within column
+        if (ri < rows.length - 1 && !navigableCols[ci]?.disabled) {
+          focusCell(ri + 1, colKey);
+        } else {
+          // Find next focusable column
+          let nextColIdx = ci + 1;
+          while (
+            nextColIdx < navigableCols.length &&
+            navigableCols[nextColIdx].disabled === true
+          ) {
+            nextColIdx++;
+          }
 
-    const movePrev = useCallback((ri: number, colKey: string) => {
-        const ci = navigableCols.findIndex(c => c.key === colKey);
-        if (ci > 0) {
-            focusCell(ri, navigableCols[ci - 1].key);
-        } else if (ri > 0) {
-            focusCell(ri - 1, navigableCols[navigableCols.length - 1].key);
+          if (nextColIdx < navigableCols.length) {
+            focusCell(0, navigableCols[nextColIdx].key);
+          } else {
+            // No more — add new row, moveNext owns the focus
+            rowAddedByNavigationRef.current = true;
+            onRowAdd?.();
+            setTimeout(() => focusCell(rows.length, newRowFocusCol ?? colKey), 20);
+          }
         }
-    }, [navigableCols, focusCell]);
+      }
+    },
+    [navigableCols, enterNavigation, rows.length, focusCell, onRowAdd, newRowFocusCol],
+  );
 
-    // ── Cancel / blur ─────────────────────────────────────────────────────────
-    const cancelEdit = useCallback(() => {
-        setActiveCell(null);
-        onActiveChange?.(null);
-    }, [onActiveChange]);
+  const movePrev = useCallback(
+    (ri: number, colKey: string) => {
+      const ci = navigableCols.findIndex((c) => c.key === colKey);
+      if (ci > 0) {
+        focusCell(ri, navigableCols[ci - 1].key);
+      } else if (ri > 0) {
+        focusCell(ri - 1, navigableCols[navigableCols.length - 1].key);
+      }
+    },
+    [navigableCols, focusCell],
+  );
 
-    // ── Global keyboard handler (table-level) ─────────────────────────────────
-    const handleTableKeyDown = useCallback((
-        e: React.KeyboardEvent,
-        ri: number,
-        colKey: string,
-    ) => {
-        const target = e.target as HTMLInputElement;
-        const tagName = target.tagName;
-        const inputType = target.type?.toLowerCase() ?? "";
+  // ── Cancel / blur ─────────────────────────────────────────────────────────
+  const cancelEdit = useCallback(() => {
+    setActiveCell(null);
+    onActiveChange?.(null);
+  }, [onActiveChange]);
 
-        const isNumberInput = tagName === 'INPUT' && inputType === 'number';
-        const isTextInput = tagName === 'INPUT' && (inputType === 'text' || inputType === '');
-        const isComboboxInput = isTextInput && target.getAttribute('role') === 'combobox';
-        const isSelect = tagName === 'SELECT';
-        const isTextArea = tagName === 'TEXTAREA';
+  // ── Global keyboard handler (table-level) ─────────────────────────────────
+  const handleTableKeyDown = useCallback(
+    (e: React.KeyboardEvent, ri: number, colKey: string) => {
+      const target = e.target as HTMLInputElement;
+      const tagName = target.tagName;
+      const inputType = target.type?.toLowerCase() ?? '';
 
-        const shouldBlockArrowUpDown = isNumberInput || isComboboxInput || isSelect;
+      const isNumberInput = tagName === 'INPUT' && inputType === 'number';
+      const isTextInput =
+        tagName === 'INPUT' && (inputType === 'text' || inputType === '');
+      const isComboboxInput = isTextInput && target.getAttribute('role') === 'combobox';
+      const isSelect = tagName === 'SELECT';
+      const isTextArea = tagName === 'TEXTAREA';
 
-        switch (e.key) {
-            case 'Enter':
+      const shouldBlockArrowUpDown = isNumberInput || isComboboxInput || isSelect;
 
-                if (enterBlockedRef.current) {
-                    e.preventDefault();
-                    break;
-                }
+      switch (e.key) {
+        case 'Enter':
+          if (enterBlockedRef.current) {
+            e.preventDefault();
+            break;
+          }
 
-                // prevent double enter firing
-                if (enterLockRef.current) {
-                    e.preventDefault();
-                    break;
-                }
+          // prevent double enter firing
+          if (enterLockRef.current) {
+            e.preventDefault();
+            break;
+          }
 
-                enterLockRef.current = true;
-                e.preventDefault();
-                moveNext(ri, colKey);
+          enterLockRef.current = true;
+          e.preventDefault();
+          moveNext(ri, colKey);
 
-                setTimeout(() => {
-                    enterLockRef.current = false;
-                }, 50);
+          setTimeout(() => {
+            enterLockRef.current = false;
+          }, 50);
 
-                break;
+          break;
 
-            case 'Tab':
-                e.preventDefault();
-                e.shiftKey ? movePrev(ri, colKey) : moveNext(ri, colKey);
-                break;
+        case 'Tab':
+          e.preventDefault();
+          e.shiftKey ? movePrev(ri, colKey) : moveNext(ri, colKey);
+          break;
 
-            case 'Escape':
-                e.preventDefault();
-                cancelEdit();
-                break;
-        }
-    }, [moveNext, movePrev, cancelEdit]);
+        case 'Escape':
+          e.preventDefault();
+          cancelEdit();
+          break;
+      }
+    },
+    [moveNext, movePrev, cancelEdit],
+  );
 
+  const visibleRows = useMemo(() => {
+    if (manualEntry) return rows;
 
+    // hide initial empty row when manual entry is false
+    return rows.filter((row, index) => {
+      // keep rows that have some value
+      const hasValue = row.ITEMID && row.__rowId;
+      console.log(hasValue, 'hasValue');
 
-    const visibleRows = useMemo(() => {
-        if (manualEntry) return rows;
+      return hasValue;
+    });
+  }, [rows, manualEntry]);
+  console.log(visibleRows, 'visibleRows');
 
-        // hide initial empty row when manual entry is false
-        return rows.filter((row, index) => {
-            // keep rows that have some value
-            const hasValue = row.ITEMID && row.__rowId ;
-            console.log(hasValue, 'hasValue');
+  // ── Styles ────────────────────────────────────────────────────────────────
+  const ROW_H = 30;
+  const maxH = maxVisibleRows * ROW_H + 38;
 
-            return hasValue;
-        });
-    }, [rows, manualEntry]);
-    console.log(visibleRows,'visibleRows')
+  const S = useMemo(
+    () => ({
+      root: { fontFamily: 'inherit', fontSize: FONT.size.sm } as React.CSSProperties,
+      toolbar: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '6px 10px',
+        background: COLORS.gray50,
+        border: `1px solid ${COLORS.gray200}`,
+        borderBottom: 'none',
+        borderRadius: '6px 6px 0 0',
+      } as React.CSSProperties,
+      wrap: {
+        border: `1px solid ${COLORS.gray200}`,
+        borderTop: 'none',
+        borderRadius: '0 0 6px 6px',
+        overflow: 'hidden',
+      } as React.CSSProperties,
+      scrollArea: {
+        overflowX: 'auto' as const,
+        overflowY: 'auto' as const,
+        maxHeight: maxH,
+      },
+      table: {
+        width: '100%',
+        borderCollapse: 'collapse' as const,
+        tableLayout: 'fixed' as const,
+      },
+      th: {
+        position: 'sticky' as const,
+        top: 0,
+        zIndex: 10,
+        background: '#f7e0d1',
+        fontSize: FONT.size.xs,
+        fontWeight: FONT.weight.semibold,
+        color: COLORS.textSecondary,
+        padding: '5px 5px',
+        borderBottom: `2px solid ${COLORS.gray200}`,
+        borderRight: `1px solid ${COLORS.gray100}`,
+        textAlign: 'left' as const,
+        whiteSpace: 'nowrap' as const,
+        userSelect: 'none' as const,
+      },
+      td: {
+        borderBottom: `1px solid ${COLORS.gray100}`,
+        borderRight: `1px solid ${COLORS.gray100}`,
+        padding: 0,
+        position: 'relative' as const,
+        verticalAlign: 'middle' as const,
+        height: ROW_H,
+      },
+      statusBar: {
+        padding: '3px 10px',
+        fontSize: FONT.size.xs,
+        color: COLORS.textMuted,
+        background: COLORS.gray50,
+        borderTop: `1px solid ${COLORS.gray200}`,
+        display: 'flex',
+        alignItems: 'center',
+      } as React.CSSProperties,
+      tfootTd: {
+        padding: '4px 5px',
+        fontSize: FONT.size.xs,
+        fontWeight: FONT.weight.semibold,
+        background: accentColor,
+        color: 'white',
+        borderRight: '1px solid rgba(255,255,255,0.2)',
+      } as React.CSSProperties,
+      addBtn: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '3px 10px',
+        fontSize: FONT.size.xs,
+        borderRadius: 4,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        border: `1px solid ${COLORS.gray300}`,
+        background: 'white',
+        color: COLORS.textSecondary,
+      } as React.CSSProperties,
+    }),
+    [accentColor, maxH],
+  );
 
-    // ── Styles ────────────────────────────────────────────────────────────────
-    const ROW_H = 30;
-    const maxH = maxVisibleRows * ROW_H + 38;
+  // ── Cell renderer (wraps parent renderCell with table interaction) ────────
+  const renderCellWrapper = useCallback(
+    (row: Record<string, any>, ri: number, col: ColumnDef) => {
+      const k = errKey(ri, col.key);
+      const isEditing = activeCell?.rowIndex === ri && activeCell?.colKey === col.key;
+      const isFocused = activeCell?.rowIndex === ri;
+      const isError = !!errors[k] && !!touched[k];
+      const inputRef = getInputRef(ri, col.key);
 
-    const S = useMemo(() => ({
-        root: { fontFamily: 'inherit', fontSize: FONT.size.sm } as React.CSSProperties,
-        toolbar: {
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '6px 10px',
-            background: COLORS.gray50,
-            border: `1px solid ${COLORS.gray200}`,
-            borderBottom: 'none',
-            borderRadius: '6px 6px 0 0',
-        } as React.CSSProperties,
-        wrap: {
-            border: `1px solid ${COLORS.gray200}`,
-            borderTop: 'none',
-            borderRadius: '0 0 6px 6px',
-            overflow: 'hidden',
-        } as React.CSSProperties,
-        scrollArea: {
-            overflowX: 'auto' as const,
-            overflowY: 'auto' as const,
-            maxHeight: maxH,
-        },
-        table: {
-            width: '100%',
-            borderCollapse: 'collapse' as const,
-            tableLayout: 'fixed' as const,
-        },
-        th: {
-            position: 'sticky' as const, top: 0, zIndex: 10,
-            background: '#f7e0d1',
-            fontSize: FONT.size.xs, fontWeight: FONT.weight.semibold, color: COLORS.textSecondary,
-            padding: '5px 5px',
-            borderBottom: `2px solid ${COLORS.gray200}`,
-            borderRight: `1px solid ${COLORS.gray100}`,
-            textAlign: 'left' as const,
-            whiteSpace: 'nowrap' as const,
-            userSelect: 'none' as const,
-        },
-        td: {
-            borderBottom: `1px solid ${COLORS.gray100}`,
-            borderRight: `1px solid ${COLORS.gray100}`,
-            padding: 0,
-            position: 'relative' as const,
-            verticalAlign: 'middle' as const,
-            height: ROW_H,
-        },
-        statusBar: {
-            padding: '3px 10px', fontSize: FONT.size.xs, color: COLORS.textMuted,
-            background: COLORS.gray50, borderTop: `1px solid ${COLORS.gray200}`,
-            display: 'flex', alignItems: 'center',
-        } as React.CSSProperties,
-        tfootTd: {
-            padding: '4px 5px', fontSize: FONT.size.xs, fontWeight: FONT.weight.semibold,
-            background: accentColor, color: 'white',
-            borderRight: '1px solid rgba(255,255,255,0.2)',
-        } as React.CSSProperties,
-        addBtn: {
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            padding: '3px 10px', fontSize: FONT.size.xs, borderRadius: 4,
-            cursor: 'pointer', fontFamily: 'inherit',
-            border: `1px solid ${COLORS.gray300}`,
-            background: 'white', color: COLORS.textSecondary,
-        } as React.CSSProperties,
-    }), [accentColor, maxH]);
+      const value =
+        col.computed && computeCell ? computeCell(col.key, row) : (row[col.key] ?? '');
 
-    // ── Cell renderer (wraps parent renderCell with table interaction) ────────
-    const renderCellWrapper = useCallback((
-        row: Record<string, any>,
-        ri: number,
-        col: ColumnDef,
-    ) => {
-        const k = errKey(ri, col.key);
-        const isEditing = activeCell?.rowIndex === ri && activeCell?.colKey === col.key;
-        const isFocused = activeCell?.rowIndex === ri;
-        const isError = !!errors[k] && !!touched[k];
-        const inputRef = getInputRef(ri, col.key);
+      const cellStyle: React.CSSProperties = {
+        ...S.td,
+        width: col.width ?? 100,
+        minWidth: col.width ?? 100,
+        outline: isEditing ? `2px solid ${accentColor}` : 'none',
+        outlineOffset: '-2px',
+        background: isError ? '#fff5f5' : undefined,
+        ...getCellStyle?.(ri, col),
+      };
 
-        const value = col.computed && computeCell
-            ? computeCell(col.key, row)
-            : row[col.key] ?? '';
-
-        const cellStyle: React.CSSProperties = {
-            ...S.td,
-            width: col.width ?? 100,
-            minWidth: col.width ?? 100,
-            outline: isEditing ? `2px solid ${accentColor}` : 'none',
-            outlineOffset: '-2px',
-            background: isError ? '#fff5f5' : undefined,
-            ...getCellStyle?.(ri, col),
-        };
-
-        const content = col.computed || col.disabled
-            ? (
-                <div style={{ height: ROW_H, display: 'flex', alignItems: 'center', padding: '0 5px' }}>
-                    {renderCell({
-                        row, rowIndex: ri, col, value,
-                        isEditing: false, isFocused,
-                        isError, errorMessage: errors[k],
-                        isTouched: !!touched[k],
-                        onChange: () => { },
-                        onCommit: () => { },
-                        onCancel: cancelEdit,
-                        inputRef,
-                    })}
-                </div>
-            )
-            : (
-                <div
-                    style={{ height: ROW_H, display: 'flex', alignItems: 'center' }}
-                    onKeyDown={(e) => handleTableKeyDown(e, ri, col.key)}
-                    onClick={() => !isEditing && focusCell(ri, col.key)}
-                >
-                    {renderCell({
-                        row, rowIndex: ri, col, value,
-                        isEditing, isFocused,
-                        isError, errorMessage: errors[k],
-                        isTouched: !!touched[k],
-                        onChange: (val) => onCellChange(ri, col.key, val),
-                        onCommit: () => moveNext(ri, col.key),
-                        onCancel: cancelEdit,
-                        inputRef,
-                    })}
-                </div>
-            );
-
-        return (
-            <td key={col.key} style={cellStyle}>
-                {content}
-                {isError && (
-                    <div style={{
-                        position: 'absolute', bottom: '100%', left: 0,
-                        background: COLORS.error, color: 'white',
-                        fontSize: FONT.size.xs, padding: '2px 6px', borderRadius: 3,
-                        zIndex: 10, whiteSpace: 'nowrap', pointerEvents: 'none',
-                    }}>
-                        {errors[k]}
-                    </div>
-                )}
-            </td>
-        );
-    }, [
-        activeCell, errors, touched, accentColor, getCellStyle, S.td,
-        computeCell, renderCell, cancelEdit, handleTableKeyDown,
-        focusCell, onCellChange, moveNext,
-    ]);
-
-    // ── Row renderer ──────────────────────────────────────────────────────────
-    const renderRowContent = useCallback((row: Record<string, any>, ri: number) => {
-        const isActiveRow = activeCell?.rowIndex === ri;
-        const baseRowStyle: React.CSSProperties = {
-            background: ri % 2 === 0 ? 'white' : '#fafafa',
-            ...getRowStyle?.(ri, row),
-        };
-
-        const cells = () => (
-            <>
-                {/* Row number */}
-                <td style={{ ...S.td, width: 28, textAlign: 'center', fontSize: FONT.size.xs, color: COLORS.gray300 }}>
-                    {ri + 1}
-                </td>
-
-                {/* Data cells */}
-                {columns.map(col => renderCellWrapper(row, ri, col))}
-
-                {/* Action cells */}
-                {(showDeleteRow || showDuplicateRow) && (
-                    <td style={{ ...S.td, width: showDuplicateRow ? 56 : 34, borderRight: 'none', textAlign: 'center', padding: '0 3px' }}>
-                        <div style={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-                            {showDuplicateRow && (
-                                <button
-                                    onClick={() => onRowDuplicate?.(ri)}
-                                    title="Duplicate row"
-                                    style={{ padding: '1px 5px', fontSize: FONT.size.xs, borderRadius: 3, cursor: 'pointer', border: `1px solid ${COLORS.gray300}`, background: 'white', color: COLORS.textSecondary }}
-                                >⧉</button>
-                            )}
-                            {showDeleteRow && (
-                                <button
-                                    onClick={() => onRowDelete?.(ri)}
-                                    title="Delete row"
-                                    style={{ padding: '1px 5px', fontSize: FONT.size.xs, borderRadius: 3, cursor: 'pointer', border: `1px solid ${COLORS.error}`, background: COLORS.error, color: 'white' }}
-                                >✕</button>
-                            )}
-                        </div>
-                    </td>
-                )}
-            </>
+      const content =
+        col.computed || col.disabled ? (
+          <div
+            style={{
+              height: ROW_H,
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0 5px',
+            }}
+          >
+            {renderCell({
+              row,
+              rowIndex: ri,
+              col,
+              value,
+              isEditing: false,
+              isFocused,
+              isError,
+              errorMessage: errors[k],
+              isTouched: !!touched[k],
+              onChange: () => {},
+              onCommit: () => {},
+              onCancel: cancelEdit,
+              inputRef,
+            })}
+          </div>
+        ) : (
+          <div
+            style={{ height: ROW_H, display: 'flex', alignItems: 'center' }}
+            onKeyDown={(e) => handleTableKeyDown(e, ri, col.key)}
+            onClick={() => !isEditing && focusCell(ri, col.key)}
+          >
+            {renderCell({
+              row,
+              rowIndex: ri,
+              col,
+              value,
+              isEditing,
+              isFocused,
+              isError,
+              errorMessage: errors[k],
+              isTouched: !!touched[k],
+              onChange: (val) => onCellChange(ri, col.key, val),
+              onCommit: () => moveNext(ri, col.key),
+              onCancel: cancelEdit,
+              inputRef,
+            })}
+          </div>
         );
 
-        if (renderRow) {
-            return renderRow({
-                row, rowIndex: ri, columns,
-                isActiveRow,
-                activeColKey: isActiveRow ? (activeCell?.colKey ?? null) : null,
-                renderCell: (col) => renderCellWrapper(row, ri, col),
-                onRowClick: () => focusCell(ri, navigableCols[0]?.key ?? columns[0].key),
-                onDeleteRow: () => onRowDelete?.(ri),
-                onDuplicateRow: onRowDuplicate ? () => onRowDuplicate(ri) : undefined,
-                rowStyle: baseRowStyle,
-            });
-        }
-
-        return (
-            <tr key={row.__id ?? ri} style={baseRowStyle}>
-                {cells()}
-            </tr>
-        );
-    }, [
-        activeCell, columns, S.td, renderCellWrapper, renderRow,
-        showDeleteRow, showDuplicateRow, getRowStyle,
-        onRowDelete, onRowDuplicate, focusCell, navigableCols,
-    ]);
-
-    // ── Action column width ───────────────────────────────────────────────────
-    const actionColWidth = showDuplicateRow ? 30 : 15;
-
-    // ── Render ────────────────────────────────────────────────────────────────
-    return (
-        <div style={S.root}>
-            {/* Toolbar */}
-            {(title || showAddRow) && (
-                <div style={S.toolbar}>
-                    {title && (
-                        <span style={{ flex: 1, fontWeight: FONT.weight.semibold, fontSize: FONT.size.sm }}>{title}</span>
-                    )}
-                    {showAddRow && (
-                        <button style={S.addBtn} onClick={onRowAdd}>
-                            + Add Row
-                        </button>
-                    )}
-                    {showEnterNavigate && (
-                        <SwitchInput
-                            value={enterNavigation}
-                            onChange={(val) => setEnterNavigation(val)}
-                            trueValue="column"
-                            falseValue="row"
-                            size="xs"
-                            labels={{ on: 'COLUMN', off: 'ROW' }}
-                            labelFontSize='xs'
-                        />
-                    )}
-                </div>
-            )}
-
-            <div style={S.wrap}>
-                <div style={S.scrollArea}>
-                    <table style={S.table}>
-                        <thead style={{ ...S.th, textAlign: 'center' }}>
-                            <tr>
-                                <th style={{ ...S.th, width: 10, textAlign: 'center' }}>#</th>
-                                {columns.map(col => (
-                                    <th key={col.key} style={{
-                                        ...S.th,
-                                        width: col.width ?? 100,
-                                        textAlign: 'center',
-                                    }}>
-                                        {col.label}
-                                        {col.required && <span style={{ color: COLORS.error, marginLeft: 2 }}>*</span>}
-                                    </th>
-                                ))}
-                                {(showDeleteRow || showDuplicateRow) && (
-                                    <th style={{ ...S.th, width: actionColWidth, textAlign: 'center', borderRight: 'none' }}>
-                                        DEL
-                                    </th>
-                                )}
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {visibleRows.map((row, ri) => (
-                                <GridRow
-                                    key={row.__id ?? row.__rowId ?? ri}
-                                    renderRowContent={() => renderRowContent(row, ri)}
-                                />
-                            ))}
-
-                            {visibleRows.length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={columns.length + 2}
-                                        style={{
-                                            padding: 20,
-                                            textAlign: 'center',
-                                            fontSize: FONT.size.xs,
-                                            color: COLORS.gray300
-                                        }}
-                                    >
-                                        No rows yet — click "+ Add Row" to begin
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Totals footer */}
-                {showTotals && rows.length > 0 && renderTotalCell && (
-                    <table style={{ ...S.table, borderTop: `2px solid ${accentColor}` }}>
-                        <tbody>
-                            <tr>
-                                <td style={{ ...S.tfootTd, width: 10 }} />
-                                {columns.map((col, ci) => (
-                                    <td key={col.key} style={{
-                                        ...S.tfootTd,
-                                        width: col.width ?? 100,
-                                        textAlign: col.align ?? 'left',
-                                        ...(ci === columns.length - 1 ? { borderRight: 'none' } : {}),
-                                    }}>
-                                        {renderTotalCell(col, rows)}
-                                    </td>
-                                ))}
-                                {(showDeleteRow || showDuplicateRow) && (
-                                    <td style={{ ...S.tfootTd, width: actionColWidth, borderRight: 'none' }} />
-                                )}
-                            </tr>
-                        </tbody>
-                    </table>
-                )}
-
-                {/* Status bar */}
-                <div style={S.statusBar}>
-                    <span style={{ marginLeft: 'auto' }}>
-                        {rows.length} row{rows.length !== 1 ? 's' : ''}
-                    </span>
-                </div>
+      return (
+        <td
+          key={col.key}
+          style={cellStyle}
+        >
+          {content}
+          {isError && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '100%',
+                left: 0,
+                background: COLORS.error,
+                color: 'white',
+                fontSize: FONT.size.xs,
+                padding: '2px 6px',
+                borderRadius: 3,
+                zIndex: 10,
+                whiteSpace: 'nowrap',
+                pointerEvents: 'none',
+              }}
+            >
+              {errors[k]}
             </div>
+          )}
+        </td>
+      );
+    },
+    [
+      activeCell,
+      errors,
+      touched,
+      accentColor,
+      getCellStyle,
+      S.td,
+      computeCell,
+      renderCell,
+      cancelEdit,
+      handleTableKeyDown,
+      focusCell,
+      onCellChange,
+      moveNext,
+    ],
+  );
+
+  // ── Row renderer ──────────────────────────────────────────────────────────
+  const renderRowContent = useCallback(
+    (row: Record<string, any>, ri: number) => {
+      const isActiveRow = activeCell?.rowIndex === ri;
+      const baseRowStyle: React.CSSProperties = {
+        background: ri % 2 === 0 ? 'white' : '#fafafa',
+        ...getRowStyle?.(ri, row),
+      };
+
+      const cells = () => (
+        <>
+          {/* Row number */}
+          <td
+            style={{
+              ...S.td,
+              width: 28,
+              textAlign: 'center',
+              fontSize: FONT.size.xs,
+              color: COLORS.gray300,
+            }}
+          >
+            {ri + 1}
+          </td>
+
+          {/* Data cells */}
+          {columns.map((col) => renderCellWrapper(row, ri, col))}
+
+          {/* Action cells */}
+          {(showDeleteRow || showDuplicateRow) && (
+            <td
+              style={{
+                ...S.td,
+                width: showDuplicateRow ? 56 : 34,
+                borderRight: 'none',
+                textAlign: 'center',
+                padding: '0 3px',
+              }}
+            >
+              <div style={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                {showDuplicateRow && (
+                  <button
+                    onClick={() => onRowDuplicate?.(ri)}
+                    title="Duplicate row"
+                    style={{
+                      padding: '1px 5px',
+                      fontSize: FONT.size.xs,
+                      borderRadius: 3,
+                      cursor: 'pointer',
+                      border: `1px solid ${COLORS.gray300}`,
+                      background: 'white',
+                      color: COLORS.textSecondary,
+                    }}
+                  >
+                    ⧉
+                  </button>
+                )}
+                {showDeleteRow && (
+                  <button
+                    onClick={() => onRowDelete?.(ri)}
+                    title="Delete row"
+                    style={{
+                      padding: '1px 5px',
+                      fontSize: FONT.size.xs,
+                      borderRadius: 3,
+                      cursor: 'pointer',
+                      border: `1px solid ${COLORS.error}`,
+                      background: COLORS.error,
+                      color: 'white',
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </td>
+          )}
+        </>
+      );
+
+      if (renderRow) {
+        return renderRow({
+          row,
+          rowIndex: ri,
+          columns,
+          isActiveRow,
+          activeColKey: isActiveRow ? (activeCell?.colKey ?? null) : null,
+          renderCell: (col) => renderCellWrapper(row, ri, col),
+          onRowClick: () => focusCell(ri, navigableCols[0]?.key ?? columns[0].key),
+          onDeleteRow: () => onRowDelete?.(ri),
+          onDuplicateRow: onRowDuplicate ? () => onRowDuplicate(ri) : undefined,
+          rowStyle: baseRowStyle,
+        });
+      }
+
+      return (
+        <tr
+          key={row.__id ?? ri}
+          style={baseRowStyle}
+        >
+          {cells()}
+        </tr>
+      );
+    },
+    [
+      activeCell,
+      columns,
+      S.td,
+      renderCellWrapper,
+      renderRow,
+      showDeleteRow,
+      showDuplicateRow,
+      getRowStyle,
+      onRowDelete,
+      onRowDuplicate,
+      focusCell,
+      navigableCols,
+    ],
+  );
+
+  // ── Action column width ───────────────────────────────────────────────────
+  const actionColWidth = showDuplicateRow ? 30 : 15;
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  return (
+    <div style={S.root}>
+      {/* Toolbar */}
+      {(title || showAddRow) && (
+        <div style={S.toolbar}>
+          {title && (
+            <span
+              style={{
+                flex: 1,
+                fontWeight: FONT.weight.semibold,
+                fontSize: FONT.size.sm,
+              }}
+            >
+              {title}
+            </span>
+          )}
+          {showAddRow && (
+            <button
+              style={S.addBtn}
+              onClick={onRowAdd}
+            >
+              + Add Row
+            </button>
+          )}
+          {showEnterNavigate && (
+            <SwitchInput
+              value={enterNavigation}
+              onChange={(val) => setEnterNavigation(val)}
+              trueValue="column"
+              falseValue="row"
+              size="xs"
+              labels={{ on: 'COLUMN', off: 'ROW' }}
+              labelFontSize="xs"
+            />
+          )}
         </div>
-    );
+      )}
+
+      <div style={S.wrap}>
+        <div style={S.scrollArea}>
+          <table style={S.table}>
+            <thead style={{ ...S.th, textAlign: 'center' }}>
+              <tr>
+                <th style={{ ...S.th, width: 10, textAlign: 'center' }}>#</th>
+                {columns.map((col) => (
+                  <th
+                    key={col.key}
+                    style={{
+                      ...S.th,
+                      width: col.width ?? 100,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {col.label}
+                    {col.required && (
+                      <span style={{ color: COLORS.error, marginLeft: 2 }}>*</span>
+                    )}
+                  </th>
+                ))}
+                {(showDeleteRow || showDuplicateRow) && (
+                  <th
+                    style={{
+                      ...S.th,
+                      width: actionColWidth,
+                      textAlign: 'center',
+                      borderRight: 'none',
+                    }}
+                  >
+                    DEL
+                  </th>
+                )}
+              </tr>
+            </thead>
+
+            <tbody>
+              {visibleRows.map((row, ri) => (
+                <GridRow
+                  key={row.__id ?? row.__rowId ?? ri}
+                  renderRowContent={() => renderRowContent(row, ri)}
+                />
+              ))}
+
+              {visibleRows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={columns.length + 2}
+                    style={{
+                      padding: 20,
+                      textAlign: 'center',
+                      fontSize: FONT.size.xs,
+                      color: COLORS.gray300,
+                    }}
+                  >
+                    No rows yet — click "+ Add Row" to begin
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Totals footer */}
+        {showTotals && rows.length > 0 && renderTotalCell && (
+          <table style={{ ...S.table, borderTop: `2px solid ${accentColor}` }}>
+            <tbody>
+              <tr>
+                <td style={{ ...S.tfootTd, width: 10 }} />
+                {columns.map((col, ci) => (
+                  <td
+                    key={col.key}
+                    style={{
+                      ...S.tfootTd,
+                      width: col.width ?? 100,
+                      textAlign: col.align ?? 'left',
+                      ...(ci === columns.length - 1 ? { borderRight: 'none' } : {}),
+                    }}
+                  >
+                    {renderTotalCell(col, rows)}
+                  </td>
+                ))}
+                {(showDeleteRow || showDuplicateRow) && (
+                  <td
+                    style={{ ...S.tfootTd, width: actionColWidth, borderRight: 'none' }}
+                  />
+                )}
+              </tr>
+            </tbody>
+          </table>
+        )}
+
+        {/* Status bar */}
+        <div style={S.statusBar}>
+          <span style={{ marginLeft: 'auto' }}>
+            {rows.length} row{rows.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ExcelGrid;

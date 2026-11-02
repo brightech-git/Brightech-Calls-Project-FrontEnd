@@ -2,11 +2,7 @@
 // hooks/ModuleMaster/useModuleMaster.ts
 // ─────────────────────────────────────────────
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   createModule,
@@ -14,26 +10,24 @@ import {
   getModuleById,
   updateModule,
   deleteModule,
-} from "@/services/ModuleMasterService";
+} from '@/services/ModuleMasterService';
 
-import {
-  ModulePayload,
-} from "@/types/ModuleMaster/ModuleMaster";
+import { ModulePayload } from '@/types/ModuleMaster/ModuleMaster';
 
-const MODULE_KEY = ["module-list"];
+const MODULE_KEY = ['module-list'];
 
 // GET ALL
 export const useModuleList = () =>
   useQuery({
     queryKey: MODULE_KEY,
     queryFn: getAllModules,
-    select :(res)=>res.data
+    select: (res) => res.data,
   });
 
 // GET BY ID
 export const useGetModuleById = (id: string) =>
   useQuery({
-    queryKey: ["module", id],
+    queryKey: ['module', id],
     queryFn: () => getModuleById(id),
     enabled: !!id,
   });
@@ -43,8 +37,7 @@ export const useCreateModule = () => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: ModulePayload) =>
-      createModule(payload),
+    mutationFn: (payload: ModulePayload) => createModule(payload),
 
     onSuccess: () =>
       qc.invalidateQueries({
@@ -58,13 +51,7 @@ export const useUpdateModule = () => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: ModulePayload;
-    }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: ModulePayload }) =>
       updateModule(id, payload),
 
     onSuccess: () =>
@@ -79,8 +66,7 @@ export const useDeleteModule = () => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      deleteModule(id),
+    mutationFn: (id: string) => deleteModule(id),
 
     onSuccess: () =>
       qc.invalidateQueries({

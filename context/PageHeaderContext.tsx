@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 interface PageHeaderValue {
   title: string;
@@ -13,12 +13,12 @@ interface PageHeaderContextType {
 }
 
 const PageHeaderContext = createContext<PageHeaderContextType>({
-  header: { title: "" },
+  header: { title: '' },
   setHeader: () => {},
 });
 
 export function PageHeaderProvider({ children }: { children: React.ReactNode }) {
-  const [header, setHeaderState] = useState<PageHeaderValue>({ title: "" });
+  const [header, setHeaderState] = useState<PageHeaderValue>({ title: '' });
   const setHeader = useCallback((v: PageHeaderValue) => setHeaderState(v), []);
   return (
     <PageHeaderContext.Provider value={{ header, setHeader }}>
@@ -32,7 +32,7 @@ export function usePageHeader(value: PageHeaderValue) {
   const { setHeader } = useContext(PageHeaderContext);
   useEffect(() => {
     setHeader(value);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value.title, value.subtitle]);
 }
 

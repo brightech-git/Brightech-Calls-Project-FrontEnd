@@ -67,9 +67,7 @@ export interface UpdateStatusPayload {
   remark?: string;
 }
 
-export type CallsBookingRecord_Table =
-  CallsBookingRecord &
-  Record<string, unknown>;
+export type CallsBookingRecord_Table = CallsBookingRecord & Record<string, unknown>;
 
 // Thin shape returned by the paginated list endpoint (GET /callsbooking).
 // Use getCallsBookingById(sno) to load the full CallsBookingRecord for
@@ -86,13 +84,11 @@ export interface CallsBookingListItem {
   assignedUsers?: string | null;
   status?: string | null;
   active?: string | null;
-  remark?:string;
-  statusRemark?:string;
+  remark?: string;
+  statusRemark?: string;
 }
 
-export type CallsBookingListItem_Table =
-  CallsBookingListItem &
-  Record<string, unknown>;
+export type CallsBookingListItem_Table = CallsBookingListItem & Record<string, unknown>;
 
 // Query params accepted by GET /callsbooking. fromDate/toDate are optional,
 // date-only (yyyy-MM-dd), inclusive range filters on TKTDATE. For "As On"
@@ -100,13 +96,13 @@ export type CallsBookingListItem_Table =
 export interface CallsBookingListParams {
   page?: number;
   size?: number;
-  asOn :boolean;
+  asOn: boolean;
   fromDate?: string | null;
   toDate?: string | null;
-  asOnDate?:string ;
-  clientId ?: string;
-  userId ?:string;
-  projectId ?:string
-  moduleId?:string
-  status ?: string
+  asOnDate?: string;
+  clientId?: string;
+  userId?: string;
+  projectId?: string;
+  moduleId?: string;
+  status?: string;
 }

@@ -1,11 +1,7 @@
 // ================= HOOKS =================
 // hooks/useRoleTran.ts
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   createModule,
@@ -13,19 +9,16 @@ import {
   getMenu,
   updateModule,
   deleteModule,
-
   createSubModule,
   getSubModules,
   updateSubModule,
   deleteSubModule,
-
   createContentUnderModule,
   createContentUnderSubModule,
   getContentsByModule,
   getContentsBySubModule,
   updateContent,
   deleteContent,
-
   getRoleTransactions,
   insertRoleTransaction,
   saveRoleTransaction,
@@ -34,12 +27,9 @@ import {
   getActiveRoleTransactionsByRoleId,
   deleteRoleTransaction,
   toggleRoleTransactionActive,
-} from "@/services/RoleTranService";
+} from '@/services/RoleTranService';
 
-import {
-  toastCreated,
-  toastError,
-} from "@/components/toast/toast";
+import { toastCreated, toastError } from '@/components/toast/toast';
 
 // =====================================================
 // MODULE
@@ -48,7 +38,7 @@ import {
 // GET MODULES
 export const useModules = () => {
   return useQuery({
-    queryKey: ["modules"],
+    queryKey: ['modules'],
     queryFn: getModules,
   });
 };
@@ -56,9 +46,9 @@ export const useModules = () => {
 // GET MENU
 export const useMenu = () => {
   return useQuery({
-    queryKey: ["menu"],
+    queryKey: ['menu'],
     queryFn: getMenu,
-    select : (res)=>res.data
+    select: (res) => res.data,
   });
 };
 
@@ -70,15 +60,14 @@ export const useCreateModule = () => {
     mutationFn: createModule,
 
     onSuccess: () => {
-    
       queryClient.invalidateQueries({
-        queryKey: ["modules"],
+        queryKey: ['modules'],
       });
       // toastCreated("Module");
     },
 
     onError: () => {
-      toastError("Failed To Create Module");
+      toastError('Failed To Create Module');
     },
   });
 };
@@ -91,15 +80,15 @@ export const useUpdateModule = () => {
     mutationFn: updateModule,
 
     onSuccess: () => {
-      toastCreated("Module Updated Successfully");
+      toastCreated('Module Updated Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["modules"],
+        queryKey: ['modules'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Update Module");
+      toastError('Failed To Update Module');
     },
   });
 };
@@ -112,15 +101,15 @@ export const useDeleteModule = () => {
     mutationFn: deleteModule,
 
     onSuccess: () => {
-      toastCreated("Module Deleted Successfully");
+      toastCreated('Module Deleted Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["modules"],
+        queryKey: ['modules'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Delete Module");
+      toastError('Failed To Delete Module');
     },
   });
 };
@@ -130,11 +119,9 @@ export const useDeleteModule = () => {
 // =====================================================
 
 // GET SUB MODULES
-export const useSubModules = (
-  moduleId: number
-) => {
+export const useSubModules = (moduleId: number) => {
   return useQuery({
-    queryKey: ["submodules", moduleId],
+    queryKey: ['submodules', moduleId],
     queryFn: () => getSubModules(moduleId),
     enabled: !!moduleId,
   });
@@ -157,15 +144,15 @@ export const useCreateSubModule = () => {
     }) => createSubModule(moduleId, body),
 
     onSuccess: () => {
-      toastCreated("Sub Module Created Successfully");
+      toastCreated('Sub Module Created Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["submodules"],
+        queryKey: ['submodules'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Create Sub Module");
+      toastError('Failed To Create Sub Module');
     },
   });
 };
@@ -178,15 +165,15 @@ export const useUpdateSubModule = () => {
     mutationFn: updateSubModule,
 
     onSuccess: () => {
-      toastCreated("Sub Module Updated Successfully");
+      toastCreated('Sub Module Updated Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["submodules"],
+        queryKey: ['submodules'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Update Sub Module");
+      toastError('Failed To Update Sub Module');
     },
   });
 };
@@ -199,15 +186,15 @@ export const useDeleteSubModule = () => {
     mutationFn: deleteSubModule,
 
     onSuccess: () => {
-      toastCreated("Sub Module Deleted Successfully");
+      toastCreated('Sub Module Deleted Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["submodules"],
+        queryKey: ['submodules'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Delete Sub Module");
+      toastError('Failed To Delete Sub Module');
     },
   });
 };
@@ -217,20 +204,14 @@ export const useDeleteSubModule = () => {
 // =====================================================
 
 // GET CONTENTS — a submodule id (when selected) takes precedence over the module id
-export const useContents = (
-  moduleId: number,
-  subModuleId: number
-) => {
+export const useContents = (moduleId: number, subModuleId: number) => {
   return useQuery({
-    queryKey: ["contents", moduleId, subModuleId],
+    queryKey: ['contents', moduleId, subModuleId],
     queryFn: () =>
-      subModuleId
-        ? getContentsBySubModule(subModuleId)
-        : getContentsByModule(moduleId),
+      subModuleId ? getContentsBySubModule(subModuleId) : getContentsByModule(moduleId),
     enabled: !!moduleId,
   });
 };
-
 
 // CREATE CONTENT
 export const useCreateContent = () => {
@@ -254,19 +235,18 @@ export const useCreateContent = () => {
         : createContentUnderModule(moduleId, body),
 
     onSuccess: () => {
-      toastCreated("Content Created Successfully");
+      toastCreated('Content Created Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["contents"],
+        queryKey: ['contents'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Create Content");
+      toastError('Failed To Create Content');
     },
   });
 };
-
 
 // UPDATE CONTENT
 export const useUpdateContent = () => {
@@ -276,15 +256,15 @@ export const useUpdateContent = () => {
     mutationFn: updateContent,
 
     onSuccess: () => {
-      toastCreated("Content Updated Successfully");
+      toastCreated('Content Updated Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["contents"],
+        queryKey: ['contents'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Update Content");
+      toastError('Failed To Update Content');
     },
   });
 };
@@ -297,15 +277,15 @@ export const useDeleteContent = () => {
     mutationFn: deleteContent,
 
     onSuccess: () => {
-      toastCreated("Content Deleted Successfully");
+      toastCreated('Content Deleted Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["contents"],
+        queryKey: ['contents'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Delete Content");
+      toastError('Failed To Delete Content');
     },
   });
 };
@@ -317,9 +297,9 @@ export const useDeleteContent = () => {
 // GET ROLE TRANSACTIONS
 export const useRoleTransactions = () => {
   return useQuery({
-    queryKey: ["roleTransactions"],
+    queryKey: ['roleTransactions'],
     queryFn: getRoleTransactions,
-    select :(res)=>res.data
+    select: (res) => res.data,
   });
 };
 
@@ -331,15 +311,15 @@ export const useSaveRoleTransaction = () => {
     mutationFn: saveRoleTransaction,
 
     onSuccess: () => {
-      toastCreated("Role Transaction Saved Successfully");
+      toastCreated('Role Transaction Saved Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["roleTransactions"],
+        queryKey: ['roleTransactions'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Save Role Transaction");
+      toastError('Failed To Save Role Transaction');
     },
   });
 };
@@ -352,15 +332,15 @@ export const useInsertRoleTransaction = () => {
     mutationFn: insertRoleTransaction,
 
     onSuccess: () => {
-      toastCreated("Role Transactions Inserted Successfully");
+      toastCreated('Role Transactions Inserted Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["roleTransactions"],
+        queryKey: ['roleTransactions'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Insert Role Transactions");
+      toastError('Failed To Insert Role Transactions');
     },
   });
 };
@@ -368,7 +348,7 @@ export const useInsertRoleTransaction = () => {
 // GET ROLE TRANSACTIONS BY ROLE ID
 export const useRoleTransactionsByRoleId = (roleId: number) => {
   return useQuery({
-    queryKey: ["roleTransactions", "roleId", roleId],
+    queryKey: ['roleTransactions', 'roleId', roleId],
     queryFn: () => getRoleTransactionsByRoleId(roleId),
     enabled: !!roleId,
   });
@@ -377,7 +357,7 @@ export const useRoleTransactionsByRoleId = (roleId: number) => {
 // GET ACTIVE ROLE TRANSACTIONS
 export const useActiveRoleTransactions = () => {
   return useQuery({
-    queryKey: ["roleTransactions", "active"],
+    queryKey: ['roleTransactions', 'active'],
     queryFn: getActiveRoleTransactions,
   });
 };
@@ -385,7 +365,7 @@ export const useActiveRoleTransactions = () => {
 // GET ACTIVE ROLE TRANSACTIONS BY ROLE ID
 export const useActiveRoleTransactionsByRoleId = (roleId: number) => {
   return useQuery({
-    queryKey: ["roleTransactions", "active", "roleId", roleId],
+    queryKey: ['roleTransactions', 'active', 'roleId', roleId],
     queryFn: () => getActiveRoleTransactionsByRoleId(roleId),
     enabled: !!roleId,
   });
@@ -399,15 +379,15 @@ export const useDeleteRoleTransaction = () => {
     mutationFn: deleteRoleTransaction,
 
     onSuccess: () => {
-      toastCreated("Role Transaction Deleted Successfully");
+      toastCreated('Role Transaction Deleted Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["roleTransactions"],
+        queryKey: ['roleTransactions'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Delete Role Transaction");
+      toastError('Failed To Delete Role Transaction');
     },
   });
 };
@@ -420,15 +400,15 @@ export const useToggleRoleTransactionActive = () => {
     mutationFn: toggleRoleTransactionActive,
 
     onSuccess: () => {
-      toastCreated("Role Transaction Status Updated Successfully");
+      toastCreated('Role Transaction Status Updated Successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ["roleTransactions"],
+        queryKey: ['roleTransactions'],
       });
     },
 
     onError: () => {
-      toastError("Failed To Update Role Transaction Status");
+      toastError('Failed To Update Role Transaction Status');
     },
   });
 };

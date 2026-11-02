@@ -1,57 +1,49 @@
+import { invalidateCallQueries } from '@/lib/query/invalidate';
 // ─────────────────────────────────────────────
 // hooks/CallsBooking/useCallsBooking.ts
 // ─────────────────────────────────────────────
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   createCallsBooking,
-  getAllCallsBookings,
+  getCallsBookingsForTable,
   getCallsBookingById,
   updateCallsBooking,
   deleteCallsBooking,
   getMyTasks,
   getCallsByStatus,
   updateCallsBookingStatus,
-} from "@/services/TaskAssignmentService";
+} from '@/services/TaskAssignmentService';
 
 import {
   CallsBookingListParams,
   CallsBookingMediaMeta,
   CallsBookingPayload,
   UpdateStatusPayload,
-} from "@/types/TaskAssignment/TaskAssignment";
+} from '@/types/TaskAssignment/TaskAssignment';
 
-const CALLS_BOOKING_KEY = [
-  "calls-booking-list",
-];
+const CALLS_BOOKING_KEY = ['calls-booking-list'];
 
-// GET ALL (paginated — defaults to a large page so existing
-// client-side table pagination keeps working unchanged)
+// GET ALL: collect server pages of at most 200 rows for the local table.
 // fromDate/toDate (yyyy-MM-dd) are optional and included in the query key
 // so switching the date filter (or the "As On" single-day filter, which
 // callers pass as fromDate === toDate) refetches instead of reusing a
 // stale cached page.
-export const useCallsBookingList = (
-  params?: CallsBookingListParams
-) => {
+export const useCallsBookingList = (params?: CallsBookingListParams) => {
   const {
     page = 0,
-    size = 1000,
-    fromDate = "",
-    toDate = "",
+    size = 200,
+    fromDate = '',
+    toDate = '',
     asOn = false,
-    asOnDate = "",
-    clientId = "",
-    userId = "",
-    status = "",
-    projectId = "",
-    moduleId = "",
-    } = params ?? {};
+    asOnDate = '',
+    clientId = '',
+    userId = '',
+    status = '',
+    projectId = '',
+    moduleId = '',
+  } = params ?? {};
 
   return useQuery({
     queryKey: [
@@ -59,169 +51,131 @@ export const useCallsBookingList = (
       {
         page,
         size,
-        fromDate: asOn ? "" : fromDate,
-        toDate: asOn ? "" : toDate,
+        fromDate: asOn ? '' : fromDate,
+        toDate: asOn ? '' : toDate,
         asOn,
-        asOnDate: asOn ? asOnDate : "",
+        asOnDate: asOn ? asOnDate : '',
         clientId,
         userId,
         status,
         projectId,
-        moduleId
+        moduleId,
       },
     ],
 
-    queryFn: () =>
-      getAllCallsBookings({
-        page,
-        size,
-        fromDate,
-        toDate,
-        asOn,
-        asOnDate,
-        clientId,
-        userId,
-        status,
-        projectId,
-        moduleId
-      }),
+    queryFn: ({ signal }) =>
+      getCallsBookingsForTable(
+        {
+          page,
+          size,
+          fromDate,
+          toDate,
+          asOn,
+          asOnDate,
+          clientId,
+          userId,
+          status,
+          projectId,
+          moduleId,
+        },
+        signal,
+      ),
 
     placeholderData: (previousData) => previousData,
   });
 };
 
 // GET BY ID
-export const useGetCallsBookingById = (
-  id: string
-) =>
+export const useGetCallsBookingById = (id: string) =>
   useQuery({
-    queryKey: ["calls-booking", id],
-    queryFn: () =>
-      getCallsBookingById(id),
+    queryKey: ['calls-booking', id],
+    queryFn: () => getCallsBookingById(id),
     enabled: !!id,
   });
 
 // GET MY TASKS
-export const useMyTasks = (
-  userId: string
-) =>
+export const useMyTasks = (userId: string) =>
   useQuery({
-    queryKey: ["my-tasks", userId],
-    queryFn: () =>
-      getMyTasks(userId),
+    queryKey: ['my-tasks', userId],
+    queryFn: () => getMyTasks(userId),
     enabled: !!userId,
   });
 
 // GET BY STATUS
-export const useCallsByStatus = (
-  status: string
-) =>
+export const useCallsByStatus = (status: string) =>
   useQuery({
-    queryKey: ["calls-status", status],
-    queryFn: () =>
-      getCallsByStatus(status),
+    queryKey: ['calls-status', status],
+    queryFn: () => getCallsByStatus(status),
     enabled: !!status,
   });
 
 // CREATE
-export const useCreateCallsBooking =
-  () => {
+export const useCreateCallsBooking = () => {
+  const qc = useQueryClient();
 
-    const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      payload,
+      media,
+      mediaMeta,
+    }: {
+      payload: CallsBookingPayload;
+      media?: File[] | null;
+      mediaMeta?: CallsBookingMediaMeta[] | null;
+    }) => createCallsBooking(payload, media, mediaMeta),
 
-    return useMutation({
-      mutationFn: ({
-        payload,
-        media,
-        mediaMeta,
-      }: {
-        payload: CallsBookingPayload;
-        media?: File[] | null;
-        mediaMeta?: CallsBookingMediaMeta[] | null;
-      }) =>
-        createCallsBooking(payload, media, mediaMeta),
-
-      onSuccess: () =>
-        qc.invalidateQueries({
-          queryKey:
-            CALLS_BOOKING_KEY,
-        }),
-    });
-  };
+    onSuccess: () => {
+      invalidateCallQueries(qc);
+    },
+  });
+};
 
 // UPDATE
-export const useUpdateCallsBooking =
-  () => {
+export const useUpdateCallsBooking = () => {
+  const qc = useQueryClient();
 
-    const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+      media,
+      mediaMeta,
+    }: {
+      id: string;
+      payload: CallsBookingPayload;
+      media?: File[] | null;
+      mediaMeta?: CallsBookingMediaMeta[] | null;
+    }) => updateCallsBooking(id, payload, media, mediaMeta),
 
-    return useMutation({
-      mutationFn: ({
-        id,
-        payload,
-        media,
-        mediaMeta,
-      }: {
-        id: string;
-        payload: CallsBookingPayload;
-        media?: File[] | null;
-        mediaMeta?: CallsBookingMediaMeta[] | null;
-      }) =>
-        updateCallsBooking(
-          id,
-          payload,
-          media,
-          mediaMeta
-        ),
-
-      onSuccess: () =>
-        qc.invalidateQueries({
-          queryKey:
-            CALLS_BOOKING_KEY,
-        }),
-    });
-  };
+    onSuccess: () => {
+      invalidateCallQueries(qc);
+    },
+  });
+};
 
 // UPDATE STATUS
-export const useUpdateCallsBookingStatus =
-  () => {
+export const useUpdateCallsBookingStatus = () => {
+  const qc = useQueryClient();
 
-    const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status, remark }: UpdateStatusPayload) =>
+      updateCallsBookingStatus(id, status, remark),
 
-    return useMutation({
-      mutationFn: ({
-        id,
-        status,
-        remark,
-      }: UpdateStatusPayload) =>
-        updateCallsBookingStatus(
-          id,
-          status,
-          remark
-        ),
-
-      onSuccess: () =>
-        qc.invalidateQueries({
-          queryKey:
-            CALLS_BOOKING_KEY,
-        }),
-    });
-  };
+    onSuccess: () => {
+      invalidateCallQueries(qc);
+    },
+  });
+};
 
 // DELETE
-export const useDeleteCallsBooking =
-  () => {
+export const useDeleteCallsBooking = () => {
+  const qc = useQueryClient();
 
-    const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCallsBooking(id),
 
-    return useMutation({
-      mutationFn: (id: string) =>
-        deleteCallsBooking(id),
-
-      onSuccess: () =>
-        qc.invalidateQueries({
-          queryKey:
-            CALLS_BOOKING_KEY,
-        }),
-    });
-  };
+    onSuccess: () => {
+      invalidateCallQueries(qc);
+    },
+  });
+};

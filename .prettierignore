@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+build/
+coverage/
+.git/
+.agents/
+.codex/
+.aws/
+package-lock.json
+next-env.d.ts
+*.tsbuildinfo
+*.zip

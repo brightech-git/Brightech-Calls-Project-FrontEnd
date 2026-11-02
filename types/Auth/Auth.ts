@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────
 
 export interface LoginPayload {
-  username: string;
+  userName: string;
   password: string;
 }
 
@@ -31,6 +31,8 @@ export interface UpdateUserPayload {
 }
 
 export interface AuthResponse {
+  roleName?: string;
+  roleId?: number;
   userId: number;
   staffId: number | null;
   username: string;
@@ -53,7 +55,7 @@ export interface UserRecord {
   USERNAME: string;
   ACTIVE: string;
   PWD: string;
-  ROLENAME :string
+  ROLENAME: string;
   ISCLIENT?: string | null;
   CLIENTID?: number | null;
   UPDATED: string | null;

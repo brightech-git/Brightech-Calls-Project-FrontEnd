@@ -1,21 +1,21 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createClient,
   getAllClients,
   getClientById,
   updateClient,
   deleteClient,
-} from "@/services/ClientMasterService";
-import { ClientPayload } from "@/types/ClientMaster/ClientMaster";
+} from '@/services/ClientMasterService';
+import { ClientPayload } from '@/types/ClientMaster/ClientMaster';
 
-const CLIENT_KEY = ["client-list"];
+const CLIENT_KEY = ['client-list'];
 
 export const useClientList = () =>
-  useQuery({ queryKey: CLIENT_KEY, queryFn: getAllClients ,select :(res) => res.data  });
+  useQuery({ queryKey: CLIENT_KEY, queryFn: getAllClients, select: (res) => res.data });
 
 export const useGetClientById = (id: string) =>
   useQuery({
-    queryKey: ["client", id],
+    queryKey: ['client', id],
     queryFn: () => getClientById(id),
     enabled: !!id,
   });

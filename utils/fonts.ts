@@ -1,8 +1,2 @@
-import { Poppins } from 'next/font/google';
-
-export const poppins = Poppins({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-poppins',
-  display: 'swap',
-});
+// Browser-native font stack keeps static exports independent of Google Fonts.
+export const FONT_FAMILY = "'Segoe UI', Arial, sans-serif";

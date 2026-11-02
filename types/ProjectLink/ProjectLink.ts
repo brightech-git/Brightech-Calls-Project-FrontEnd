@@ -3,7 +3,8 @@
 // ─────────────────────────────────────────────
 
 export interface ProjectLinkPayload {
-  clientId: number ;
+  authPassword?: string | null;
+  clientId: number;
   projectTypeId: number;
   url?: string | null;
   userName?: string | null;
@@ -15,14 +16,14 @@ export interface ProjectLinkPayload {
 
 export interface ProjectLinkRecord {
   linkId: number;
- clientId: number;
+  clientId: number;
   clientName?: string | null;
   projectTypeId: number;
-   projectTypeName?: string | null 
-  url?: string ;
+  projectTypeName?: string | null;
+  url?: string;
   userName?: string | null;
   password?: string | null;
-  authPassword?:string;
+  authPassword?: string;
   status?: string | null;
   type?: string | null;
   active?: boolean;

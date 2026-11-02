@@ -2,26 +2,30 @@
 // hooks/CompanyMaster/useCompanyMaster.ts
 // ─────────────────────────────────────────────
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createCompany,
   getAllCompanies,
   getCompanyById,
   updateCompany,
   deleteCompany,
-} from "@/services/CompanyMasterService";
-import { CompanyPayload } from "@/types/CompanyMaster/CompanyMaster";
+} from '@/services/CompanyMasterService';
+import { CompanyPayload } from '@/types/CompanyMaster/CompanyMaster';
 
-const COMPANY_KEY = ["company-list"];
+const COMPANY_KEY = ['company-list'];
 
 // GET ALL
 export const useCompanyList = () =>
-  useQuery({ queryKey: COMPANY_KEY, queryFn: getAllCompanies ,select :(res)=> res?.data ?? [] });
+  useQuery({
+    queryKey: COMPANY_KEY,
+    queryFn: getAllCompanies,
+    select: (res) => res?.data ?? [],
+  });
 
 // GET BY ID
 export const useGetCompanyById = (id: string) =>
   useQuery({
-    queryKey: ["company", id],
+    queryKey: ['company', id],
     queryFn: () => getCompanyById(id),
     enabled: !!id,
   });

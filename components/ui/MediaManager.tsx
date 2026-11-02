@@ -1,13 +1,13 @@
 // ─────────────────────────────────────────────
 // components/ui/MediaManager.tsx
 // ─────────────────────────────────────────────
-"use client";
+'use client';
 
-import { useRef, useState, CSSProperties } from "react";
-import { RefreshCw, X, ChevronLeft, ChevronRight, FileText, Plus } from "lucide-react";
+import { useRef, useState, CSSProperties } from 'react';
+import { RefreshCw, X, ChevronLeft, ChevronRight, FileText, Plus } from 'lucide-react';
 
-import { COLORS, RADIUS, FONT } from "@/utils/theme";
-import { SwitchInput } from "@/components/ui/SwitchInput";
+import { COLORS, RADIUS, FONT } from '@/utils/theme';
+import { SwitchInput } from '@/components/ui/SwitchInput';
 
 export interface MediaItem {
   uid: string;
@@ -31,7 +31,7 @@ export const makeMediaItem = (file: File): MediaItem => ({
   id: null,
   file,
   previewUrl: URL.createObjectURL(file),
-  mediaType: file.type.split("/")[0] || "file",
+  mediaType: file.type.split('/')[0] || 'file',
   active: true,
   isExisting: false,
 });
@@ -47,14 +47,14 @@ export const makeExistingMediaItem = (
     displayOrder?: number | null;
     active?: boolean | null;
   },
-  baseUrl: string
+  baseUrl: string,
 ): MediaItem => ({
   uid: `existing-${record.id}-${Math.random().toString(36).slice(2)}`,
   id: record.id ?? null,
   file: null,
-  fileName: (record.mediaUrl ?? "").split("/").pop() || "file",
-  previewUrl: `${baseUrl}${record.mediaUrl ?? ""}`,
-  mediaType: (record.mediaType ?? "file").toLowerCase(),
+  fileName: (record.mediaUrl ?? '').split('/').pop() || 'file',
+  previewUrl: `${baseUrl}${record.mediaUrl ?? ''}`,
+  mediaType: (record.mediaType ?? 'file').toLowerCase(),
   active: record.active !== false,
   isExisting: true,
 });
@@ -82,7 +82,7 @@ interface MediaManagerProps {
 export function MediaManager({
   value,
   onChange,
-  accept = "image/*,video/*,application/pdf",
+  accept = 'image/*,video/*,application/pdf',
   maxFiles = 10,
   onError,
 }: MediaManagerProps) {
@@ -118,7 +118,7 @@ export function MediaManager({
         if (m.uid !== uid || m.isExisting) return m;
         URL.revokeObjectURL(m.previewUrl);
         return { ...makeMediaItem(file), uid: m.uid, active: m.active };
-      })
+      }),
     );
   };
 
@@ -150,8 +150,8 @@ export function MediaManager({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         {value.map((item, idx) => (
           <div
             key={item.uid}
@@ -160,17 +160,24 @@ export function MediaManager({
               border: `1px solid ${COLORS.cardBorder}`,
               borderRadius: RADIUS.md,
               background: COLORS.cardBg,
-              overflow: "hidden",
-              position: "relative",
+              overflow: 'hidden',
+              position: 'relative',
               fontFamily: FONT.family,
               opacity: item.active ? 1 : 0.55,
             }}
           >
             <div
               style={{
-                position: "absolute", top: 4, left: 4, zIndex: 2,
-                background: "rgba(0,0,0,0.6)", color: "#fff",
-                fontSize: 10, fontWeight: 700, borderRadius: 10, padding: "1px 6px",
+                position: 'absolute',
+                top: 4,
+                left: 4,
+                zIndex: 2,
+                background: 'rgba(0,0,0,0.6)',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 700,
+                borderRadius: 10,
+                padding: '1px 6px',
               }}
             >
               #{idx + 1}
@@ -179,41 +186,94 @@ export function MediaManager({
             <button
               type="button"
               onClick={() => remove(item.uid)}
-              title={item.isExisting ? "Mark inactive" : "Remove"}
+              title={item.isExisting ? 'Mark inactive' : 'Remove'}
               style={{
-                position: "absolute", top: 4, right: 4, zIndex: 2,
-                width: 20, height: 20, borderRadius: "50%", border: "none",
-                background: "rgba(0,0,0,0.6)", color: "#fff", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
+                position: 'absolute',
+                top: 4,
+                right: 4,
+                zIndex: 2,
+                width: 20,
+                height: 20,
+                borderRadius: '50%',
+                border: 'none',
+                background: 'rgba(0,0,0,0.6)',
+                color: '#fff',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               <X size={12} />
             </button>
 
-            <div style={{ height: 90, background: COLORS.gray50, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {item.mediaType === "image" ? (
-                <img src={item.previewUrl} alt={item.file?.name ?? item.fileName ?? "media"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : item.mediaType === "video" ? (
-                <video src={item.previewUrl} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <div
+              style={{
+                height: 90,
+                background: COLORS.gray50,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {item.mediaType === 'image' ? (
+                <img
+                  src={item.previewUrl}
+                  alt={item.file?.name ?? item.fileName ?? 'media'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : item.mediaType === 'video' ? (
+                <video
+                  src={item.previewUrl}
+                  muted
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
               ) : (
-                <FileText size={28} color={COLORS.textMuted} />
+                <FileText
+                  size={28}
+                  color={COLORS.textMuted}
+                />
               )}
             </div>
 
-            <div style={{ padding: 6, display: "flex", flexDirection: "column", gap: 4 }}>
+            <div style={{ padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <div
-                title={item.file?.name ?? item.fileName ?? ""}
-                style={{ fontSize: 10, color: COLORS.textMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                title={item.file?.name ?? item.fileName ?? ''}
+                style={{
+                  fontSize: 10,
+                  color: COLORS.textMuted,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
               >
-                {item.file?.name ?? item.fileName ?? ""}
+                {item.file?.name ?? item.fileName ?? ''}
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", gap: 2 }}>
-                  <button type="button" disabled={idx === 0} onClick={() => move(idx, -1)} title="Move earlier" style={iconBtnStyle(idx === 0)}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ display: 'flex', gap: 2 }}>
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => move(idx, -1)}
+                    title="Move earlier"
+                    style={iconBtnStyle(idx === 0)}
+                  >
                     <ChevronLeft size={12} />
                   </button>
-                  <button type="button" disabled={idx === value.length - 1} onClick={() => move(idx, 1)} title="Move later" style={iconBtnStyle(idx === value.length - 1)}>
+                  <button
+                    type="button"
+                    disabled={idx === value.length - 1}
+                    onClick={() => move(idx, 1)}
+                    title="Move later"
+                    style={iconBtnStyle(idx === value.length - 1)}
+                  >
                     <ChevronRight size={12} />
                   </button>
                 </div>
@@ -233,11 +293,19 @@ export function MediaManager({
                 )}
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 10, color: COLORS.textSecondary }}>{item.active ? "Active" : "Inactive"}</span>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span style={{ fontSize: 10, color: COLORS.textSecondary }}>
+                  {item.active ? 'Active' : 'Inactive'}
+                </span>
                 <SwitchInput
-                  value={item.active ? "Y" : "N"}
-                  onChange={(v) => toggleActive(item.uid, v === "Y")}
+                  value={item.active ? 'Y' : 'N'}
+                  onChange={(v) => toggleActive(item.uid, v === 'Y')}
                   trueValue="Y"
                   falseValue="N"
                   size="sm"
@@ -251,11 +319,20 @@ export function MediaManager({
           type="button"
           onClick={() => addInputRef.current?.click()}
           style={{
-            width: 120, height: 152,
-            border: `1px dashed ${COLORS.cardBorder}`, borderRadius: RADIUS.md,
-            background: COLORS.gray50, color: COLORS.textMuted,
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            gap: 4, cursor: "pointer", fontFamily: FONT.family, fontSize: 11,
+            width: 120,
+            height: 152,
+            border: `1px dashed ${COLORS.cardBorder}`,
+            borderRadius: RADIUS.md,
+            background: COLORS.gray50,
+            color: COLORS.textMuted,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+            cursor: 'pointer',
+            fontFamily: FONT.family,
+            fontSize: 11,
           }}
         >
           <Plus size={18} />
@@ -268,10 +345,10 @@ export function MediaManager({
         type="file"
         multiple
         accept={accept}
-        style={{ display: "none" }}
+        style={{ display: 'none' }}
         onChange={(e) => {
           handleAddFiles(e.target.files);
-          e.target.value = "";
+          e.target.value = '';
         }}
       />
 
@@ -279,11 +356,11 @@ export function MediaManager({
         ref={replaceInputRef}
         type="file"
         accept={accept}
-        style={{ display: "none" }}
+        style={{ display: 'none' }}
         onChange={(e) => {
           if (replacingUid) handleReplace(replacingUid, e.target.files);
           setReplacingUid(null);
-          e.target.value = "";
+          e.target.value = '';
         }}
       />
     </div>
@@ -292,10 +369,16 @@ export function MediaManager({
 
 function iconBtnStyle(disabled: boolean): CSSProperties {
   return {
-    width: 20, height: 20, borderRadius: 4,
-    border: `1px solid ${COLORS.cardBorder}`, background: COLORS.cardBg,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.4 : 1, color: COLORS.textSecondary,
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    border: `1px solid ${COLORS.cardBorder}`,
+    background: COLORS.cardBg,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.4 : 1,
+    color: COLORS.textSecondary,
   };
 }

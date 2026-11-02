@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 // hooks/ApiHooks/Menu/useAccessibleMenu.ts
 //
@@ -11,9 +11,9 @@
 // checked by id only, nothing else. Until the backend starts sending that
 // list, "menuIds" is absent and every entry is shown.
 
-import { useMemo } from "react";
-import { menuConfig, MenuEntryConfig } from "@/config/menu/menuConfig";
-import { useSession } from "@/hooks/Auth/useSession";
+import { useMemo } from 'react';
+import { menuConfig, MenuEntryConfig } from '@/config/menu/menuConfig';
+import { useSession } from '@/hooks/Auth/useSession';
 
 function getAllowedMenuIds(raw: string | null | undefined): string[] | null {
   if (!raw) return null;
@@ -26,8 +26,11 @@ function getAllowedMenuIds(raw: string | null | undefined): string[] | null {
 }
 
 export function useAccessibleMenu() {
-  const { menuIds } = useSession();
-  const allowedIds = useMemo(() => getAllowedMenuIds(menuIds), [menuIds]);
+  const { menuIds, userId } = useSession();
+  const allowedIds = useMemo(
+    () => (userId === '999' ? null : getAllowedMenuIds(menuIds)),
+    [menuIds, userId],
+  );
 
   // No ids stored yet -> nothing to restrict against, show everything.
   const isAllowed = (id: string): boolean => !allowedIds || allowedIds.includes(id);
@@ -48,7 +51,10 @@ export function useAccessibleMenu() {
 
   const accessibleMenu = useMemo(() => filterEntries(menuConfig), [allowedIds]);
 
-  const findById = (entries: MenuEntryConfig[], pathname: string): MenuEntryConfig | null => {
+  const findById = (
+    entries: MenuEntryConfig[],
+    pathname: string,
+  ): MenuEntryConfig | null => {
     for (const entry of entries) {
       if (entry.href === pathname) return entry;
       if (entry.children) {

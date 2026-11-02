@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import {
   fetchRoles,
   createRole,
   updateRole,
   deleteRole,
-} from "@/services/RoleMasterService";
-import { Role, RolePayload } from "@/types/RoleMaster/RoleMaster";
+} from '@/services/RoleMasterService';
+import { Role, RolePayload } from '@/types/RoleMaster/RoleMaster';
 
 export const useRole = () => {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -33,9 +33,7 @@ export const useRole = () => {
   // ✅ UPDATE
   const editRole = async (id: number, payload: RolePayload) => {
     const updated = await updateRole(id, payload);
-    setRoles((prev) =>
-      prev.map((r) => (r.ROLEID === id ? updated : r))
-    );
+    setRoles((prev) => prev.map((r) => (r.ROLEID === id ? updated : r)));
   };
 
   // ✅ DELETE

@@ -1,11 +1,3 @@
-export const formatToFixed = (
-    value: string | number | null | undefined,
-    decimals: number = 2
-): string => {
-    if (value === "" || value === null || value === undefined) return "";
-
-    const num = Number(value);
-    if (isNaN(num)) return "";
-
-    return num.toFixed(decimals);
-};
+import { formatNumber, type NumericValue } from './number';
+export const formatToFixed = (value: NumericValue, decimals = 2) =>
+  formatNumber(value, decimals, false);

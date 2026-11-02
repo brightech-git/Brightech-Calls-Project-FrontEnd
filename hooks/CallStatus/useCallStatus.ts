@@ -1,25 +1,20 @@
+import { invalidateCallQueries } from '@/lib/query/invalidate';
 // ─────────────────────────────────────────────
 // hooks/CallStatus/useCallStatus.ts
 // ─────────────────────────────────────────────
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   createCallStatus,
   deleteCallStatus,
   getActiveBookingsWithLastStatus,
   getCallStatusHistory,
-} from "@/services/CallStatusService";
+} from '@/services/CallStatusService';
 
-import {
-  CallStatusPayload,
-} from "@/types/CallStatus/CallStatus";
+import { CallStatusPayload } from '@/types/CallStatus/CallStatus';
 
-const ACTIVE_BOOKINGS_KEY = ["callstatus-active-bookings"];
+const ACTIVE_BOOKINGS_KEY = ['callstatus-active-bookings'];
 
 // ACTIVE (Y) BOOKINGS + LAST STATUS — Call Status list page
 export const useActiveBookingsWithLastStatus = () =>
@@ -33,7 +28,7 @@ export const useActiveBookingsWithLastStatus = () =>
 // both the Call Status detail page and the Task Assignment preview.
 export const useCallStatusTicketDetail = (tktId?: number | null) =>
   useQuery({
-    queryKey: ["callstatus-ticket-detail", tktId],
+    queryKey: ['callstatus-ticket-detail', tktId],
     queryFn: () => getCallStatusHistory(tktId as number),
     enabled: !!tktId,
     select: (res) => res.data,
@@ -42,7 +37,7 @@ export const useCallStatusTicketDetail = (tktId?: number | null) =>
 // STATUS HISTORY ONLY (used by the Task Assignment preview)
 export const useCallStatusHistory = (tktId?: number | null) =>
   useQuery({
-    queryKey: ["callstatus-history", tktId],
+    queryKey: ['callstatus-history', tktId],
     queryFn: () => getCallStatusHistory(tktId as number),
     enabled: !!tktId,
     select: (res) => res.data?.statuses ?? [],
@@ -50,26 +45,20 @@ export const useCallStatusHistory = (tktId?: number | null) =>
 
 // CREATE (supports multiple media files)
 export const useCreateCallStatus = () => {
-
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      payload,
-      media,
-    }: {
-      payload: CallStatusPayload;
-      media?: File[];
-    }) =>
+    mutationFn: ({ payload, media }: { payload: CallStatusPayload; media?: File[] }) =>
       createCallStatus(payload, media),
 
     onSuccess: (_res, variables) => {
+      invalidateCallQueries(qc);
       qc.invalidateQueries({ queryKey: ACTIVE_BOOKINGS_KEY });
       qc.invalidateQueries({
-        queryKey: ["callstatus-ticket-detail", variables.payload.tktId],
+        queryKey: ['callstatus-ticket-detail', variables.payload.tktId],
       });
       qc.invalidateQueries({
-        queryKey: ["callstatus-history", variables.payload.tktId],
+        queryKey: ['callstatus-history', variables.payload.tktId],
       });
     },
   });
@@ -77,14 +66,13 @@ export const useCreateCallStatus = () => {
 
 // DELETE
 export const useDeleteCallStatus = () => {
-
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      deleteCallStatus(id),
+    mutationFn: (id: string) => deleteCallStatus(id),
 
     onSuccess: () => {
+      invalidateCallQueries(qc);
       qc.invalidateQueries({ queryKey: ACTIVE_BOOKINGS_KEY });
     },
   });

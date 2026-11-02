@@ -2,19 +2,19 @@
 // services/CompanyMasterService.ts
 // ─────────────────────────────────────────────
 
-import { axiosInstance } from "@/api/axiosInstance";
-import { ApiResponse } from "@/types/ApiResponse";
-import { CompanyPayload, CompanyRecord } from "@/types/CompanyMaster/CompanyMaster";
+import { axiosInstance } from '@/api/axiosInstance';
+import { ApiResponse } from '@/types/ApiResponse';
+import { CompanyPayload, CompanyRecord } from '@/types/CompanyMaster/CompanyMaster';
 
 // CREATE
 export const createCompany = async (payload: CompanyPayload): Promise<CompanyRecord> => {
-  const response = await axiosInstance.post<CompanyRecord>("/company", payload);
+  const response = await axiosInstance.post<CompanyRecord>('/company', payload);
   return response.data;
 };
 
 // GET ALL
 export const getAllCompanies = async (): Promise<ApiResponse<CompanyRecord[]>> => {
-  const response = await axiosInstance.get<ApiResponse<CompanyRecord[]>>("/company");
+  const response = await axiosInstance.get<ApiResponse<CompanyRecord[]>>('/company');
   return response.data;
 };
 
@@ -25,7 +25,10 @@ export const getCompanyById = async (id: string): Promise<CompanyRecord> => {
 };
 
 // UPDATE
-export const updateCompany = async (id: string, payload: CompanyPayload): Promise<CompanyRecord> => {
+export const updateCompany = async (
+  id: string,
+  payload: CompanyPayload,
+): Promise<CompanyRecord> => {
   const response = await axiosInstance.put<CompanyRecord>(`/company/${id}`, payload);
   return response.data;
 };

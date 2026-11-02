@@ -1,15 +1,13 @@
-import { axiosInstance } from "@/api/axiosInstance";
-import { Role, RolePayload, ApiResponse } from "@/types/RoleMaster/RoleMaster";
+import { axiosInstance } from '@/api/axiosInstance';
+import { Role, RolePayload, ApiResponse } from '@/types/RoleMaster/RoleMaster';
 
 // ✅ GET ALL
 export const fetchRoles = async () => {
   try {
-    const { data } = await axiosInstance.get<ApiResponse<Role[]>>(
-      `/rolemaster`
-    );
+    const { data } = await axiosInstance.get<ApiResponse<Role[]>>(`/rolemaster`);
     return data.data;
   } catch (error) {
-    console.error("Error fetching roles:", error);
+    console.error('Error fetching roles:', error);
     throw error;
   }
 };
@@ -17,13 +15,10 @@ export const fetchRoles = async () => {
 // ✅ CREATE
 export const createRole = async (payload: RolePayload) => {
   try {
-    const { data } = await axiosInstance.post<ApiResponse<Role>>(
-      `/rolemaster`,
-      payload
-    );
+    const { data } = await axiosInstance.post<ApiResponse<Role>>(`/rolemaster`, payload);
     return data.data;
   } catch (error) {
-    console.error("Error creating role:", error);
+    console.error('Error creating role:', error);
     throw error;
   }
 };
@@ -33,11 +28,11 @@ export const updateRole = async (id: number, payload: RolePayload) => {
   try {
     const { data } = await axiosInstance.put<ApiResponse<Role>>(
       `/rolemaster/${id}`,
-      payload
+      payload,
     );
     return data.data;
   } catch (error) {
-    console.error("Error updating role:", error);
+    console.error('Error updating role:', error);
     throw error;
   }
 };
@@ -45,12 +40,10 @@ export const updateRole = async (id: number, payload: RolePayload) => {
 // ✅ DELETE
 export const deleteRole = async (id: number) => {
   try {
-    const { data } = await axiosInstance.delete<ApiResponse<any>>(
-      `/rolemaster/${id}`
-    );
+    const { data } = await axiosInstance.delete<ApiResponse<any>>(`/rolemaster/${id}`);
     return data;
   } catch (error) {
-    console.error("Error deleting role:", error);
+    console.error('Error deleting role:', error);
     throw error;
   }
 };

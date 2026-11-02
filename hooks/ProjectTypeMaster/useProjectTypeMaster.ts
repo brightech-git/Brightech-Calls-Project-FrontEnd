@@ -2,11 +2,7 @@
 // hooks/ProjectTypeMaster/useProjectTypeMaster.ts
 // ─────────────────────────────────────────────
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   createProjectType,
@@ -14,25 +10,23 @@ import {
   getProjectTypeById,
   updateProjectType,
   deleteProjectType,
-} from "@/services/ProjectTypeMasterService";
+} from '@/services/ProjectTypeMasterService';
 
-import {
-  ProjectTypePayload,
-} from "@/types/ProjectTypeMaster/ProjectTypeMaster";
+import { ProjectTypePayload } from '@/types/ProjectTypeMaster/ProjectTypeMaster';
 
-const PROJECT_TYPE_KEY = ["project-type-list"];
+const PROJECT_TYPE_KEY = ['project-type-list'];
 
 // GET ALL
 export const useProjectTypeList = (active?: boolean) =>
   useQuery({
-    queryKey: [...PROJECT_TYPE_KEY, active ?? "all"],
+    queryKey: [...PROJECT_TYPE_KEY, active ?? 'all'],
     queryFn: () => getAllProjectTypes(active),
   });
 
 // GET BY ID
 export const useGetProjectTypeById = (id: string) =>
   useQuery({
-    queryKey: ["project-type", id],
+    queryKey: ['project-type', id],
     queryFn: () => getProjectTypeById(id),
     enabled: !!id,
   });
@@ -42,8 +36,7 @@ export const useCreateProjectType = () => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: ProjectTypePayload) =>
-      createProjectType(payload),
+    mutationFn: (payload: ProjectTypePayload) => createProjectType(payload),
 
     onSuccess: () =>
       qc.invalidateQueries({
@@ -57,13 +50,7 @@ export const useUpdateProjectType = () => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: ProjectTypePayload;
-    }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: ProjectTypePayload }) =>
       updateProjectType(id, payload),
 
     onSuccess: () =>
@@ -78,8 +65,7 @@ export const useDeleteProjectType = () => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      deleteProjectType(id),
+    mutationFn: (id: string) => deleteProjectType(id),
 
     onSuccess: () =>
       qc.invalidateQueries({

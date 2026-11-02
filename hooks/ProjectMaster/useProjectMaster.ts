@@ -2,11 +2,7 @@
 // hooks/ProjectMaster/useProjectMaster.ts
 // ─────────────────────────────────────────────
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   createProject,
@@ -14,27 +10,24 @@ import {
   getAllProjects,
   getProjectById,
   updateProject,
-} from "@/services/ProjectMasterService";
+} from '@/services/ProjectMasterService';
 
-import {
-  ProjectPayload,
-    ProjectRecord,
-} from "@/types/ProjectMaster/ProjectMaster";
+import { ProjectPayload, ProjectRecord } from '@/types/ProjectMaster/ProjectMaster';
 
-const PROJECT_KEY = ["project-list"];
+const PROJECT_KEY = ['project-list'];
 
 // GET ALL
 export const useProjectList = () =>
   useQuery({
     queryKey: PROJECT_KEY,
     queryFn: getAllProjects,
-    select :(res)=>res.data
+    select: (res) => res.data,
   });
 
 // GET BY ID
 export const useGetProjectById = (id: string) =>
   useQuery({
-    queryKey: ["project", id],
+    queryKey: ['project', id],
     queryFn: () => getProjectById(id),
     enabled: !!id,
   });
@@ -44,8 +37,7 @@ export const useCreateProject = () => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: ProjectPayload) =>
-      createProject(payload),
+    mutationFn: (payload: ProjectPayload) => createProject(payload),
 
     onSuccess: () =>
       qc.invalidateQueries({
@@ -59,13 +51,8 @@ export const useUpdateProject = () => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: ProjectPayload;
-    }) => updateProject(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: ProjectPayload }) =>
+      updateProject(id, payload),
 
     onSuccess: () =>
       qc.invalidateQueries({

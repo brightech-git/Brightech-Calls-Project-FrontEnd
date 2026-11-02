@@ -2,7 +2,7 @@
 // hooks/ApiHooks/ClientVisit/useClientVisit.ts
 // ─────────────────────────────────────────────
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ClientVisitFilters,
   createClientVisit,
@@ -10,21 +10,26 @@ import {
   getAllClientVisits,
   getClientVisitById,
   updateClientVisit,
-} from "@/services/ClientVisitService";
-import { ClientVisitMediaMeta, ClientVisitPayload } from "@/types/ClientVisit/ClientVisit";
+} from '@/services/ClientVisitService';
+import {
+  ClientVisitMediaMeta,
+  ClientVisitPayload,
+} from '@/types/ClientVisit/ClientVisit';
 
-const CLIENT_VISIT_KEY = ["client-visit-list"];
+const CLIENT_VISIT_KEY = ['client-visit-list'];
 
 // GET ALL
 export const useClientVisitList = (filters?: ClientVisitFilters) =>
-  useQuery({ queryKey: [...CLIENT_VISIT_KEY, filters ?? {}],
-     queryFn: () => getAllClientVisits(filters) ,
-    select : (res) =>res.data });
+  useQuery({
+    queryKey: [...CLIENT_VISIT_KEY, filters ?? {}],
+    queryFn: () => getAllClientVisits(filters),
+    select: (res) => res.data,
+  });
 
 // GET BY ID
 export const useGetClientVisitById = (id: string) =>
   useQuery({
-    queryKey: ["client-visit", id],
+    queryKey: ['client-visit', id],
     queryFn: () => getClientVisitById(id),
     enabled: !!id,
   });

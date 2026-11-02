@@ -2,13 +2,13 @@
 // services/ClientServerMasterService.ts
 // ─────────────────────────────────────────────
 
-import { axiosInstance } from "@/api/axiosInstance";
-import { ApiResponse } from "@/types/ApiResponse";
+import { axiosInstance } from '@/api/axiosInstance';
+import { ApiResponse } from '@/types/ApiResponse';
 import {
   ClientServerPayload,
   ClientServerRecord,
   PageResult,
-} from "@/types/ClientServerMaster/ClientServerMaster";
+} from '@/types/ClientServerMaster/ClientServerMaster';
 
 export interface ClientServerFilters {
   clientId?: string;
@@ -19,28 +19,25 @@ export interface ClientServerFilters {
 
 // CREATE
 export const createClientServer = async (
-  payload: ClientServerPayload
+  payload: ClientServerPayload,
 ): Promise<ClientServerRecord> => {
-  const response = await axiosInstance.post<ClientServerRecord>(
-    "/clientserver",
-    payload
-  );
+  const response = await axiosInstance.post<ClientServerRecord>('/clientserver', payload);
   return response.data;
 };
 
 // GET ALL (PAGINATED + FILTERS)
 export const getAllClientServers = async (
-  filters?: ClientServerFilters
+  filters?: ClientServerFilters,
 ): Promise<ApiResponse<PageResult<ClientServerRecord>>> => {
   const params = filters
     ? Object.fromEntries(
-        Object.entries(filters).filter(([, v]) => v !== undefined && v !== "")
+        Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
       )
     : undefined;
 
   const response = await axiosInstance.get<ApiResponse<PageResult<ClientServerRecord>>>(
-    "/clientserver",
-    { params }
+    '/clientserver',
+    { params },
   );
   return response.data;
 };
@@ -54,11 +51,11 @@ export const getClientServerById = async (id: string): Promise<ClientServerRecor
 // UPDATE
 export const updateClientServer = async (
   id: string,
-  payload: ClientServerPayload
+  payload: ClientServerPayload,
 ): Promise<ClientServerRecord> => {
   const response = await axiosInstance.put<ClientServerRecord>(
     `/clientserver/${id}`,
-    payload
+    payload,
   );
   return response.data;
 };

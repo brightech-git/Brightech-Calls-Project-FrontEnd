@@ -47,8 +47,7 @@ export interface CallStatusListItem {
   lastStatus?: string | null;
 }
 
-export type CallStatusListItem_Table =
-  CallStatusListItem & Record<string, unknown>;
+export type CallStatusListItem_Table = CallStatusListItem & Record<string, unknown>;
 
 // The booking summary embedded alongside the status history for one ticket.
 export interface CallStatusBookingSummary {

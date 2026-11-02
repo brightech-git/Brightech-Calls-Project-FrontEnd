@@ -1,9 +1,9 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: "export",
+  output: 'export',
   trailingSlash: false,
-  transpilePackages: ["@chakra-ui/react"],
+  transpilePackages: ['@chakra-ui/react'],
 };
 
 export default nextConfig;

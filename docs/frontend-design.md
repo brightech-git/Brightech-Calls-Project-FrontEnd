@@ -4,16 +4,16 @@ The Calls frontend uses a shared business-workspace design inspired by the exist
 
 ## Appearance
 
-Use the palette button at the top right of the workspace. Choose Ocean, Forest, Violet, or Ember; comfortable or compact spacing; standard or larger text. Settings are saved per browser under `calls-appearance` and synchronized across tabs.
+Use the palette button at the top right of the workspace. Choose Graphite, Ocean, Forest, Violet, or Ember; comfortable or compact spacing; standard or larger text. Settings are saved per browser under `calls-appearance` and synchronized across tabs.
 
 - `utils/theme.ts`: semantic color and typography tokens; named presets.
 - `context/ThemeContext.tsx`: validates, persists, and applies appearance settings.
 - `app/globals.css`: Tailwind v4 import, semantic `@theme` tokens, appearance variables, and base typography.
 - `utils/ui.ts`: statically discoverable Tailwind utilities shared by the shell, forms, tables, sign-in, dashboard, and role screens. Semantic marker classes remain for navigation and focus hooks.
-- `utils/fonts.ts`: Poppins Regular font loading through Next.js.
+- `utils/fonts.ts`: global system-font stack; see `app/globals.css`.
 - `config/pageConfig.ts`: titles, descriptions, and breadcrumb groups for every workspace route.
 
-Prefer semantic colors from `COLORS`, type sizes from `FONT`, and CSS variables such as `--control-height`, `--row-padding`, and `--page-space` over hardcoded values. The revised interface uses light work surfaces and a white navigation panel. Poppins Regular (400) is self-hosted by Next.js; hierarchy uses size, spacing, and color rather than synthetic bold weights.
+Prefer semantic colors from `COLORS`, type sizes from `FONT`, and CSS variables such as `--control-height`, `--row-padding`, and `--page-space` over hardcoded values. The revised interface uses light work surfaces and a white navigation panel. The global Segoe UI / Arial stack avoids external font downloads and uses consistent regular, medium, semibold and bold weights.
 
 Use Tailwind utilities such as `bg-brand`, `text-ink`, `border-line`, `h-control`, and `p-page` for new styling. The PostCSS integration uses `@tailwindcss/postcss`. Component stylesheets and inline JSX style blocks were replaced with utilities. Runtime-dependent values, third-party widget styling, and exported print-document styles remain where necessary. Existing Chakra components retain their behavior; important Tailwind utilities take precedence over their generated styles.
 
@@ -35,3 +35,5 @@ Existing form implementations keep their data and submit handlers. Their shared 
 Run `npm run build` for TypeScript validation and static export. Existing lint debt remains in older components; the new shell, appearance, session, error, and dashboard components have targeted lint checks. Browser checks use isolated local API fixtures, never saved into source or used to modify backend records. Test data is not part of the shipped frontend.
 
 The frontend still depends on the API availability and authorization behavior of the existing backend. This design pass does not add endpoints for legacy staff/operator/user-role features.
+
+See `docs/modernization.md` for the shared API, component, formatting, caching and feature architecture.

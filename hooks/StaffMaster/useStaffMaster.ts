@@ -1,21 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createStaff,
   getAllStaff,
   getStaffById,
   updateStaff,
   deleteStaff,
-} from "@/services/StaffMasterService";
-import { StaffPayload } from "@/types/StaffMaster/StaffMaster";
+} from '@/services/StaffMasterService';
+import { StaffPayload } from '@/types/StaffMaster/StaffMaster';
 
-const STAFF_KEY = ["staff-list"];
+const STAFF_KEY = ['staff-list'];
 
-export const useStaffList = () =>
-  useQuery({ queryKey: STAFF_KEY, queryFn: getAllStaff });
+export const useStaffList = () => useQuery({ queryKey: STAFF_KEY, queryFn: getAllStaff });
 
 export const useGetStaffById = (id: string) =>
   useQuery({
-    queryKey: ["staff", id],
+    queryKey: ['staff', id],
     queryFn: () => getStaffById(id),
     enabled: !!id,
   });
