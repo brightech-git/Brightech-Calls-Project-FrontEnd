@@ -529,8 +529,10 @@ export default function CallsBookingPage() {
       ...data,
       compId: editRow?.compId ?? defaultCompId,
       active: editRow ? (data.active ?? editRow.active ?? 'Y') : 'Y',
-      clientId: myClientId,
+      // clientId: myClientId,
     };
+    // console.log(payload,'payload')
+    // return;
     try {
       if (editRow) {
         const res = await updateMutation.mutateAsync({
