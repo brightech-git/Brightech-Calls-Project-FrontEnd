@@ -16,11 +16,11 @@ const UI: Record<string, string> = {
   'form-control': input,
   'app-shell': 'flex! h-dvh! overflow-hidden! bg-canvas! font-sans! text-ink!',
   'app-main': 'flex! min-w-0! flex-1! flex-col!',
-  'app-content': 'min-h-0! flex-1! overflow-auto! p-page!',
+  'app-content': 'min-h-0! flex-1! overflow-auto! p-2!',
   'skip-link':
     'fixed! -top-24! left-4! z-[2000]! rounded-lg! bg-white! px-5! py-3! text-brand! focus:top-3!',
   'topbar-root':
-    'relative! z-30! flex! h-[82px]! shrink-0! items-center! gap-5! border-b! border-line! bg-white! px-page! max-md:h-[68px]! max-md:gap-3!',
+    'relative! z-30! flex! h-[65px]! shrink-0! items-center! gap-5! border-b! border-line! bg-white! px-page! max-md:h-[68px]! max-md:gap-3!',
   'mobile-menu': '[&]:hidden! [&]:max-md:flex!',
   'shell-icon-button':
     'inline-flex! size-10! shrink-0! items-center! justify-center! rounded-full! border-0! bg-slate-50! text-muted! transition-colors! hover:bg-brand-soft! hover:text-brand!',
@@ -43,7 +43,7 @@ const UI: Record<string, string> = {
   'sidebar-desktop': 'max-md:hidden!',
   'sidebar-drawer-content': 'max-w-[min(300px,88vw)]!',
   'sidebar-brand':
-    'flex! h-[82px]! shrink-0! items-center! gap-2.5! border-b! border-line! px-5! py-4!',
+    'flex! h-[65px]! shrink-0! items-center! gap-2.5! border-b! border-line! px-5! py-4!',
   'sidebar-brand-mark':
     'grid! size-[38px]! shrink-0! place-items-center! rounded-xl! border! border-brand/10! bg-brand-soft! text-brand!',
   'sidebar-brand-copy':
@@ -91,10 +91,10 @@ const UI: Record<string, string> = {
     'flex! items-center! gap-2! border-0! bg-transparent! py-1! text-xs! text-muted! hover:text-brand!',
   'appearance-note': 'mt-4! border-t! border-line! pt-3! text-xs! text-muted!',
   'dashboard-welcome':
-    'mb-6! flex! items-center! justify-between! gap-6! overflow-hidden! rounded-2xl! border! border-line! bg-linear-to-r! from-white! to-brand-soft! p-8! [&_h1]:my-2! [&_h1]:text-3xl! [&_h1]:leading-tight! [&_h1]:tracking-tight! [&_p]:text-sm! [&_p]:text-muted! max-lg:flex-col! max-lg:items-start! max-sm:p-6! [&_h1]:max-sm:text-2xl!',
+    'mb-2! flex! items-center! justify-between! gap-6! overflow-hidden! rounded-2xl! border! border-line! bg-linear-to-r! from-white! to-brand-soft! p-2! [&_h1]:my-2! [&_h1]:text-xl! [&_h1]:leading-tight! [&_h1]:tracking-tight! [&_p]:text-sm! [&_p]:text-muted! max-lg:flex-col! max-lg:items-start! max-sm:p-2! [&_h1]:max-sm:text-xl!',
   'dashboard-welcome-actions': 'flex! shrink-0! flex-wrap! gap-2.5!',
-  'dashboard-stats': 'mb-7! grid! grid-cols-4! gap-4! max-lg:grid-cols-2! max-sm:gap-3!',
-  'stat-card': `${card} p-6! max-sm:p-4! [&>strong]:my-3! [&>strong]:block! [&>strong]:text-3xl! [&>strong]:leading-none! [&>p]:text-xs! [&>p]:text-muted!`,
+  'dashboard-stats': 'mb-2! grid! grid-cols-4! gap-2! max-lg:grid-cols-2! max-sm:gap-3!',
+  'stat-card': `${card} p-2! max-sm:p-2! [&>strong]:block! [&>strong]:text-xl! [&>strong]:leading-none! [&>p]:text-xs! [&>p]:text-muted!`,
   'stat-top': 'flex! items-center! justify-between! gap-2! text-xs! text-muted!',
   'stat-icon': 'grid! size-9! shrink-0! place-items-center! rounded-xl!',
   'dashboard-layout':
@@ -155,7 +155,7 @@ const UI: Record<string, string> = {
   'ct-th':
     'sticky! top-0! z-0! border-b! border-line! bg-slate-50/70! px-5! py-3.5! text-left! text-xs! tracking-wide! text-muted! uppercase! whitespace-nowrap!',
   'ct-td':
-    'border-t! border-slate-100! px-5! py-row! align-middle! text-sm! whitespace-nowrap! text-slate-600!',
+    'border-t! border-slate-100! px-5! py-row! align-middle! text-sm! whitespace-nowrap! text-slate-600! hover:cursor-pointer ',
   'ct-tr': 'hover:bg-slate-50!',
   'ct-actions-btn':
     'mr-1! inline-flex! size-8! items-center! justify-center! rounded-lg! border! border-line! bg-white! text-slate-600! transition-colors! hover:border-brand-soft! hover:bg-brand-soft! hover:text-brand!',
@@ -202,7 +202,8 @@ const UI: Record<string, string> = {
   'um-field-label': 'block! text-sm! leading-5! text-muted!',
   'um-field-error': 'col-start-2! text-xs! text-rose-600!',
   'um-table-wrap': 'min-w-0!',
-  'csm-filters': 'flex! flex-wrap! items-end! gap-2!',
+  'csm-filters': 'flex! flex-col sm:flex-row! min-w-lg items-center! gap-2!',
+  'csm-btn-primary' : 'flex! flex-row! bg-brand! text-xs items-center gap-1 h-9 p-1! min-w-[100px] rounded-sm text-white!',
   'cd-overlay':
     'fixed! inset-0! z-1000! flex! items-center! justify-center! bg-slate-900/35! p-4! backdrop-blur-sm!',
   'cd-box': 'w-full! max-w-sm! rounded-2xl! bg-white! p-7! shadow-2xl!',

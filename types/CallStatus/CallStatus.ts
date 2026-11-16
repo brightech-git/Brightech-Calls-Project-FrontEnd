@@ -51,6 +51,7 @@ export type CallStatusListItem_Table = CallStatusListItem & Record<string, unkno
 
 // The booking summary embedded alongside the status history for one ticket.
 export interface CallStatusBookingSummary {
+  media?: CallStatusMedia[] | null;
   sno: number;
   tktId?: number | null;
   clientName?: string | null;

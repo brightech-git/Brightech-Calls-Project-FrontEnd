@@ -279,7 +279,7 @@ export default function ClientServerMasterPage() {
                 ...clientItems,
               ]}
               placeholder="Filter by client"
-              className={ui('[max-width:180px]!')}
+              className={ui('[min-width:180px]!')}
             />
 
             <NativeSelectWrapper
@@ -287,7 +287,7 @@ export default function ClientServerMasterPage() {
               onChange={(e) => setFilterActive(e.target.value)}
               items={ACTIVE_FILTER_OPTIONS}
               placeholder="Filter by status"
-              className={ui('[max-width:140px]!')}
+              className={ui('[max-width:100px]!')}
             />
 
             <button
@@ -295,7 +295,7 @@ export default function ClientServerMasterPage() {
               onClick={openCreate}
             >
               <Plus size={13} />
-              Add Client Server
+              Add More
             </button>
           </div>
         }

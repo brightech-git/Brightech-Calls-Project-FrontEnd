@@ -1,32 +1,5 @@
 'use client';
 
-/**
- * CustomTable.tsx
- * ─────────────────────────────────────────────────────────────────────────────
- * A fully-featured, config-driven data table that follows the project's dark
- * design system.
- *
- * Features:
- *  • Column configuration with optional sort, custom render, and cell alignment
- *  • Global search/filter
- *  • Column-level sorting (asc / desc toggle)
- *  • Client-side pagination
- *  • Row selection (checkbox) with bulk-action slot
- *  • Status badge auto-coloring
- *  • Empty state
- *  • Loading skeleton rows
- *  • Optional row action buttons (Edit / Delete / custom)
- *  • Responsive horizontal scroll
- *
- * Usage:
- *   <CustomTable
- *     columns={columns}
- *     data={data}
- *     isLoading={isFetching}
- *     onEdit={(row) => openForm(row)}
- *     onDelete={(row) => deleteRow(row.id)}
- *   />
- */
 import { ui } from '@/utils/ui';
 import {
   Box,
@@ -85,7 +58,7 @@ export interface RowAction<T = Record<string, unknown>> {
   onClick: (row: T) => void;
   colorScheme?: 'blue' | 'red' | 'green' | 'amber';
 }
-export interface CustomTableProps<T extends Record<string, unknown>> {
+export interface CustomTableProps<T extends object> {
   columns: TableColumn<T>[];
   data: T[];
   isLoading?: boolean;
@@ -114,13 +87,12 @@ export interface CustomTableProps<T extends Record<string, unknown>> {
   title?: string;
   /** Slot rendered in the top-right toolbar (e.g. an "Add" button) */
   toolbarRight?: React.ReactNode;
-  /**
-   * When provided, adds a "List" toggle action to each row that expands an
-   * inline row directly beneath it (accordion-style — no modal, no page nav)
-   * rendering whatever this returns. Expansion state is managed internally.
-   */
+
   expandedRowRender?: (row: T) => React.ReactNode;
   showSearch?: boolean;
+  showPagination?: boolean;
+  highlightRowId?: string | number | null;
+  onRowClick?: (row: T) => void;
 }
 
 // ─── Status badge coloring ────────────────────────────────────────────────────
@@ -257,7 +229,7 @@ function SkeletonRow({ cols }: { cols: number }) {
 
 // ─── Get nested value ─────────────────────────────────────────────────────────
 
-function getVal(row: Record<string, unknown>, key: string): unknown {
+function getVal(row: object, key: string): unknown {
   return key.split('.').reduce<unknown>((acc, k) => {
     if (acc != null && typeof acc === 'object') {
       return (acc as Record<string, unknown>)[k];
@@ -268,7 +240,7 @@ function getVal(row: Record<string, unknown>, key: string): unknown {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function CustomTable<T extends Record<string, unknown>>({
+export function CustomTable<T extends object>({
   columns,
   data,
   isLoading = false,
@@ -287,6 +259,9 @@ export function CustomTable<T extends Record<string, unknown>>({
   toolbarRight,
   expandedRowRender,
   showSearch = true,
+  showPagination = true,
+  highlightRowId,
+  onRowClick,
 }: CustomTableProps<T>) {
   const pathname = usePathname();
   const tableTitle = title || PAGE_CONFIG[pathname]?.title || 'Records';
@@ -338,7 +313,9 @@ export function CustomTable<T extends Record<string, unknown>>({
   }, [filtered, sortKey, sortDir]);
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const paged = showPagination
+    ? sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+    : sorted;
 
   // ── Sort handler ──
   const handleSort = useCallback(
@@ -637,7 +614,13 @@ export function CustomTable<T extends Record<string, unknown>>({
                       <Box
                         as="tr"
                         className={ui('ct-tr')}
-                        bg={isSelected ? COLORS.infoBg : 'transparent'}
+                        bg={
+                          isSelected ||
+                          (highlightRowId != null &&
+                            String(row[rowKey]) === String(highlightRowId))
+                            ? COLORS.infoBg
+                            : 'transparent'
+                        }
                       >
                         {selectable && (
                           <Box
@@ -740,6 +723,7 @@ export function CustomTable<T extends Record<string, unknown>>({
                               style={{
                                 textAlign: col.align ?? 'left',
                               }}
+                              onClick={onRowClick ? () => onRowClick(row) : undefined}
                             >
                               {col.render ? (
                                 col.render(row, rowIdx)
@@ -784,127 +768,129 @@ export function CustomTable<T extends Record<string, unknown>>({
         </Box>
 
         {/* ── Footer / Pagination ── */}
-        <HStack
-          borderTop={`1px solid ${COLORS.cardBorder}`}
-          className={ui(
-            '[padding-left:16px]! [padding-right:16px]! [padding-top:10px]! [padding-bottom:10px]! [justify-content:space-between]! [flex-wrap:wrap]! [gap:8px]!',
-          )}
-        >
-          {/* Row count + page size */}
-          <HStack className={ui('[gap:10px]!')}>
-            <Text className={ui('[font-size:var(--font-xs)]! [color:#34445d]!')}>
-              {sorted.length === 0
-                ? '0 records'
-                : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, sorted.length)} of ${sorted.length}`}
-            </Text>
-            <select
-              className={ui('ct-size-select')}
-              aria-label="Rows per page"
-              value={pageSize}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                setPageSize(Number(e.target.value));
-                setPage(1);
-              }}
-            >
-              {pageSizeOptions.map((s) => (
-                <option
-                  key={s}
-                  value={s}
-                >
-                  {s} / page
-                </option>
-              ))}
-            </select>
-          </HStack>
-
-          {/* Page buttons */}
-          <HStack className={ui('[gap:3px]!')}>
-            <button
-              className={ui('ct-page-btn')}
-              onClick={() => setPage(1)}
-              disabled={safePage === 1}
-              title="First page"
-            >
-              <ChevronsLeft size={13} />
-            </button>
-            <button
-              className={ui('ct-page-btn')}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={safePage === 1}
-              title="Previous"
-            >
-              <ChevronLeft size={13} />
-            </button>
-
-            {pageWindow[0] > 1 && (
-              <>
-                <button
-                  className={ui('ct-page-btn')}
-                  onClick={() => setPage(1)}
-                >
-                  1
-                </button>
-                {pageWindow[0] > 2 && (
-                  <span
-                    className={ui(
-                      '[font-size:var(--font-xs)] [color:var(--text-muted)] [padding:0_2px]',
-                    )}
-                  >
-                    …
-                  </span>
-                )}
-              </>
+        {showPagination && (
+          <HStack
+            borderTop={`1px solid ${COLORS.cardBorder}`}
+            className={ui(
+              '[padding-left:16px]! [padding-right:16px]! [padding-top:10px]! [padding-bottom:10px]! [justify-content:space-between]! [flex-wrap:wrap]! [gap:8px]!',
             )}
-
-            {pageWindow.map((p) => (
-              <button
-                key={p}
-                aria-current={p === safePage ? 'page' : undefined}
-                className={ui(`ct-page-btn${p === safePage ? ' active' : ''}`)}
-                onClick={() => setPage(p)}
+          >
+            {/* Row count + page size */}
+            <HStack className={ui('[gap:10px]!')}>
+              <Text className={ui('[font-size:var(--font-xs)]! [color:#34445d]!')}>
+                {sorted.length === 0
+                  ? '0 records'
+                  : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, sorted.length)} of ${sorted.length}`}
+              </Text>
+              <select
+                className={ui('ct-size-select')}
+                aria-label="Rows per page"
+                value={pageSize}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
               >
-                {p}
-              </button>
-            ))}
-
-            {pageWindow[pageWindow.length - 1] < totalPages && (
-              <>
-                {pageWindow[pageWindow.length - 1] < totalPages - 1 && (
-                  <span
-                    className={ui(
-                      '[font-size:var(--font-xs)] [color:var(--text-muted)] [padding:0_2px]',
-                    )}
+                {pageSizeOptions.map((s) => (
+                  <option
+                    key={s}
+                    value={s}
                   >
-                    …
-                  </span>
-                )}
-                <button
-                  className={ui('ct-page-btn')}
-                  onClick={() => setPage(totalPages)}
-                >
-                  {totalPages}
-                </button>
-              </>
-            )}
+                    {s} / page
+                  </option>
+                ))}
+              </select>
+            </HStack>
 
-            <button
-              className={ui('ct-page-btn')}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage === totalPages}
-              title="Next"
-            >
-              <ChevronRight size={13} />
-            </button>
-            <button
-              className={ui('ct-page-btn')}
-              onClick={() => setPage(totalPages)}
-              disabled={safePage === totalPages}
-              title="Last page"
-            >
-              <ChevronsRight size={13} />
-            </button>
+            {/* Page buttons */}
+            <HStack className={ui('[gap:3px]!')}>
+              <button
+                className={ui('ct-page-btn')}
+                onClick={() => setPage(1)}
+                disabled={safePage === 1}
+                title="First page"
+              >
+                <ChevronsLeft size={13} />
+              </button>
+              <button
+                className={ui('ct-page-btn')}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                title="Previous"
+              >
+                <ChevronLeft size={13} />
+              </button>
+
+              {pageWindow[0] > 1 && (
+                <>
+                  <button
+                    className={ui('ct-page-btn')}
+                    onClick={() => setPage(1)}
+                  >
+                    1
+                  </button>
+                  {pageWindow[0] > 2 && (
+                    <span
+                      className={ui(
+                        '[font-size:var(--font-xs)] [color:var(--text-muted)] [padding:0_2px]',
+                      )}
+                    >
+                      …
+                    </span>
+                  )}
+                </>
+              )}
+
+              {pageWindow.map((p) => (
+                <button
+                  key={p}
+                  aria-current={p === safePage ? 'page' : undefined}
+                  className={ui(`ct-page-btn${p === safePage ? ' active' : ''}`)}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </button>
+              ))}
+
+              {pageWindow[pageWindow.length - 1] < totalPages && (
+                <>
+                  {pageWindow[pageWindow.length - 1] < totalPages - 1 && (
+                    <span
+                      className={ui(
+                        '[font-size:var(--font-xs)] [color:var(--text-muted)] [padding:0_2px]',
+                      )}
+                    >
+                      …
+                    </span>
+                  )}
+                  <button
+                    className={ui('ct-page-btn')}
+                    onClick={() => setPage(totalPages)}
+                  >
+                    {totalPages}
+                  </button>
+                </>
+              )}
+
+              <button
+                className={ui('ct-page-btn')}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                title="Next"
+              >
+                <ChevronRight size={13} />
+              </button>
+              <button
+                className={ui('ct-page-btn')}
+                onClick={() => setPage(totalPages)}
+                disabled={safePage === totalPages}
+                title="Last page"
+              >
+                <ChevronsRight size={13} />
+              </button>
+            </HStack>
           </HStack>
-        </HStack>
+        )}
       </Box>
     </>
   );

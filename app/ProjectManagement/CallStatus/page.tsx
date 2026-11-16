@@ -11,7 +11,11 @@ import { List, Plus, Pencil, ChevronRightCircle } from 'lucide-react';
 import { CustomTable, TableColumn } from '@/components/CustomTable';
 import { TextareaField } from '@/components/ui/CapitalizesTextArea';
 import { MediaManager, MediaItem, revokeMediaItems } from '@/components/ui/MediaManager';
-import { MediaLightbox, LightboxItem } from '@/components/ui/MediaLightbox';
+import {
+  AttachmentTile,
+  MediaLightbox,
+  LightboxItem,
+} from '@/components/ui/MediaLightbox';
 import { usePageHeader } from '@/context/PageHeaderContext';
 import { useToast } from '@/components/Toast';
 import { COLORS, RADIUS, FONT } from '@/utils/theme';
@@ -121,56 +125,6 @@ const COLUMNS: TableColumn<CallStatusListItem_Table>[] = [
       ),
   },
 ];
-const mediaUrl = (path?: string | null) =>
-  `${process.env.NEXT_PUBLIC_IMAGE_URL ?? ''}${path ?? ''}`;
-function MediaTile({
-  m,
-  idx,
-  onOpen,
-}: {
-  m: {
-    mediaUrl?: string | null;
-    mediaType?: string | null;
-  };
-  idx: number;
-  onOpen: () => void;
-}) {
-  const type = (m.mediaType ?? '').toUpperCase();
-  return (
-    <div
-      style={{
-        border: `1px solid ${COLORS.cardBorder}`,
-      }}
-      onClick={onOpen}
-      className={ui(
-        '[width:90px] [height:90px] [border-radius:10px] [overflow:hidden] [background:#f8fafc] [cursor:pointer]',
-      )}
-    >
-      {type.startsWith('IMAGE') ? (
-        <img
-          src={mediaUrl(m.mediaUrl)}
-          alt={`media-${idx}`}
-          className={ui('[width:100%] [height:100%] [object-fit:cover]')}
-        />
-      ) : type.startsWith('VIDEO') ? (
-        <video
-          src={mediaUrl(m.mediaUrl)}
-          muted
-          className={ui('[width:100%] [height:100%] [object-fit:cover]')}
-        />
-      ) : (
-        <div
-          className={ui(
-            '[display:flex] [align-items:center] [justify-content:center] [height:100%] [font-size:var(--font-xs)] [color:#34445d]',
-          )}
-        >
-          File
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────
@@ -259,7 +213,7 @@ function CallStatusPageInner() {
           STATUS: values.STATUS,
           remark: values.remark,
         },
-        media: media.map((m) => m.file).filter(Boolean) as File[],
+        media: media.flatMap((item) => (item.active && item.file ? [item.file] : [])),
       });
       toast.success('Status Added', 'Call status entry created successfully.');
       setAddOpen(false);
@@ -279,6 +233,7 @@ function CallStatusPageInner() {
   // ── Detail view (full page replace) ──
   if (viewTktId !== null) {
     const booking = detail?.callBooking;
+    const bookingMedia = booking?.media ?? [];
     return (
       <>
         <div className={ui('cs-wrap')}>
@@ -345,15 +300,30 @@ function CallStatusPageInner() {
                   ))}
                 </div>
 
+                {bookingMedia.length > 0 && (
+                  <>
+                    <div className={ui('cs-section-label')}>Booking attachments</div>
+                    <div className={ui('cs-media-grid')}>
+                      {bookingMedia.map((item, index) => (
+                        <AttachmentTile
+                          key={item.id ?? index}
+                          item={item}
+                          onOpen={() => setLightbox({ items: bookingMedia, index })}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+
                 {latestStatus?.media && latestStatus.media.length > 0 && (
                   <>
                     <div className={ui('cs-section-label')}>Media (latest status)</div>
                     <div className={ui('cs-media-grid')}>
                       {latestStatus.media.map((m, idx) => (
-                        <MediaTile
+                        <AttachmentTile
                           key={m.id ?? idx}
-                          m={m}
-                          idx={idx}
+                          item={m}
+
                           onOpen={() =>
                             setLightbox({
                               items: latestStatus.media as LightboxItem[],
@@ -435,10 +405,10 @@ function CallStatusPageInner() {
                             return (
                               <div className={ui('cs-media-grid')}>
                                 {historyMedia.map((m, idx) => (
-                                  <MediaTile
+                                  <AttachmentTile
                                     key={idx}
-                                    m={m}
-                                    idx={idx}
+                                    item={m}
+
                                     onOpen={() =>
                                       setLightbox({
                                         items: historyMedia as LightboxItem[],
@@ -543,11 +513,11 @@ function CallStatusPageInner() {
                   </div>
 
                   <div className={ui('cs-field-row')}>
-                    <label className={ui('cs-field-label')}>Media (image/video)</label>
+                    <label className={ui('cs-field-label')}>Attachments</label>
                     <MediaManager
                       value={media}
                       onChange={setMedia}
-                      accept="image/*,video/*"
+                      ticketAttachments
                       maxFiles={10}
                       onError={(msg) => toast.error('Error', msg)}
                     />

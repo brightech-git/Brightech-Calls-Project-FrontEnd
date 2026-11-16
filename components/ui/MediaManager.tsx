@@ -3,10 +3,12 @@
 // ─────────────────────────────────────────────
 'use client';
 
-import { useRef, useState, CSSProperties } from 'react';
+import { useEffect, useEffectEvent, useRef, useState, CSSProperties } from 'react';
 import { RefreshCw, X, ChevronLeft, ChevronRight, FileText, Plus } from 'lucide-react';
 
 import { COLORS, RADIUS, FONT } from '@/utils/theme';
+import { ResolveImage } from '@/utils/format/resolveImage';
+import { MediaLightbox } from '@/components/ui/MediaLightbox';
 import { SwitchInput } from '@/components/ui/SwitchInput';
 
 export interface MediaItem {
@@ -52,8 +54,14 @@ export const makeExistingMediaItem = (
   uid: `existing-${record.id}-${Math.random().toString(36).slice(2)}`,
   id: record.id ?? null,
   file: null,
-  fileName: (record.mediaUrl ?? '').split('/').pop() || 'file',
-  previewUrl: `${baseUrl}${record.mediaUrl ?? ''}`,
+  fileName:
+    record.mediaUrl
+      ?.split('/')
+      .pop()
+      ?.replace(/^[a-f0-9-]{36}_/i, '') || 'file',
+  previewUrl: baseUrl
+    ? `${baseUrl}${record.mediaUrl ?? ''}`
+    : ResolveImage(record.mediaUrl),
   mediaType: (record.mediaType ?? 'file').toLowerCase(),
   active: record.active !== false,
   isExisting: true,
@@ -66,10 +74,31 @@ export const revokeMediaItems = (items: MediaItem[]) =>
     if (!m.isExisting) URL.revokeObjectURL(m.previewUrl);
   });
 
+const imageExtensions =
+  'jpg jpeg jfif png gif webp bmp tif tiff heic heif avif ico'.split(' ');
+const videoExtensions = 'mp4 m4v mov webm avi mkv mpeg mpg wmv 3gp ogv'.split(' ');
+const documentExtensions =
+  'sql pdf xsl xslt txt log md rtf csv tsv json xml yaml yml doc docx xls xlsx ppt pptx odt ods odp zip 7z rar gz tar mp3 wav ogg m4a aac flac'.split(
+    ' ',
+  );
+const ticketExtensions = [...imageExtensions, ...videoExtensions, ...documentExtensions];
+const ticketAccept = ticketExtensions.map((extension) => '.' + extension).join(',');
+
+function validateTicketFile(file: File) {
+  const extension = file.name.match(/\.([^.]+)$/)?.[1].toLowerCase();
+  if (!extension || !ticketExtensions.includes(extension)) {
+    return file.name + ' is not a supported attachment.';
+  }
+  if (file.size === 0 || file.size > 5 * 1024 * 1024) {
+    return file.name + ' must be between 1 byte and 5 MB.';
+  }
+}
+
 interface MediaManagerProps {
   value: MediaItem[];
   onChange: (items: MediaItem[]) => void;
   accept?: string;
+  ticketAttachments?: boolean;
   maxFiles?: number;
   onError?: (msg: string) => void;
 }
@@ -82,16 +111,27 @@ interface MediaManagerProps {
 export function MediaManager({
   value,
   onChange,
+  ticketAttachments = false,
   accept = 'image/*,video/*,application/pdf',
   maxFiles = 10,
   onError,
 }: MediaManagerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const addInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const [dragging, setDragging] = useState(false);
   const [replacingUid, setReplacingUid] = useState<string | null>(null);
 
-  const handleAddFiles = (files: FileList | null) => {
+  const handleAddFiles = (files: FileList | File[] | null) => {
     if (!files || !files.length) return;
+
+    const valid = Array.from(files).filter((file) => {
+      const error = ticketAttachments ? validateTicketFile(file) : undefined;
+      if (error) onError?.(error);
+      return !error;
+    });
+    if (!valid.length) return;
 
     const remaining = maxFiles - value.length;
     if (remaining <= 0) {
@@ -99,19 +139,50 @@ export function MediaManager({
       return;
     }
 
-    const picked = Array.from(files).slice(0, remaining);
-    if (files.length > remaining) {
+    const picked = valid.slice(0, remaining);
+    if (valid.length > remaining) {
       onError?.(`Only ${remaining} more file(s) allowed`);
     }
 
     onChange([...value, ...picked.map(makeMediaItem)]);
   };
 
+  const handlePaste = useEffectEvent((event: ClipboardEvent) => {
+    const clipboard = event.clipboardData;
+    if (!clipboard) return;
+
+    const files = Array.from(clipboard.files);
+    if (!files.length) {
+      for (const item of clipboard.items) {
+        if (item.kind !== 'file') continue;
+        const file = item.getAsFile();
+        if (file) files.push(file);
+      }
+    }
+    if (!files.length) return;
+
+    event.preventDefault();
+    handleAddFiles(files);
+  });
+
+  useEffect(() => {
+    if (!ticketAttachments) return;
+    const region = containerRef.current?.closest('form') ?? containerRef.current;
+    const listener = (event: Event) => handlePaste(event as ClipboardEvent);
+    region?.addEventListener('paste', listener);
+    return () => region?.removeEventListener('paste', listener);
+  }, [ticketAttachments]);
+
   // Replace is only offered for not-yet-uploaded picks — an existing
   // (already-saved) item can only be toggled active/inactive or reordered.
   const handleReplace = (uid: string, files: FileList | null) => {
     const file = files?.[0];
     if (!file) return;
+    const error = ticketAttachments ? validateTicketFile(file) : undefined;
+    if (error) {
+      onError?.(error);
+      return;
+    }
 
     onChange(
       value.map((m) => {
@@ -150,7 +221,37 @@ export function MediaManager({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div
+      ref={containerRef}
+      style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+    >
+      {ticketAttachments && (
+        <button
+          type="button"
+          className="button w-full flex-col border-dashed p-4 whitespace-normal"
+          style={
+            dragging
+              ? { background: COLORS.primaryLight, borderColor: COLORS.primary }
+              : undefined
+          }
+          onClick={() => addInputRef.current?.click()}
+          onDragOver={(event) => {
+            if (!event.dataTransfer.types.includes('Files')) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDragging(false);
+            handleAddFiles(event.dataTransfer.files);
+          }}
+        >
+          <span>Drop files here or press Ctrl+V to paste</span>
+          <span>Click to browse · Maximum 5 MB per file</span>
+        </button>
+      )}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         {value.map((item, idx) => (
           <div
@@ -216,24 +317,26 @@ export function MediaManager({
                 justifyContent: 'center',
               }}
             >
-              {item.mediaType === 'image' ? (
-                <img
-                  src={item.previewUrl}
-                  alt={item.file?.name ?? item.fileName ?? 'media'}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : item.mediaType === 'video' ? (
-                <video
-                  src={item.previewUrl}
-                  muted
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <FileText
-                  size={28}
-                  color={COLORS.textMuted}
-                />
-              )}
+              <button
+                type="button"
+                className="attachment-tile"
+                aria-label={
+                  'Preview ' + (item.file?.name ?? item.fileName ?? 'attachment')
+                }
+                onClick={() => setPreviewIndex(idx)}
+              >
+                {item.mediaType === 'image' ? (
+                  <img
+                    src={item.previewUrl}
+                    alt=""
+                  />
+                ) : (
+                  <FileText
+                    size={28}
+                    aria-hidden="true"
+                  />
+                )}
+              </button>
             </div>
 
             <div style={{ padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -336,7 +439,7 @@ export function MediaManager({
           }}
         >
           <Plus size={18} />
-          Add Media
+          Choose files
         </button>
       </div>
 
@@ -344,7 +447,7 @@ export function MediaManager({
         ref={addInputRef}
         type="file"
         multiple
-        accept={accept}
+        accept={ticketAttachments ? ticketAccept : accept}
         style={{ display: 'none' }}
         onChange={(e) => {
           handleAddFiles(e.target.files);
@@ -355,7 +458,7 @@ export function MediaManager({
       <input
         ref={replaceInputRef}
         type="file"
-        accept={accept}
+        accept={ticketAttachments ? ticketAccept : accept}
         style={{ display: 'none' }}
         onChange={(e) => {
           if (replacingUid) handleReplace(replacingUid, e.target.files);
@@ -363,6 +466,18 @@ export function MediaManager({
           e.target.value = '';
         }}
       />
+      {previewIndex !== null && (
+        <MediaLightbox
+          items={value.map((item) => ({
+            mediaUrl: item.previewUrl,
+            mediaType: item.mediaType,
+            fileName: item.file?.name ?? item.fileName,
+          }))}
+          index={previewIndex}
+          onIndexChange={setPreviewIndex}
+          onClose={() => setPreviewIndex(null)}
+        />
+      )}
     </div>
   );
 }

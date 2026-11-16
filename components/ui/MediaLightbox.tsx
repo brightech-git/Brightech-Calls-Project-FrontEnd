@@ -1,20 +1,169 @@
-// ─────────────────────────────────────────────
-// components/ui/MediaLightbox.tsx
-// ─────────────────────────────────────────────
-// Full-screen popup for viewing one media item from a group, with
-// Left/Right buttons (and arrow keys) to step through the adjacent
-// items in that same group. Used anywhere a small media thumbnail is
-// shown (Task Assignment media, Call Status media/history).
 'use client';
 
-import { useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { COLORS, RADIUS, FONT } from '@/utils/theme';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, FileText, X } from 'lucide-react';
 import { ResolveImage } from '@/utils/format/resolveImage';
 
 export interface LightboxItem {
   mediaUrl?: string | null;
   mediaType?: string | null;
+  fileName?: string;
+}
+
+export function attachmentName(item: LightboxItem) {
+  return (
+    item.fileName ||
+    item.mediaUrl
+      ?.split(/[?#]/)[0]
+      .split('/')
+      .pop()
+      ?.replace(/^[a-f0-9-]{36}_/i, '') ||
+    'Attachment'
+  );
+}
+
+function attachmentUrl(item: LightboxItem) {
+  return item.mediaUrl?.startsWith('blob:') ? item.mediaUrl : ResolveImage(item.mediaUrl);
+}
+
+export function AttachmentTile({
+  item,
+  onOpen,
+}: {
+  item: LightboxItem;
+  onOpen: () => void;
+}) {
+  const name = attachmentName(item);
+  const type = item.mediaType?.toUpperCase();
+  return (
+    <button
+      type="button"
+      className="attachment-tile"
+      onClick={onOpen}
+      title={name}
+      aria-label={'Preview ' + name}
+    >
+      {type === 'IMAGE' ? (
+        <img
+          src={attachmentUrl(item)}
+          alt=""
+        />
+      ) : (
+        <FileText
+          size={24}
+          aria-hidden="true"
+        />
+      )}
+      <span>{name}</span>
+    </button>
+  );
+}
+
+type Preview =
+  { kind: 'text' | 'document'; content: string } | { kind: 'pdf'; url: string };
+
+async function readDocument(response: Response, extension: string) {
+  const { unzipSync, strFromU8 } = await import('fflate');
+  const path = extension === 'docx' ? 'word/document.xml' : 'content.xml';
+  const files = unzipSync(new Uint8Array(await response.arrayBuffer()), {
+    filter: (file) => file.name === path && file.originalSize <= 10 * 1024 * 1024,
+  });
+  if (!files[path]) throw new Error('Document content is unavailable.');
+  const document = new DOMParser().parseFromString(
+    strFromU8(files[path]),
+    'application/xml',
+  );
+  if (document.querySelector('parsererror'))
+    throw new Error('Document content could not be read.');
+  const tags = extension === 'docx' ? ['p'] : ['p', 'h'];
+  const paragraphs = Array.from(document.getElementsByTagName('*')).filter((element) =>
+    tags.includes(element.localName),
+  );
+  return paragraphs.map((paragraph) => paragraph.textContent ?? '').join('\n\n');
+}
+
+function FilePreview({ url, extension }: { url: string; extension: string }) {
+  const [preview, setPreview] = useState<Preview>();
+  const [failed, setFailed] = useState(false);
+  const document = ['docx', 'odt'].includes(extension);
+  const pdf = extension === 'pdf';
+  const supported =
+    document ||
+    pdf ||
+    [
+      'sql',
+      'txt',
+      'log',
+      'md',
+      'csv',
+      'tsv',
+      'json',
+      'xml',
+      'xsl',
+      'xslt',
+      'yaml',
+      'yml',
+    ].includes(extension);
+
+  useEffect(() => {
+    if (!supported || !url) return;
+    const controller = new AbortController();
+    let objectUrl: string | undefined;
+
+    async function load() {
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) throw new Error('Attachment could not be loaded.');
+        if (pdf) {
+          const bytes = await response.arrayBuffer();
+          const signature = new TextDecoder().decode(bytes.slice(0, 5));
+          if (signature !== '%PDF-') throw new Error('Invalid PDF.');
+          if (controller.signal.aborted) return;
+          objectUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+          setPreview({ kind: 'pdf', url: objectUrl });
+          return;
+        }
+        const content = document
+          ? await readDocument(response, extension)
+          : await response.text();
+        if (!controller.signal.aborted)
+          setPreview({ kind: document ? 'document' : 'text', content });
+      } catch {
+        if (!controller.signal.aborted) setFailed(true);
+      }
+    }
+
+    void load();
+    return () => {
+      controller.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [url, extension, supported, document, pdf]);
+
+  if (!supported || !url)
+    return <p>Preview is unavailable for this file type. Use Open original.</p>;
+  if (failed)
+    return (
+      <p role="alert">
+        Couldn’t load the preview. Use Open original to view or download the file.
+      </p>
+    );
+  if (!preview) return <p role="status">Loading preview…</p>;
+  if (preview.kind === 'pdf')
+    return (
+      <iframe
+        className="attachment-pdf"
+        src={preview.url}
+        title="PDF preview"
+      />
+    );
+  return (
+    <pre
+      className={preview.kind === 'document' ? 'attachment-document' : 'attachment-text'}
+    >
+      {preview.content || 'This file is empty.'}
+    </pre>
+  );
 }
 
 interface MediaLightboxProps {
@@ -22,7 +171,6 @@ interface MediaLightboxProps {
   index: number;
   onClose: () => void;
   onIndexChange: (index: number) => void;
-  baseUrl?: string;
 }
 
 export function MediaLightbox({
@@ -30,160 +178,104 @@ export function MediaLightbox({
   index,
   onClose,
   onIndexChange,
-  baseUrl,
 }: MediaLightboxProps) {
-  const count = items.length;
-
-  const goPrev = () => onIndexChange((index - 1 + count) % count);
-  const goNext = () => onIndexChange((index + 1) % count);
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft' && count > 1) goPrev();
-      if (e.key === 'ArrowRight' && count > 1) goNext();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, count]);
-
-  if (!count) return null;
-
-  const base = baseUrl ?? process.env.NEXT_PUBLIC_IMAGE_URL ?? '';
+  const dialog = useRef<HTMLDialogElement>(null);
   const item = items[index];
-  const type = (item.mediaType ?? '').toUpperCase();
-  const url = ResolveImage(item.mediaUrl);
+  useEffect(() => {
+    const element = dialog.current;
+    element?.showModal();
+    return () => element?.close();
+  }, []);
 
-  const navBtnStyle = (side: 'left' | 'right'): React.CSSProperties => ({
-    position: 'fixed',
-    [side]: 16,
-    top: '50%',
-    transform: 'translateY(-50%)',
-    width: 44,
-    height: 44,
-    borderRadius: '50%',
-    border: 'none',
-    background: 'rgba(255,255,255,0.15)',
-    color: '#fff',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2001,
-  });
-
+  if (!item) return null;
+  const count = items.length;
+  const name = attachmentName(item);
+  const url = attachmentUrl(item);
+  const type = item.mediaType?.toUpperCase();
+  const extension = name.split('.').pop()?.toLowerCase() ?? '';
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.85)',
-        zIndex: 2000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+    <dialog
+      ref={dialog}
+      className="attachment-dialog"
+      aria-label={name}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') event.stopPropagation();
+      }}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
       }}
     >
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
-        title="Close"
-        style={{
-          position: 'fixed',
-          top: 16,
-          right: 16,
-          width: 36,
-          height: 36,
-          borderRadius: '50%',
-          border: 'none',
-          background: 'rgba(255,255,255,0.15)',
-          color: '#fff',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2001,
-        }}
-      >
-        <X size={18} />
-      </button>
-
-      {count > 1 && (
+      <div className="attachment-dialog-header">
+        <strong>{name}</strong>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            goPrev();
-          }}
-          title="Previous"
-          style={navBtnStyle('left')}
+          type="button"
+          className="button"
+          onClick={onClose}
+          aria-label="Close preview"
         >
-          <ChevronLeft size={24} />
+          <X size={18} />
         </button>
-      )}
-
+      </div>
       <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          maxWidth: '90vw',
-          maxHeight: '85vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 10,
-        }}
+        className="attachment-preview"
+        key={index}
+        tabIndex={0}
+        aria-label="Scrollable attachment preview"
       >
-        {type.startsWith('IMAGE') ? (
+        {type === 'IMAGE' ? (
           <img
             src={url}
-            alt={`media-${index}`}
-            style={{
-              maxWidth: '90vw',
-              maxHeight: '80vh',
-              objectFit: 'contain',
-              borderRadius: RADIUS.md,
-            }}
+            alt={name}
           />
-        ) : type.startsWith('VIDEO') ? (
+        ) : type === 'VIDEO' ? (
           <video
             src={url}
             controls
-            autoPlay
-            style={{ maxWidth: '90vw', maxHeight: '80vh', borderRadius: RADIUS.md }}
           />
         ) : (
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: '#fff', fontFamily: FONT.family }}
-          >
-            Open file
-          </a>
-        )}
-
-        {count > 1 && (
-          <div style={{ color: '#fff', fontSize: 12, fontFamily: FONT.family }}>
-            {index + 1} / {count}
-          </div>
+          <FilePreview
+            key={url}
+            url={url}
+            extension={extension}
+          />
         )}
       </div>
-
-      {count > 1 && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            goNext();
-          }}
-          title="Next"
-          style={navBtnStyle('right')}
-        >
-          <ChevronRight size={24} />
-        </button>
-      )}
-    </div>
+      <div className="attachment-dialog-footer">
+        {url && (
+          <a
+            className="button"
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open original
+          </a>
+        )}
+        {count > 1 && (
+          <>
+            <button
+              type="button"
+              className="button"
+              aria-label="Previous attachment"
+              onClick={() => onIndexChange((index - 1 + count) % count)}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span>
+              {index + 1} / {count}
+            </span>
+            <button
+              type="button"
+              className="button"
+              aria-label="Next attachment"
+              onClick={() => onIndexChange((index + 1) % count)}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </>
+        )}
+      </div>
+    </dialog>
   );
 }

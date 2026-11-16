@@ -1,7 +1,13 @@
-export function ResolveImage(image: string | null | undefined) {
-  if (!image || image === undefined) return '';
+import { apiConfig } from '@/lib/api/config';
 
-  const baseUrl = 'https://calls.brightechsoftware.com';
+export function ResolveImage(path: string | null | undefined) {
+  if (!path) return '';
 
-  return `${baseUrl}${image}`;
+  const base = process.env.NEXT_PUBLIC_IMAGE_URL || apiConfig.baseURL;
+  try {
+    const url = new URL(path, new URL(base).origin);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+  } catch {
+    return '';
+  }
 }

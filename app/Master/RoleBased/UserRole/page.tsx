@@ -17,7 +17,6 @@ import {
   Badge,
   Spinner,
 } from '@chakra-ui/react';
-import { Table } from '@chakra-ui/react/table';
 
 /* ------------------ ICONS ------------------ */
 import { AiOutlineSave } from 'react-icons/ai';
@@ -27,7 +26,7 @@ import { FaEdit, FaTrash, FaPrint, FaFileExcel } from 'react-icons/fa';
 /* ------------------ COMPONENTS ------------------ */
 import { Toaster, toaster } from '@/components/ui/toaster';
 import scrollToTop from '@/components/scroll/ScrollToTop';
-import { CustomTable } from '@/components/table/CustomTable';
+import { CustomTable } from '@/components/CustomTable';
 import { NativeSelectWrapper } from '@/components/ui/NativeSelectWrapper';
 import SearchBar from '@/components/search/SearchBar';
 import { useEnterNavigation } from '@/components/form/useEnterNavigation';
@@ -59,24 +58,7 @@ const emptyForm: UserRolePayload = {
   ROLEID: 0,
   UPUSERID,
 };
-const userRoleColumns = [
-  {
-    key: 'SNO',
-    label: 'S.No',
-  },
-  {
-    key: 'USERID',
-    label: 'User',
-  },
-  {
-    key: 'ROLEID',
-    label: 'Role',
-  },
-  {
-    key: 'actions',
-    label: 'Actions',
-  },
-];
+
 export default function UserRoleMaster() {
   // const { theme } = useTheme();
   const router = useRouter();
@@ -376,14 +358,22 @@ export default function UserRoleMaster() {
                          </Flex> */}
 
             <CustomTable
-              columns={userRoleColumns}
-              data={paginatedUserRoles}
-              renderRow={(ur: UserRole, index: number) => (
-                <>
-                  <Table.Cell>{page * size + index + 1}</Table.Cell>
-                  <Table.Cell>{getOperatorName(ur.USERID)}</Table.Cell>
-                  <Table.Cell>{getRoleName(ur.ROLEID)}</Table.Cell>
-                  <Table.Cell>
+              columns={[
+                {
+                  key: 'SNO',
+                  header: 'S.No',
+                  render: (_row, index) => page * size + index + 1,
+                },
+                {
+                  key: 'USERID',
+                  header: 'User',
+                  render: (ur) => getOperatorName(ur.USERID),
+                },
+                { key: 'ROLEID', header: 'Role', render: (ur) => getRoleName(ur.ROLEID) },
+                {
+                  key: 'actions',
+                  header: 'Actions',
+                  render: (ur) => (
                     <Box className={ui('[display:flex]! [gap:8px]!')}>
                       <FaTrash
                         onClick={(e) => {
@@ -394,17 +384,16 @@ export default function UserRoleMaster() {
                         className={ui('[cursor:pointer]! [color:red]!')}
                       />
                     </Box>
-                  </Table.Cell>
-                </>
-              )}
-              headerBg="#f8fafc"
-              headerColor="var(--text-muted)"
-              // bodyBg={theme.colors.primary}
+                  ),
+                },
+              ]}
+              data={paginatedUserRoles}
+              showSearch={false}
+              showPagination={false}
+              rowKey="USERID"
               highlightRowId={highlightedId}
-              rowIdKey="USERID"
-              emptyText="No user role assignments available"
-              onRowClick={(row) => handleEdit(row)}
-              className={ui('[border-color:var(--border)]!')}
+              emptyMessage="No user role assignments available"
+              onRowClick={handleEdit}
             />
           </Box>
         </GridItem>

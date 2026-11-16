@@ -287,6 +287,7 @@ export default function DashboardPage() {
                 ? 'Employee workloads are unavailable.'
                 : 'No employee accounts found.'
             }
+            
           />
           <p className="text-xs text-muted">
             Employees are non-client user accounts, including inactive accounts. Shared
@@ -391,6 +392,12 @@ export default function DashboardPage() {
                   ]
                 : []
             }
+            onRowClick={(row) => {
+              if (row.tktId != null)
+                window.location.assign(
+                  `/ProjectManagement/CallStatus?tktId=${row.tktId}`,
+                );
+            }}
           />
         </section>
         <aside className={ui('dashboard-aside')}>

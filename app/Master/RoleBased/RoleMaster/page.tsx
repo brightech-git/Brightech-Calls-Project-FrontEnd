@@ -15,7 +15,6 @@ import {
   Flex,
   Badge,
   Spinner,
-  Table,
 } from '@chakra-ui/react';
 import { AiOutlineSave } from 'react-icons/ai';
 import { IoIosExit } from 'react-icons/io';
@@ -37,7 +36,7 @@ import { Role, RolePayload } from '@/types/RoleMaster/RoleMaster';
 
 /*------------------COMPONENTS ------------------------------*/
 import ScrollToTop from '@/components/scroll/ScrollToTop';
-import { CustomTable } from '@/components/table/CustomTable';
+import { CustomTable } from '@/components/CustomTable';
 import SearchBar from '@/components/search/SearchBar';
 import { DynamicForm } from '@/components/form/DynamicForm';
 import { useEnterNavigation } from '@/components/form/useEnterNavigation';
@@ -59,32 +58,7 @@ const yesNoItems = [
     value: 'N',
   },
 ];
-const roleColumns = [
-  {
-    key: 'SNO',
-    label: 'S.No',
-  },
-  {
-    key: 'ROLEID',
-    label: 'Role Id',
-  },
-  {
-    key: 'ROLENAME',
-    label: 'Role Name',
-  },
-  {
-    key: 'ACTIVE',
-    label: 'Active',
-  },
-  {
-    key: 'PWDACCESS',
-    label: 'Password Access',
-  },
-  {
-    key: 'ADMINACCESS',
-    label: 'Admin Access',
-  },
-];
+
 export default function RoleMaster() {
   // const { theme } = useTheme();
   const router = useRouter();
@@ -381,14 +355,18 @@ export default function RoleMaster() {
             </Flex>
 
             <CustomTable
-              columns={roleColumns}
-              data={paginatedRoles}
-              renderRow={(role: Role, index: number) => (
-                <>
-                  <Table.Cell>{page * size + index + 1}</Table.Cell>
-                  <Table.Cell>{role.ROLEID}</Table.Cell>
-                  <Table.Cell>{role.ROLENAME}</Table.Cell>
-                  <Table.Cell>
+              columns={[
+                {
+                  key: 'SNO',
+                  header: 'S.No',
+                  render: (_row, index) => page * size + index + 1,
+                },
+                { key: 'ROLEID', header: 'Role Id', render: (role) => role.ROLEID },
+                { key: 'ROLENAME', header: 'Role Name', render: (role) => role.ROLENAME },
+                {
+                  key: 'ACTIVE',
+                  header: 'Active',
+                  render: (role) => (
                     <Badge
                       colorScheme={role.ACTIVE === 'Y' ? 'green' : 'red'}
                       className={ui(
@@ -397,8 +375,12 @@ export default function RoleMaster() {
                     >
                       {role.ACTIVE === 'Y' ? 'Yes' : 'No'}
                     </Badge>
-                  </Table.Cell>
-                  <Table.Cell>
+                  ),
+                },
+                {
+                  key: 'PWDACCESS',
+                  header: 'Password Access',
+                  render: (role) => (
                     <Badge
                       colorScheme={role.PWDACCESS === 'Y' ? 'green' : 'red'}
                       className={ui(
@@ -407,8 +389,12 @@ export default function RoleMaster() {
                     >
                       {role.PWDACCESS === 'Y' ? 'Yes' : 'No'}
                     </Badge>
-                  </Table.Cell>
-                  <Table.Cell>
+                  ),
+                },
+                {
+                  key: 'ADMINACCESS',
+                  header: 'Admin Access',
+                  render: (role) => (
                     <Badge
                       colorScheme={role.ADMINACCESS === 'Y' ? 'green' : 'red'}
                       className={ui(
@@ -417,17 +403,16 @@ export default function RoleMaster() {
                     >
                       {role.ADMINACCESS === 'Y' ? 'Yes' : 'No'}
                     </Badge>
-                  </Table.Cell>
-                </>
-              )}
-              headerBg="#f8fafc"
-              headerColor="var(--text-muted)"
-              // bodyBg={theme.colors.primary}
+                  ),
+                },
+              ]}
+              data={paginatedRoles}
+              showSearch={false}
+              showPagination={false}
+              rowKey="ROLEID"
               highlightRowId={highlightedId?.toString()}
-              rowIdKey="ROLEID"
-              emptyText="No roles available"
-              onRowClick={(row) => handleEdit(row)}
-              className={ui('[border-color:var(--border)]!')}
+              emptyMessage="No roles available"
+              onRowClick={handleEdit}
             />
           </Box>
         </GridItem>

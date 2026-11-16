@@ -20,7 +20,11 @@ import {
   revokeMediaItems,
   makeExistingMediaItem,
 } from '@/components/ui/MediaManager';
-import { MediaLightbox, LightboxItem } from '@/components/ui/MediaLightbox';
+import {
+  AttachmentTile,
+  MediaLightbox,
+  LightboxItem,
+} from '@/components/ui/MediaLightbox';
 import { DatePickerInput } from '@/components/ui/DatePickerInput';
 import { usePageHeader } from '@/context/PageHeaderContext';
 import { useToast } from '@/components/Toast';
@@ -47,7 +51,6 @@ import {
   CallsBookingListItem_Table,
 } from '@/types/TaskAssignment/TaskAssignment';
 import { NativeSelectWrapper } from '@/components/ui/NativeSelectWrapper';
-import { ResolveImage } from '@/utils/format/resolveImage';
 
 // ─────────────────────────────────────────────
 // Schema
@@ -263,47 +266,23 @@ export default function CallsBookingPage() {
   // range. Both are sent to the server (GET /callsbooking?fromDate=&toDate=)
   // so the filter — and the summary tiles below — reflect the whole
   // matching dataset, not just the currently loaded page.
-  const isClientUser =
-    typeof window !== 'undefined' && localStorage.getItem('isClient') === 'Y';
-  const myClientId = isClientUser
-    ? Number(localStorage.getItem('clientId') || 0) || 0
-    : 0;
-  const userId = Number(localStorage.getItem('userId') || 0) || 0;
-
-  const [appliedFilters, setAppliedFilters] = useState({
-    asOn: true,
-    asOnDate: today,
-    fromDate: today,
-    toDate: today,
-    userId: userId ? userId.toString() : '',
-    clientId: myClientId ? myClientId.toString() : '',
+  const userId = localStorage.getItem('userId') ?? '';
+  const isAdmin = userId === '999';
+  const isClientUser = !isAdmin && localStorage.getItem('isClient') === 'Y';
+  const myClientId = isClientUser ? Number(localStorage.getItem('clientId')) || 0 : 0;
+  const defaultFilters = {
+    asOn: !isAdmin,
+    asOnDate: isAdmin ? '' : today,
+    fromDate: isAdmin ? '' : today,
+    toDate: isAdmin ? '' : today,
+    userId: isAdmin || isClientUser ? '' : userId,
+    clientId: myClientId ? String(myClientId) : '',
     projectId: '',
     moduleId: '',
     status: '',
-  });
-  const [searchFilters, setSearchFilters] = useState(appliedFilters);
-
-  console.log(searchFilters, 'searchFilters');
-
-  useEffect(() => {
-    if (myClientId) {
-      setAppliedFilters((prev) => ({
-        ...prev,
-        clientId: myClientId.toString(),
-        userId: '',
-      }));
-      setSearchFilters((prev) => ({
-        ...prev,
-        clientId: myClientId.toString(),
-        userId: '',
-      }));
-    } else {
-      setSearchFilters((prev) => ({
-        ...prev,
-        userId: userId.toString(),
-      }));
-    }
-  }, [userId, myClientId]);
+  };
+  const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
+  const [searchFilters, setSearchFilters] = useState(defaultFilters);
 
   const { data: companies = [] } = useCompanyList();
   const { data: clients = [] } = useClientList();
@@ -312,7 +291,6 @@ export default function CallsBookingPage() {
   const { data: staffList = [] } = useGetAllUsers();
   const { data: pagedBookings, isLoading } = useCallsBookingList(searchFilters);
   const bookings = pagedBookings?.content ?? [];
-  console.log(bookings, 'bookings');
   const { data: viewData, isLoading: viewLoading } = useGetCallsBookingById(viewId ?? '');
 
   // Call status history for the ticket currently being previewed
@@ -335,17 +313,8 @@ export default function CallsBookingPage() {
     });
   };
   const handleResetFilters = () => {
-    setAppliedFilters({
-      asOn: true,
-      asOnDate: today,
-      fromDate: today,
-      toDate: today,
-      userId: userId && !myClientId ? userId.toString() : '',
-      clientId: myClientId ? myClientId.toString() : '',
-      projectId: '',
-      moduleId: '',
-      status: '',
-    });
+    setAppliedFilters(defaultFilters);
+    setSearchFilters(defaultFilters);
   };
   const {
     control,
@@ -428,11 +397,9 @@ export default function CallsBookingPage() {
   ];
 
   // ── List filters (toolbar) ──
-  // Staff filter defaults to the logged-in user's own id so the list
-  // opens scoped to "my bookings"; "All Staff" clears it back to everyone.
   const staffFilterItems = [
     {
-      label: 'All Staff',
+      label: 'All assigned users',
       value: '',
     },
     ...staffItems,
@@ -483,9 +450,7 @@ export default function CallsBookingPage() {
       });
       setMedia((prev) => {
         revokeMediaItems(prev);
-        return (r.media ?? []).map((m) =>
-          makeExistingMediaItem(m, process.env.NEXT_PUBLIC_IMAGE_URL ?? ''),
-        );
+        return (r.media ?? []).map((m) => makeExistingMediaItem(m, ''));
       });
       setOpen(true);
     } catch (err: any) {
@@ -679,7 +644,6 @@ export default function CallsBookingPage() {
                     <div className={ui('cb-detail-section-label')}>Media</div>
                     <div className={ui('cb-media-grid')}>
                       {v.media.map((m, idx) => {
-                        const type = (m.mediaType ?? '').toUpperCase();
                         return (
                           // NOTE: m.mediaId is a shared group id (same across every
                           // file in this booking), not unique per item — key on idx.
@@ -687,40 +651,15 @@ export default function CallsBookingPage() {
                             key={idx}
                             className={ui('cb-media-tile')}
                           >
-                            {type.startsWith('IMAGE') ? (
-                              <img
-                                src={ResolveImage(m.mediaUrl)}
-                                alt={`media-${idx}`}
-                                onClick={() =>
-                                  setLightbox({
-                                    items: v.media as LightboxItem[],
-                                    index: idx,
-                                  })
-                                }
-                                className={ui(
-                                  '[width:100%] [height:90px] [object-fit:cover] [cursor:pointer]',
-                                )}
-                              />
-                            ) : type.startsWith('VIDEO') ? (
-                              <video
-                                src={ResolveImage(m.mediaUrl)}
-                                controls
-                                className={ui(
-                                  '[width:100%] [height:90px] [object-fit:cover]',
-                                )}
-                              />
-                            ) : (
-                              <a
-                                href={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={ui(
-                                  '[display:flex] [align-items:center] [justify-content:center] [height:90px] [font-size:var(--font-xs)] [color:#34445d]',
-                                )}
-                              >
-                                Open file
-                              </a>
-                            )}
+                            <AttachmentTile
+                              item={m}
+                              onOpen={() =>
+                                setLightbox({
+                                  items: v.media as LightboxItem[],
+                                  index: idx,
+                                })
+                              }
+                            />
                             <div
                               style={{
                                 color:
@@ -848,46 +787,20 @@ export default function CallsBookingPage() {
                               return (
                                 <div className={ui('cb-media-grid')}>
                                   {historyMedia.map((m, idx) => {
-                                    const type = (m.mediaType ?? '').toUpperCase();
                                     return (
                                       <div
                                         key={idx}
                                         className={ui('cb-media-tile')}
                                       >
-                                        {type.startsWith('IMAGE') ? (
-                                          <img
-                                            src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
-                                            alt={`status-media-${idx}`}
-                                            onClick={() =>
-                                              setLightbox({
-                                                items: historyMedia as LightboxItem[],
-                                                index: idx,
-                                              })
-                                            }
-                                            className={ui(
-                                              '[width:100%] [height:90px] [object-fit:cover] [cursor:pointer]',
-                                            )}
-                                          />
-                                        ) : type.startsWith('VIDEO') ? (
-                                          <video
-                                            src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
-                                            controls
-                                            className={ui(
-                                              '[width:100%] [height:90px] [object-fit:cover]',
-                                            )}
-                                          />
-                                        ) : (
-                                          <a
-                                            href={`${process.env.NEXT_PUBLIC_IMAGE_URL}${m.mediaUrl}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className={ui(
-                                              '[display:flex] [align-items:center] [justify-content:center] [height:90px] [font-size:var(--font-xs)] [color:#34445d]',
-                                            )}
-                                          >
-                                            Open file
-                                          </a>
-                                        )}
+                                        <AttachmentTile
+                                          item={m}
+                                          onOpen={() =>
+                                            setLightbox({
+                                              items: historyMedia as LightboxItem[],
+                                              index: idx,
+                                            })
+                                          }
+                                        />
                                       </div>
                                     );
                                   })}
@@ -1095,7 +1008,7 @@ export default function CallsBookingPage() {
           )}
 
           {/* Staff */}
-          {userId == 2 && (
+          {isAdmin && (
             <VStack
               spaceX="4px"
               className={ui('[align-items:stretch]! [min-width:150px]!')}
@@ -1105,18 +1018,17 @@ export default function CallsBookingPage() {
                   '[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!',
                 )}
               >
-                Staff
+                Assigned user
               </Text>
 
               <SelectCombobox
                 value={appliedFilters.userId || undefined}
                 onChange={(val) => handleChange('userId', val)}
                 items={staffFilterItems}
-                placeholder="Select staff"
+                placeholder="All assigned users"
                 size="sm"
                 label=""
                 className={ui('[max-width:180px]! [font-size:var(--font-sm)]!')}
-                disable={userId != 2}
               />
             </VStack>
           )}
@@ -1549,7 +1461,7 @@ export default function CallsBookingPage() {
                   <MediaManager
                     value={media}
                     onChange={setMedia}
-                    accept="image/*,video/*,application/pdf,.doc,.docx"
+                    ticketAttachments
                     maxFiles={10}
                     onError={(msg) => toast.error('Error', msg)}
                   />
@@ -1670,11 +1582,11 @@ export default function CallsBookingPage() {
                 </div>
 
                 <div className={ui('cs-field-row')}>
-                  <label className={ui('cs-field-label')}>Media (image/video)</label>
+                  <label className={ui('cs-field-label')}>Attachments</label>
                   <MediaManager
                     value={statusMedia}
                     onChange={setStatusMedia}
-                    accept="image/*,video/*"
+                    ticketAttachments
                     maxFiles={10}
                     onError={(msg) => toast.error('Error', msg)}
                   />

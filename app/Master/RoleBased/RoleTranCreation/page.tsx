@@ -15,7 +15,7 @@ import {
   Grid,
   GridItem,
 } from '@chakra-ui/react';
-import { Table } from '@chakra-ui/react/table';
+
 import {
   ChevronRight,
   ChevronDown,
@@ -27,7 +27,7 @@ import {
   AlertCircle,
   Edit2,
 } from 'lucide-react';
-import { CustomTable, TableColumn } from '@/components/table/CustomTable';
+import { CustomTable } from '@/components/CustomTable';
 import { toastError, toastCreated } from '@/components/toast/toast';
 import {
   useRoleTransactions,
@@ -1083,36 +1083,6 @@ export default function RoleTranCreationPage() {
   );
 
   // ── Staging table columns ──────────────────────────────────────────────────
-  const selectedRowsColumns: TableColumn[] = useMemo(
-    () => [
-      {
-        key: 'MODULENAME',
-        label: 'Module',
-        align: 'start',
-      },
-      {
-        key: 'SUBMODULENAME',
-        label: 'Sub Module',
-        align: 'start',
-      },
-      {
-        key: 'CONTENTNAME',
-        label: 'Content',
-        align: 'start',
-      },
-      {
-        key: 'ACTIVE',
-        label: 'Active',
-        align: 'center',
-      },
-      {
-        key: 'actions',
-        label: '',
-        align: 'center',
-      },
-    ],
-    [],
-  );
   const groupedByRole = useMemo(() => {
     if (!roleTransactions) return {} as Record<string, RoleTran[]>;
     const g: Record<string, RoleTran[]> = {};
@@ -1502,17 +1472,26 @@ export default function RoleTranCreationPage() {
                   <VStack className={ui('[align-items:stretch]! [gap:16px]!')}>
                     <Box className={ui('[overflow-x:auto]!')}>
                       <CustomTable
-                        columns={selectedRowsColumns}
-                        data={rows}
-                        size="sm"
-                        headerBg="blue.50"
-                        bodyBg="white"
-                        renderRow={(row, IDx) => (
-                          <>
-                            <Table.Cell>{row.MODULENAME}</Table.Cell>
-                            <Table.Cell>{row.SUBMODULENAME || '—'}</Table.Cell>
-                            <Table.Cell>{row.CONTENTNAME}</Table.Cell>
-                            <Table.Cell className={ui('[text-align:center]!')}>
+                        columns={[
+                          {
+                            key: 'MODULENAME',
+                            header: 'Module',
+                            render: (row) => row.MODULENAME,
+                          },
+                          {
+                            key: 'SUBMODULENAME',
+                            header: 'Sub Module',
+                            render: (row) => row.SUBMODULENAME || '—',
+                          },
+                          {
+                            key: 'CONTENTNAME',
+                            header: 'Content',
+                            render: (row) => row.CONTENTNAME,
+                          },
+                          {
+                            key: 'ACTIVE',
+                            header: 'Active',
+                            render: (row) => (
                               <Box
                                 bg={row.ACTIVE ? T.greenLight : T.redLight}
                                 color={row.ACTIVE ? '#065F46' : '#991B1B'}
@@ -1522,8 +1501,12 @@ export default function RoleTranCreationPage() {
                               >
                                 {row.ACTIVE ? 'Yes' : 'No'}
                               </Box>
-                            </Table.Cell>
-                            <Table.Cell className={ui('[text-align:center]!')}>
+                            ),
+                          },
+                          {
+                            key: 'actions',
+                            header: 'Actions',
+                            render: (_row, IDx) => (
                               <HStack
                                 className={ui('[gap:4px]! [justify-content:center]!')}
                               >
@@ -1554,10 +1537,13 @@ export default function RoleTranCreationPage() {
                                   <Trash2 size={13} />
                                 </button>
                               </HStack>
-                            </Table.Cell>
-                          </>
-                        )}
-                        className={ui('[border-color:var(--color-gray-200)]!')}
+                            ),
+                          },
+                        ]}
+                        data={rows}
+                        showSearch={false}
+                        showPagination={false}
+                        title="Selected permissions"
                       />
                     </Box>
                     <HStack
