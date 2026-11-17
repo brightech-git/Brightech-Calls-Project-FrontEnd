@@ -1,18 +1,17 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import { Box, Button, Grid, VStack, Text, HStack, Badge, Table } from '@chakra-ui/react';
 import {
   Database,
   Layers,
   FileText,
   Pencil,
   Trash2,
-  ChevronDown,
+  ChevronRight,
   Eye,
   Plus,
-  RefreshCw,
+  RotateCcw,
+  Check,
 } from 'lucide-react';
 import {
   useModules,
@@ -29,15 +28,19 @@ import {
   useUpdateContent,
   useDeleteContent,
 } from '@/src/module/role-tran/hook/use-role-tran';
-import {
-  useSidebar,
-  type DirectMenuItem,
-  type SectionDirectItem,
-  type MenuGroup,
-} from '@/context/layout/SideBarContext';
+import { useSidebar, type DirectMenuItem, type MenuGroup } from '@/context/layout/SideBarContext';
 import { menuConfig } from '@/config/menu/menuConfig';
-// import { useTheme } from "@/context/theme/themeContext";
+import { labelFor } from '@/config/menu/menuLabels';
 import { toastError } from '@/components/toast/toast';
+import { cn } from '@/lib/utils';
+import {
+  buttonClass,
+  buttonVariants,
+  cardClass,
+  controlClass,
+  iconButtonClass,
+  labelClass,
+} from '@/lib/styles';
 
 // Module options come straight from the static sidebar config — the value
 // stored (and sent to the API as `name`) is always the stable `id` slug,
@@ -51,108 +54,241 @@ const moduleOptions = menuConfig.map((m) => ({
 
 type TabKey = 'module' | 'submodule' | 'content' | 'view';
 
-// ─── Tab config ──────────────────────────────────────────────────────────────
-
 const TABS: {
   key: TabKey;
   label: string;
   icon: React.ReactNode;
-  color: string;
-  bg: string;
+  hint: string;
 }[] = [
   {
     key: 'module',
-    label: 'Module',
+    label: 'Modules',
     icon: <Database size={14} />,
-    color: '#2563EB',
-    bg: '#EFF6FF',
+    hint: 'Top-level sidebar sections',
   },
   {
     key: 'submodule',
-    label: 'Sub Module',
+    label: 'Sub modules',
     icon: <Layers size={14} />,
-    color: '#059669',
-    bg: '#ECFDF5',
+    hint: 'Groups inside a module',
   },
   {
     key: 'content',
-    label: 'Content',
+    label: 'Contents',
     icon: <FileText size={14} />,
-    color: '#7C3AED',
-    bg: '#F5F3FF',
+    hint: 'Pages users can open',
   },
   {
     key: 'view',
-    label: 'View',
+    label: 'Structure',
     icon: <Eye size={14} />,
-    color: '#D97706',
-    bg: '#FFFBEB',
+    hint: 'Full tree preview',
   },
 ];
 
-// ─── Shared styles ──────────────────────────────────────────────────────────
+// ─── Small building blocks ──────────────────────────────────────────────────
 
-const selectClasses =
-  'h-control! w-full! cursor-pointer! rounded-lg! border! border-line! bg-white! px-3! text-sm! text-ink! outline-none! focus:border-brand! focus:ring-3! focus:ring-brand-soft!';
+function Panel({
+  title,
+  subtitle,
+  action,
+  children,
+  className,
+}: {
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={cn(cardClass, 'min-w-0 overflow-hidden', className)}>
+      <header className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
+        <div className="min-w-0">
+          <h2 className="truncate text-sm font-semibold text-ink">{title}</h2>
+          {subtitle && <p className="text-[11px] text-muted">{subtitle}</p>}
+        </div>
+        {action}
+      </header>
+      {children}
+    </section>
+  );
+}
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
+function Count({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-semibold text-ink">
+      {children}
+    </span>
+  );
+}
 
-const FormPanel = ({ children }: { children: React.ReactNode }) => (
-  <Box
-    className="max-w-full max-lg:w-full items-stretch max-sm:p-4 w-85 shrink-0 bg-white p-3 rounded-lg border border-gray-100 shadow-sm h-fit sticky top-5"
-  >
-    {children}
-  </Box>
-);
-const DataPanel = ({ children }: { children: React.ReactNode }) => (
-  <Box
-    className="flex-1 min-w-0 bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden"
-  >
-    {children}
-  </Box>
-);
-const FieldLabel = ({ children }: { children: React.ReactNode }) => (
-  <Text
-    className="text-sm font-normal text-ink mb-1"
-  >
-    {children}
-  </Text>
-);
-const ActionButton = ({
-  onClick,
-  color = '#2563eb',
-  className = '',
+function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <label className="grid gap-1">
+      <span className={labelClass}>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function FormPanel({
+  title,
+  editing,
+  onReset,
   children,
 }: {
-  onClick: () => void;
-  color?: string;
-  className?: string;
+  title: string;
+  editing: boolean;
+  onReset: () => void;
   children: React.ReactNode;
-}) => (
-  <button
-    onClick={onClick}
-    style={{
-      background: `${color}15`,
-      color,
-    }}
-    onMouseEnter={(e) => {
-      (e.currentTarget as HTMLButtonElement).style.background = `${color}25`;
-    }}
-    onMouseLeave={(e) => {
-      (e.currentTarget as HTMLButtonElement).style.background = `${color}15`;
-    }}
-    className={cn(
-      'inline-flex size-7 cursor-pointer items-center justify-center rounded-md border-0 transition-all duration-150',
-      className,
-    )}
-  >
-    {children}
-  </button>
-);
+}) {
+  return (
+    <Panel
+      title={editing ? `Edit ${title}` : `New ${title}`}
+      className="w-80 shrink-0 self-start max-lg:w-full lg:sticky lg:top-0"
+      action={
+        editing && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center gap-1 text-[11px] text-muted hover:text-ink"
+          >
+            <RotateCcw size={11} /> Cancel edit
+          </button>
+        )
+      }
+    >
+      <div className="grid gap-3 p-3">{children}</div>
+    </Panel>
+  );
+}
+
+function SaveButton({
+  editing,
+  disabled,
+  onClick,
+  label,
+}: {
+  editing: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(buttonClass, buttonVariants.primary, 'w-full')}
+    >
+      {editing ? <Check size={14} /> : <Plus size={14} />}
+      {editing ? `Update ${label}` : `Add ${label}`}
+    </button>
+  );
+}
+
+function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div className="flex justify-end gap-1">
+      <button
+        type="button"
+        aria-label="Edit"
+        title="Edit"
+        onClick={onEdit}
+        className={cn(iconButtonClass, 'hover:border-brand hover:text-brand')}
+      >
+        <Pencil size={12} />
+      </button>
+      <button
+        type="button"
+        aria-label="Delete"
+        title="Delete"
+        onClick={onDelete}
+        className={cn(
+          iconButtonClass,
+          'hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600',
+        )}
+      >
+        <Trash2 size={12} />
+      </button>
+    </div>
+  );
+}
+
+function SimpleTable({
+  headers,
+  empty,
+  emptyText = 'No records yet',
+  children,
+}: {
+  headers: string[];
+  empty: boolean;
+  emptyText?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse text-[13px]">
+        <thead>
+          <tr>
+            {headers.map((h, i) => (
+              <th
+                key={h}
+                className={cn(
+                  'border-b border-line bg-gray-50 px-3 py-2 text-left text-[11px] font-semibold tracking-wide whitespace-nowrap text-ink uppercase',
+                  i === 0 && 'w-10',
+                  i === headers.length - 1 && 'w-20 text-right',
+                )}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {empty ? (
+            <tr>
+              <td colSpan={headers.length} className="px-3 py-8 text-center text-muted">
+                {emptyText}
+              </td>
+            </tr>
+          ) : (
+            children
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const tdClass = 'border-t border-line px-3 py-row align-middle text-ink';
+
+function Pill({
+  tone = 'gray',
+  children,
+}: {
+  tone?: 'gray' | 'green' | 'red' | 'blue';
+  children: React.ReactNode;
+}) {
+  const tones = {
+    gray: 'bg-gray-100 text-ink',
+    green: 'bg-emerald-50 text-emerald-700',
+    red: 'bg-rose-50 text-rose-700',
+    blue: 'bg-brand-soft text-brand',
+  };
+  return (
+    <span
+      className={cn('inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold', tones[tone])}
+    >
+      {children}
+    </span>
+  );
+}
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
-export default function RoleTranPage() {
+export default function NavigationModulePage() {
   const { menuData } = useSidebar();
   // const { theme } = useTheme();
 
@@ -170,20 +306,17 @@ export default function RoleTranPage() {
   // Tracks which sidebar items are checked in the Content picker, by their
   // stable menuConfig `id` — not by label, so items with the same name in
   // different modules/submodules never collide.
-  const [selectedContentItemIds, setSelectedContentItemIds] = useState<Set<string>>(
-    new Set(),
-  );
-  const [isDirectItem, setIsDirectItem] = useState<boolean>(false);
+  const [selectedContentItemIds, setSelectedContentItemIds] = useState<Set<string>>(new Set());
   const toggle = (set: Set<number>, id: number): Set<number> => {
     const next = new Set(set);
-    next.has(id) ? next.delete(id) : next.add(id);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
     return next;
   };
 
   // ── API ──────────────────────────────────────────────────────────────────
 
   const { data: menu = [] } = useMenu();
-  console.log(menu, 'menudetails');
   const { data: modules = [] } = useModules();
   const { data: subModules = [] } = useSubModules(selectedModuleId);
   const { data: contents = [] } = useContents(selectedModuleId, selectedSubModuleId);
@@ -343,10 +476,8 @@ export default function RoleTranPage() {
     // CASE 2: submodule selected → show group items
     if (apiSubModule) {
       const group = section[apiSubModule.name];
-      if (group && Array.isArray((group as any).items)) {
-        return (group as MenuGroup).items.filter(
-          (i): i is DirectMenuItem => i.type === 'direct',
-        );
+      if (group && Array.isArray((group as Partial<MenuGroup>).items)) {
+        return (group as MenuGroup).items.filter((i): i is DirectMenuItem => i.type === 'direct');
       }
     }
     return [];
@@ -354,955 +485,524 @@ export default function RoleTranPage() {
   const toggleContentItem = (id: string) => {
     setSelectedContentItemIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
-  const activeConfig = TABS.find((t) => t.key === activeTab)!;
+
+  const totalContents = (mod: (typeof menu)[number]) =>
+    mod.moduleContent.length + mod.subModule.reduce((acc, s) => acc + s.moduleContent.length, 0);
+
+  const moduleSelect = (onChange: (id: number) => void) => (
+    <Field label="Module">
+      <select
+        value={selectedModuleId}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className={controlClass}
+      >
+        <option value="0">Select module</option>
+        {modules.map((item) => (
+          <option key={item.id} value={item.id}>
+            {labelFor(item.name)}
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+
+  // Content picker: direct items of the module, or the items of the chosen sub module.
+  const renderContentPicker = () => {
+    if (!selectedModuleId || editingContentId) return null;
+    const mod = modules.find((m) => m.id === selectedModuleId);
+    const section = mod ? getMenuSection(mod.name) : null;
+    const values = Object.values(section ?? {});
+    const directItems = values.filter(
+      (v): v is DirectMenuItem => 'type' in v && v?.type === 'direct',
+    );
+    const groups = values.filter((v): v is MenuGroup => 'items' in v && Array.isArray(v?.items));
+    if (!(directItems.length > 0 || (groups.length > 0 && selectedSubModuleId > 0))) return null;
+    const items = getSidebarItems(selectedModuleId, selectedSubModuleId);
+    const selectedCount = items.filter((i) => selectedContentItemIds.has(i.id)).length;
+    const allSelected = items.length > 0 && selectedCount === items.length;
+    return (
+      <div className="grid gap-1">
+        <div className="flex items-center justify-between">
+          <span className={labelClass}>
+            Pages{' '}
+            {selectedCount > 0 && <span className="text-brand">({selectedCount} selected)</span>}
+          </span>
+          {items.length > 0 && (
+            <button
+              type="button"
+              className="text-[11px] font-semibold text-brand hover:underline"
+              onClick={() =>
+                setSelectedContentItemIds(allSelected ? new Set() : new Set(items.map((i) => i.id)))
+              }
+            >
+              {allSelected ? 'Clear' : 'Select all'}
+            </button>
+          )}
+        </div>
+        <div className="max-h-56 overflow-y-auto rounded-md border border-line">
+          {items.length > 0 ? (
+            items.map((item) => {
+              const checked = selectedContentItemIds.has(item.id);
+              return (
+                <label
+                  key={item.id}
+                  className={cn(
+                    'flex cursor-pointer items-center gap-2 border-b border-line px-2.5 py-1.5 text-[13px] last:border-b-0 hover:bg-gray-50',
+                    checked && 'bg-brand-soft font-semibold text-brand hover:bg-brand-soft',
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleContentItem(item.id)}
+                    className="size-3.5 accent-brand"
+                  />
+                  {item.label}
+                </label>
+              );
+            })
+          ) : (
+            <p className="px-3 py-4 text-center text-xs text-muted">No pages in this section</p>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <Box className="font-normal [&_table]:w-full [&_table]:border-collapse [&_th]:bg-slate-50 [&_th]:px-3.5 [&_th]:py-row [&_th]:text-xs [&_th]:tracking-wide [&_th]:text-muted [&_th]:uppercase [&_td]:border-b [&_td]:border-slate-100 [&_td]:px-3.5 [&_td]:py-row [&_td]:text-sm [&_tbody_tr:hover]:bg-brand-soft [&_button]:min-h-9 [&_button]:rounded-lg [&_[role=tab]]:min-h-11 [&_[role=tab][data-selected]]:bg-brand-soft [&_[role=tab][data-selected]]:text-brand">
-      <VStack className="items-stretch gap-2">
-        {/* ── HEADER ─────────────────────────────────────────────────────── */}
-        <Box
-          className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm relative overflow-hidden"
-        >
-          <Box
-            bg={activeConfig.color}
-            borderLeftRadius="xl"
-            className="absolute"
-          />
-          <HStack
-            className="justify-between items-center"
-          >
-            <Box>
-              <Text
-                className="text-xl font-normal text-ink"
-              >
-                Navigation structure
-              </Text>
-              <Text className="text-gray-400 text-xs">
-                Manage Modules, Sub Modules & Contents
-              </Text>
-            </Box>
-            <Badge
-              colorPalette="blue"
-              className="pl-3 pr-3 pt-1 pb-1 rounded-full text-[11px] font-normal"
-            >
-              {modules.length} Modules
-            </Badge>
-          </HStack>
-        </Box>
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3">
+      {/* Header */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold text-ink">Navigation modules</h1>
+          <p className="text-xs text-muted">
+            Build the sidebar: modules, their sub modules, and the pages inside them.
+          </p>
+        </div>
+        <div className="flex gap-2 text-xs text-ink">
+          <span className="rounded-md border border-line px-2.5 py-1">
+            <strong>{modules.length}</strong> modules
+          </span>
+          <span className="rounded-md border border-line px-2.5 py-1">
+            <strong>{menu.reduce((a, m) => a + m.subModule.length, 0)}</strong> sub modules
+          </span>
+          <span className="rounded-md border border-line px-2.5 py-1">
+            <strong>{menu.reduce((a, m) => a + totalContents(m), 0)}</strong> contents
+          </span>
+        </div>
+      </div>
 
-        {/* ── TABS ───────────────────────────────────────────────────────── */}
-        <Box
-          className="mb-4 max-w-full overflow-x-auto p-1.5 [&_button]:flex-1 [&_button]:justify-center [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-4 [&_button]:py-2.5 [&_button[aria-selected=true]]:bg-brand-soft [&_button[aria-selected=true]]:text-brand [&_button]:max-sm:shrink-0 [&_button]:max-sm:whitespace-nowrap bg-white pl-2 pr-2 pt-1.5 pb-1.5 rounded-full border border-gray-100 shadow-sm"
-        >
-          <HStack
-            role="tablist"
-            aria-label="Navigation structure"
-            className="gap-1"
+      {/* Tabs */}
+      <div
+        role="tablist"
+        aria-label="Navigation structure"
+        className="flex gap-1 overflow-x-auto border-b border-line"
+      >
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              title={tab.hint}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                '-mb-px inline-flex items-center gap-1.5 border-b-2 border-transparent px-3 py-2 text-[13px] whitespace-nowrap text-muted transition-colors hover:text-ink',
+                isActive && 'border-brand font-semibold text-brand hover:text-brand',
+              )}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── MODULES ─────────────────────────────────────────────────────── */}
+      {activeTab === 'module' && (
+        <div className="flex items-start gap-3 max-lg:flex-col max-lg:items-stretch">
+          <FormPanel title="module" editing={!!editingModuleId} onReset={resetModuleEdit}>
+            <Field label="Sidebar section">
+              <select
+                value={moduleName}
+                onChange={(e) => setModuleName(e.target.value)}
+                className={controlClass}
+              >
+                <option value="">Choose a section</option>
+                {moduleOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <SaveButton
+              label="module"
+              editing={!!editingModuleId}
+              disabled={!moduleName}
+              onClick={handleSaveModule}
+            />
+          </FormPanel>
+
+          <Panel
+            className="flex-1"
+            title={
+              <>
+                Modules <Count>{modules.length}</Count>
+              </>
+            }
           >
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.key;
-              return (
-                <Box
-                  as="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  key={tab.key}
-                  bg={isActive ? tab.color : 'transparent'}
-                  color={isActive ? 'white' : 'gray.500'}
-                  _hover={{
-                    bg: isActive ? tab.color : tab.bg,
-                    color: isActive ? 'white' : 'gray.700',
-                  }}
-                  onClick={() => setActiveTab(tab.key)}
-                  className="flex-1 pl-3 pr-3 pt-2 pb-2 rounded-lg cursor-pointer transition-all duration-200"
+            <SimpleTable
+              headers={['#', 'Module', 'Key', 'Status', 'Actions']}
+              empty={modules.length === 0}
+            >
+              {modules.map((item, idx) => (
+                <tr
+                  key={item.id}
+                  className={cn('hover:bg-gray-50', editingModuleId === item.id && 'bg-brand-soft')}
                 >
-                  <HStack className="justify-center gap-1.5">
-                    {tab.icon}
-                    <Text
-                      fontWeight={isActive ? '700' : '500'}
-                      className="text-sm"
-                    >
-                      {tab.label}
-                    </Text>
-                  </HStack>
-                </Box>
-              );
+                  <td className={cn(tdClass, 'text-muted')}>{idx + 1}</td>
+                  <td className={cn(tdClass, 'font-semibold')}>{labelFor(item.name)}</td>
+                  <td className={cn(tdClass, 'text-xs text-muted')}>{item.name}</td>
+                  <td className={tdClass}>
+                    <Pill tone={item.active ? 'green' : 'red'}>
+                      {item.active ? 'Active' : 'Inactive'}
+                    </Pill>
+                  </td>
+                  <td className={tdClass}>
+                    <RowActions
+                      onEdit={() => {
+                        setEditingModuleId(item.id);
+                        setModuleName(item.name);
+                      }}
+                      onDelete={() => deleteModule(item.id)}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </SimpleTable>
+          </Panel>
+        </div>
+      )}
+
+      {/* ── SUB MODULES ─────────────────────────────────────────────────── */}
+      {activeTab === 'submodule' && (
+        <div className="flex items-start gap-3 max-lg:flex-col max-lg:items-stretch">
+          <FormPanel title="sub module" editing={!!editingSubModuleId} onReset={resetSubEdit}>
+            {moduleSelect((id) => {
+              setSelectedModuleId(id);
+              setSubModuleName('');
             })}
-          </HStack>
-        </Box>
+            {selectedModuleId > 0 && (
+              <Field label="Sidebar group">
+                <select
+                  value={subModuleName}
+                  onChange={(e) => setSubModuleName(e.target.value)}
+                  className={controlClass}
+                >
+                  <option value="">Choose a group</option>
+                  {getSidebarSubModules(selectedModuleId).map((sub) => (
+                    <option key={sub} value={sub}>
+                      {sub}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+            <SaveButton
+              label="sub module"
+              editing={!!editingSubModuleId}
+              disabled={!subModuleName.trim() || !selectedModuleId}
+              onClick={handleSaveSubModule}
+            />
+          </FormPanel>
 
-        {/* ── MODULE TAB ─────────────────────────────────────────────────── */}
-        {activeTab === 'module' && (
-          <HStack
-            className="flex max-lg:flex-col max-lg:items-stretch items-start gap-3"
+          <Panel
+            className="flex-1"
+            title={
+              <>
+                Sub modules <Count>{subModules.length}</Count>
+              </>
+            }
+            subtitle={
+              selectedModuleId ? undefined : 'Pick a module on the left to see its sub modules'
+            }
           >
-            {/* LEFT: Form */}
-            <FormPanel>
-              <VStack className="items-stretch gap-4">
-                <HStack
-                  className="justify-between items-center"
-                >
-                  <Text
-                    className="font-normal text-sm text-gray-700"
-                  >
-                    {editingModuleId ? 'Edit Module' : 'New Module'}
-                  </Text>
-                  {editingModuleId && (
-                    <button
-                      onClick={resetModuleEdit}
-                      className="bg-transparent border-0 cursor-pointer text-muted text-[11px] flex items-center gap-1"
-                    >
-                      <RefreshCw size={11} /> Reset
-                    </button>
-                  )}
-                </HStack>
-
-                <Box>
-                  <FieldLabel>Select Module</FieldLabel>
-                  <select
-                    value={moduleName}
-                    onChange={(e) => setModuleName(e.target.value)}
-                    className={selectClasses}
-                  >
-                    <option value="">Choose from Sidebar</option>
-                    {moduleOptions.map((opt) => (
-                      <option
-                        key={opt.value}
-                        value={opt.value}
-                      >
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </Box>
-
-                <Button
-                  _hover={{
-                    bg: 'var(--primary-hover)',
-                  }}
-                  colorScheme={editingModuleId ? 'orange' : 'blue'}
-                  onClick={handleSaveModule}
-                  // disabled={!moduleName.trim()}
-                  className="bg-brand text-white min-h-control h-9.5 rounded-lg font-normal text-sm w-full"
-                >
-                  <HStack className="gap-1.5">
-                    {editingModuleId ? <RefreshCw size={13} /> : <Plus size={13} />}
-                    <span>{editingModuleId ? 'Update Module' : 'Create Module'}</span>
-                  </HStack>
-                </Button>
-              </VStack>
-            </FormPanel>
-
-            {/* RIGHT: Data */}
-            <DataPanel>
-              <HStack
-                className="pl-5 pr-5 pt-3.5 pb-3.5 border-b border-[#F1F5F9] justify-between"
-              >
-                <Text
-                  className="font-normal text-sm text-gray-600"
-                >
-                  All Modules
-                </Text>
-                <Badge
-                  colorPalette="blue"
-                  className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
-                >
-                  {modules.length} records
-                </Badge>
-              </HStack>
-              <StyledTable
-                headers={['#', 'Module Name', 'Status', 'Actions']}
-                empty={modules.length === 0}
-              >
-                {modules.map((item, idx) => (
-                  <Table.Row
-                    key={item.id}
-                    _hover={{
-                      bg: 'gray.50',
-                    }}
-                    className="transition-colors duration-150"
-                  >
-                    <Table.Cell
-                      className="text-gray-400 text-xs w-10"
-                    >
-                      {idx + 1}
-                    </Table.Cell>
-                    <Table.Cell className="font-normal text-sm">
-                      {item.name}
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Badge
-                        colorPalette={item.active ? 'green' : 'red'}
-                        className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
-                      >
-                        {item.active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <HStack className="gap-1.5">
-                        <ActionButton
-                          onClick={() => {
-                            setEditingModuleId(item.id);
-                            setModuleName(item.name);
-                          }}
-                          className="text-[#2563EB]"
-                        >
-                          <Pencil size={12} />
-                        </ActionButton>
-                        <ActionButton
-                          onClick={() => deleteModule(item.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 size={12} />
-                        </ActionButton>
-                      </HStack>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </StyledTable>
-            </DataPanel>
-          </HStack>
-        )}
-
-        {/* ── SUB MODULE TAB ─────────────────────────────────────────────── */}
-        {activeTab === 'submodule' && (
-          <HStack
-            className="flex max-lg:flex-col max-lg:items-stretch items-start gap-3"
-          >
-            {/* LEFT: Form */}
-            <FormPanel>
-              <VStack className="items-stretch gap-4">
-                <HStack
-                  className="justify-between items-center"
-                >
-                  <Text
-                    className="font-normal text-sm text-gray-700"
-                  >
-                    {editingSubModuleId ? 'Edit Sub Module' : 'New Sub Module'}
-                  </Text>
-                  {editingSubModuleId && (
-                    <button
-                      onClick={resetSubEdit}
-                      className="bg-transparent border-0 cursor-pointer text-muted text-[11px] flex items-center gap-1"
-                    >
-                      <RefreshCw size={11} /> Reset
-                    </button>
-                  )}
-                </HStack>
-
-                <Box>
-                  <FieldLabel>Module</FieldLabel>
-                  <select
-                    value={selectedModuleId}
-                    onChange={(e) => {
-                      setSelectedModuleId(Number(e.target.value));
-                      setSubModuleName('');
-                    }}
-                    className={selectClasses}
-                  >
-                    <option value="0">Select Module</option>
-                    {modules?.map((item) => (
-                      <option
-                        key={item.id}
-                        value={item.id}
-                      >
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </Box>
-
-                {selectedModuleId > 0 && (
-                  <Box>
-                    <FieldLabel>Sub Module</FieldLabel>
-                    <select
-                      value={subModuleName}
-                      onChange={(e) => setSubModuleName(e.target.value)}
-                      className={selectClasses}
-                    >
-                      <option value="">Choose from Sidebar</option>
-                      {getSidebarSubModules(selectedModuleId).map((sub) => (
-                        <option
-                          key={sub}
-                          value={sub}
-                        >
-                          {sub}
-                        </option>
-                      ))}
-                    </select>
-                  </Box>
-                )}
-
-                <Button
-                  _hover={{
-                    bg: 'var(--primary-hover)',
-                  }}
-                  colorScheme={editingSubModuleId ? 'orange' : 'green'}
-                  onClick={handleSaveSubModule}
-                  disabled={!subModuleName.trim() || !selectedModuleId}
-                  className="bg-brand text-white min-h-control h-9.5 rounded-lg font-normal text-sm w-full"
-                >
-                  <HStack className="gap-1.5">
-                    {editingSubModuleId ? <RefreshCw size={13} /> : <Plus size={13} />}
-                    <span>{editingSubModuleId ? 'Update' : 'Create'}</span>
-                  </HStack>
-                </Button>
-              </VStack>
-            </FormPanel>
-
-            {/* RIGHT: Data */}
-            <DataPanel>
-              <HStack
-                className="pl-5 pr-5 pt-3.5 pb-3.5 border-b border-[#F1F5F9] justify-between"
-              >
-                <Text
-                  className="font-normal text-sm text-gray-600"
-                >
-                  All Sub Modules
-                </Text>
-                <Badge
-                  colorPalette="green"
-                  className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
-                >
-                  {subModules?.length} records
-                </Badge>
-              </HStack>
-              <StyledTable
-                headers={['#', 'Sub Module', 'Module', 'Actions']}
-                empty={subModules.length === 0}
-              >
-                {subModules?.map((item, idx) => (
-                  <Table.Row
-                    key={item.id}
-                    _hover={{
-                      bg: 'gray.50',
-                    }}
-                    className="transition-colors duration-150"
-                  >
-                    <Table.Cell
-                      className="text-gray-400 text-xs w-10"
-                    >
-                      {idx + 1}
-                    </Table.Cell>
-                    <Table.Cell className="font-normal text-sm">
-                      {item.name}
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Badge
-                        colorPalette="blue"
-                        className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
-                      >
-                        {modules.find((m) => m.id === item.moduleId)?.name}
-                      </Badge>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <HStack className="gap-1.5">
-                        <ActionButton
-                          onClick={() => {
-                            setEditingSubModuleId(item.id);
-                            setSubModuleName(item.name);
-                          }}
-                          className="text-[#2563EB]"
-                        >
-                          <Pencil size={12} />
-                        </ActionButton>
-                        <ActionButton
-                          onClick={() => deleteSubModule(item.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 size={12} />
-                        </ActionButton>
-                      </HStack>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </StyledTable>
-            </DataPanel>
-          </HStack>
-        )}
-
-        {/* ── CONTENT TAB ────────────────────────────────────────────────── */}
-        {activeTab === 'content' && (
-          <HStack
-            className="flex max-lg:flex-col max-lg:items-stretch items-start gap-3"
-          >
-            {/* LEFT: Form */}
-            <FormPanel>
-              <VStack className="items-stretch gap-4">
-                <HStack
-                  className="justify-between items-center"
-                >
-                  <Text
-                    className="font-normal text-sm text-gray-700"
-                  >
-                    {editingContentId ? 'Edit Content' : 'New Content'}
-                  </Text>
-                  {editingContentId && (
-                    <button
-                      onClick={resetContentEdit}
-                      className="bg-transparent border-0 cursor-pointer text-muted text-[11px] flex items-center gap-1"
-                    >
-                      <RefreshCw size={11} /> Reset
-                    </button>
-                  )}
-                </HStack>
-
-                <Box>
-                  <FieldLabel>Module</FieldLabel>
-                  <select
-                    value={selectedModuleId}
-                    onChange={(e) => {
-                      setSelectedModuleId(Number(e.target.value));
-                      setSelectedSubModuleId(0);
-                      setContentName('');
-                      setSelectedContentItemIds(new Set());
-                    }}
-                    className={selectClasses}
-                  >
-                    <option value="0">Select Module</option>
-                    {modules?.map((item) => (
-                      <option
-                        key={item.id}
-                        value={item.id}
-                      >
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </Box>
-
-                {selectedModuleId > 0 && (
-                  <Box>
-                    <FieldLabel>
-                      Sub Module{' '}
-                      <span
-                        className="text-muted font-normal normal-case tracking-normal"
-                      >
-                        (optional)
-                      </span>
-                    </FieldLabel>
-                    <select
-                      value={selectedSubModuleId}
-                      onChange={(e) => {
-                        setSelectedSubModuleId(Number(e.target.value));
-                        setContentName('');
-                        setSelectedContentItemIds(new Set());
-                      }}
-                      className={selectClasses}
-                    >
-                      <option value="0">None</option>
-                      {subModules.map((item) => (
-                        <option
-                          key={item.id}
-                          value={item.id}
-                        >
-                          {item.name}
-                        </option>
-                      ))}
-                    </select>
-                  </Box>
-                )}
-
-                {/* Checkbox picker */}
-                {selectedModuleId > 0 &&
-                  (() => {
-                    const mod = modules.find((m) => m.id === selectedModuleId);
-                    const section = mod ? getMenuSection(mod.name) : null;
-                    const directItems = Object.values(section ?? {}).filter(
-                      (v): v is DirectMenuItem => 'type' in v && v?.type === 'direct',
-                    );
-                    const groups = Object.values(section ?? {}).filter(
-                      (v): v is MenuGroup => 'items' in v && Array.isArray(v?.items),
-                    );
-                    const showPicker =
-                      directItems.length > 0 ||
-                      (groups.length > 0 && selectedSubModuleId > 0);
-                    if (!showPicker) return null;
-                    const items = getSidebarItems(selectedModuleId, selectedSubModuleId);
-                    const selectedCount = items.filter((i) =>
-                      selectedContentItemIds.has(i.id),
-                    ).length;
-                    return (
-                      <Box>
-                        <FieldLabel>
-                          Select Items
-                          {selectedCount > 0 && (
-                            <span
-                              className="ml-1.5 bg-[#7C3AED] text-white rounded-xl py-0.25 px-1.75 text-[11px]"
-                            >
-                              {selectedCount}
-                            </span>
-                          )}
-                        </FieldLabel>
-                        <Box
-                          className="border border-[#E2E8F0] rounded-lg max-h-50 overflow-y-auto bg-[#FAFAFA]"
-                        >
-                          {items.length > 0 ? (
-                            <VStack
-                              className="items-stretch gap-0 p-2"
-                            >
-                              {items.map((item) => {
-                                const checked = selectedContentItemIds.has(item.id);
-                                return (
-                                  <label
-                                    key={item.id}
-                                    style={{
-                                      background: checked ? '#EDE9FE' : 'transparent',
-                                      color: checked ? '#5B21B6' : '#374151',
-                                      fontWeight: checked ? 600 : 400,
-                                    }}
-                                    className="flex items-center gap-2 cursor-pointer py-1.25 px-2 rounded-md text-xs transition-all duration-150"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={checked}
-                                      onChange={() => toggleContentItem(item.id)}
-                                      className="accent-[#8B5CF6] w-3.25 h-3.25"
-                                    />
-                                    {item.label}
-                                  </label>
-                                );
-                              })}
-                            </VStack>
-                          ) : (
-                            <Text
-                              className="text-gray-400 text-xs text-center pt-4 pb-4"
-                            >
-                              No items available
-                            </Text>
-                          )}
-                        </Box>
-                      </Box>
-                    );
-                  })()}
-
-                <Button
-                  _hover={{
-                    bg: 'var(--primary-hover)',
-                  }}
-                  colorScheme={editingContentId ? 'orange' : 'purple'}
-                  onClick={handleSaveContent}
-                  disabled={
-                    !selectedModuleId ||
-                    (editingContentId
-                      ? !contentName.trim()
-                      : selectedContentItemIds.size === 0)
-                  }
-                  className="bg-brand text-white min-h-control h-9.5 rounded-lg font-normal text-sm w-full"
-                >
-                  <HStack className="gap-1.5">
-                    {editingContentId ? <RefreshCw size={13} /> : <Plus size={13} />}
-                    <span>{editingContentId ? 'Update' : 'Create'}</span>
-                  </HStack>
-                </Button>
-              </VStack>
-            </FormPanel>
-
-            {/* RIGHT: Data */}
-            <DataPanel>
-              <HStack
-                className="pl-5 pr-5 pt-3.5 pb-3.5 border-b border-[#F1F5F9] justify-between"
-              >
-                <Text
-                  className="font-normal text-sm text-gray-600"
-                >
-                  All Contents
-                </Text>
-                <Badge
-                  colorPalette="purple"
-                  className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
-                >
-                  {contents.length} records
-                </Badge>
-              </HStack>
-              <StyledTable
-                headers={['#', 'Content Name', 'Sub Module', 'Actions']}
-                empty={contents.length === 0}
-              >
-                {contents.map((item, idx) => {
-                  const subModuleName = item.subModuleId
-                    ? subModules.find((s) => s.id === item.subModuleId)?.name
-                    : null;
-                  return (
-                    <Table.Row
-                      key={item.id}
-                      _hover={{
-                        bg: 'gray.50',
-                      }}
-                      className="transition-colors duration-150"
-                    >
-                      <Table.Cell
-                        className="text-gray-400 text-xs w-10"
-                      >
-                        {idx + 1}
-                      </Table.Cell>
-                      <Table.Cell className="font-normal text-sm">
-                        {item.name}
-                      </Table.Cell>
-                      <Table.Cell>
-                        {subModuleName ? (
-                          <Badge
-                            colorPalette="purple"
-                            className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
-                          >
-                            {subModuleName}
-                          </Badge>
-                        ) : (
-                          <Text
-                            className="text-xs text-gray-400"
-                          >
-                            —
-                          </Text>
-                        )}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <HStack className="gap-1.5">
-                          <ActionButton
-                            onClick={() => {
-                              setEditingContentId(item.id);
-                              setContentName(item.name);
-                            }}
-                            className="text-[#2563EB]"
-                          >
-                            <Pencil size={12} />
-                          </ActionButton>
-                          <ActionButton
-                            onClick={() => deleteContent(item.id)}
-                            className="text-red-600"
-                          >
-                            <Trash2 size={12} />
-                          </ActionButton>
-                        </HStack>
-                      </Table.Cell>
-                    </Table.Row>
-                  );
-                })}
-              </StyledTable>
-            </DataPanel>
-          </HStack>
-        )}
-
-        {/* ── VIEW TAB ───────────────────────────────────────────────────── */}
-        {activeTab === 'view' && (
-          <Box>
-            <Box
-              className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden"
+            <SimpleTable
+              headers={['#', 'Sub module', 'Module', 'Actions']}
+              empty={subModules.length === 0}
+              emptyText={selectedModuleId ? 'No sub modules yet' : 'Select a module first'}
             >
-              {/* Header */}
-              <HStack
-                className="pl-5 pr-5 pt-4 pb-4 justify-between border-b border-[#F1F5F9] [background:linear-gradient(90deg,#F8FAFC,#FFFFFF)]"
-              >
-                <Box>
-                  <Text
-                    className="font-normal text-base text-gray-700"
-                  >
-                    Module Hierarchy
-                  </Text>
-                  <Text
-                    className="text-xs text-gray-400"
-                  >
-                    Expand modules and sub modules to explore contents
-                  </Text>
-                </Box>
-
-                <Badge
-                  colorPalette="orange"
-                  className="pl-3 pr-3 pt-1 pb-1 rounded-full text-[11px] font-normal"
+              {subModules.map((item, idx) => (
+                <tr
+                  key={item.id}
+                  className={cn(
+                    'hover:bg-gray-50',
+                    editingSubModuleId === item.id && 'bg-brand-soft',
+                  )}
                 >
-                  {menu.length} Modules
-                </Badge>
-              </HStack>
+                  <td className={cn(tdClass, 'text-muted')}>{idx + 1}</td>
+                  <td className={cn(tdClass, 'font-semibold')}>{item.name}</td>
+                  <td className={tdClass}>
+                    <Pill tone="blue">
+                      {labelFor(modules.find((m) => m.id === item.moduleId)?.name ?? '')}
+                    </Pill>
+                  </td>
+                  <td className={tdClass}>
+                    <RowActions
+                      onEdit={() => {
+                        setEditingSubModuleId(item.id);
+                        setSubModuleName(item.name);
+                      }}
+                      onDelete={() => deleteSubModule(item.id)}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </SimpleTable>
+          </Panel>
+        </div>
+      )}
 
-              {/* Body */}
-              <VStack
-                className="items-stretch gap-3 p-4"
+      {/* ── CONTENTS ────────────────────────────────────────────────────── */}
+      {activeTab === 'content' && (
+        <div className="flex items-start gap-3 max-lg:flex-col max-lg:items-stretch">
+          <FormPanel title="content" editing={!!editingContentId} onReset={resetContentEdit}>
+            {moduleSelect((id) => {
+              setSelectedModuleId(id);
+              setSelectedSubModuleId(0);
+              setContentName('');
+              setSelectedContentItemIds(new Set());
+            })}
+            {selectedModuleId > 0 && (
+              <Field
+                label={
+                  <>
+                    Sub module <span className="font-normal text-muted">(optional)</span>
+                  </>
+                }
               >
-                {menu.length === 0 && (
-                  <Box
-                    className="pt-12 pb-12 text-center"
-                  >
-                    <Text
-                      className="text-gray-400 text-sm"
-                    >
-                      No hierarchy data available
-                    </Text>
-                  </Box>
-                )}
+                <select
+                  value={selectedSubModuleId}
+                  onChange={(e) => {
+                    setSelectedSubModuleId(Number(e.target.value));
+                    setContentName('');
+                    setSelectedContentItemIds(new Set());
+                  }}
+                  className={controlClass}
+                >
+                  <option value="0">None (direct pages)</option>
+                  {subModules.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+            {editingContentId && (
+              <Field label="Content key">
+                <input
+                  value={contentName}
+                  onChange={(e) => setContentName(e.target.value)}
+                  className={controlClass}
+                />
+              </Field>
+            )}
+            {renderContentPicker()}
+            <SaveButton
+              label={editingContentId ? 'content' : 'selected pages'}
+              editing={!!editingContentId}
+              disabled={
+                !selectedModuleId ||
+                (editingContentId ? !contentName.trim() : selectedContentItemIds.size === 0)
+              }
+              onClick={handleSaveContent}
+            />
+          </FormPanel>
 
-                {menu.map((mod) => {
-                  const modExpanded = expandedModules.has(mod.id);
-                  return (
-                    <Box
-                      key={mod.id}
-                      borderColor={modExpanded ? '#BFDBFE' : 'gray.100'}
-                      boxShadow={
-                        modExpanded
-                          ? '0 6px 18px rgba(37,99,235,0.08)'
-                          : '0 1px 4px rgba(0,0,0,0.03)'
-                      }
-                      className="border rounded-lg overflow-hidden transition-all duration-200"
-                    >
-                      {/* MODULE HEADER */}
-                      <HStack
-                        bg={
-                          modExpanded ? 'linear-gradient(90deg,#EFF6FF,#F8FBFF)' : 'white'
-                        }
-                        _hover={{
-                          bg: '#F8FAFC',
+          <Panel
+            className="flex-1"
+            title={
+              <>
+                Contents <Count>{contents.length}</Count>
+              </>
+            }
+            subtitle={selectedModuleId ? undefined : 'Pick a module on the left to see its pages'}
+          >
+            <SimpleTable
+              headers={['#', 'Page', 'Key', 'Sub module', 'Actions']}
+              empty={contents.length === 0}
+              emptyText={selectedModuleId ? 'No pages added yet' : 'Select a module first'}
+            >
+              {contents.map((item, idx) => {
+                const sub = item.subModuleId
+                  ? subModules.find((s) => s.id === item.subModuleId)?.name
+                  : null;
+                return (
+                  <tr
+                    key={item.id}
+                    className={cn(
+                      'hover:bg-gray-50',
+                      editingContentId === item.id && 'bg-brand-soft',
+                    )}
+                  >
+                    <td className={cn(tdClass, 'text-muted')}>{idx + 1}</td>
+                    <td className={cn(tdClass, 'font-semibold')}>{labelFor(item.name)}</td>
+                    <td className={cn(tdClass, 'text-xs text-muted')}>{item.name}</td>
+                    <td className={tdClass}>
+                      {sub ? <Pill>{sub}</Pill> : <span className="text-muted">—</span>}
+                    </td>
+                    <td className={tdClass}>
+                      <RowActions
+                        onEdit={() => {
+                          setEditingContentId(item.id);
+                          setContentName(item.name);
                         }}
-                        onClick={() =>
-                          setExpandedModules(toggle(expandedModules, mod.id))
-                        }
-                        className="pl-4 pr-4 pt-3 pb-3 justify-between cursor-pointer transition-all duration-200"
-                      >
-                        <HStack className="items-start gap-3">
-                          <Box
-                            className="p-2 bg-[#DBEAFE] text-[#2563EB] rounded-lg mt-0.25"
-                          >
-                            <Database size={15} />
-                          </Box>
+                        onDelete={() => deleteContent(item.id)}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </SimpleTable>
+          </Panel>
+        </div>
+      )}
 
-                          <Box>
-                            <HStack className="gap-2 mb-1">
-                              <Text
-                                className="font-normal text-base text-ink"
-                              >
-                                {mod.name}
-                              </Text>
-
-                              <Badge
-                                colorPalette="blue"
-                                className="rounded-full text-[11px] pl-2 pr-2"
-                              >
-                                {mod.subModule.length} Sub
-                              </Badge>
-
-                              <Badge
-                                colorPalette="purple"
-                                className="rounded-full text-[11px] pl-2 pr-2"
-                              >
-                                {mod.moduleContent.length +
-                                  mod.subModule.reduce(
-                                    (acc, s) => acc + s.moduleContent.length,
-                                    0,
-                                  )}{' '}
-                                Contents
-                              </Badge>
-                            </HStack>
-
-                            <Text
-                              className="text-[11px] text-gray-500"
-                            >
-                              Click to expand hierarchy details
-                            </Text>
-                          </Box>
-                        </HStack>
-
-                        <Box
-                          transform={modExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'}
-                          className="transition-all duration-250 text-[#2563EB]"
-                        >
-                          <ChevronDown size={18} />
-                        </Box>
-                      </HStack>
-
-                      {/* MODULE CONTENT */}
-                      {modExpanded && (
-                        <Box
-                          className="pl-4 pr-4 pb-4 bg-[#FCFCFD] border-t border-[#EEF2F7]"
-                        >
-                          {/* DIRECT CONTENTS */}
-                          {mod.moduleContent.length > 0 && (
-                            <Box
-                              className="mb-4 mt-4"
-                            >
-                              <Text
-                                className="text-[11px] font-normal text-gray-400 uppercase mb-2 tracking-wide"
-                              >
-                                Direct Contents
-                              </Text>
-
-                              <HStack className="flex-wrap gap-2">
-                                {mod.moduleContent.map((c) => (
-                                  <Badge
-                                    key={c.id}
-                                    className="pl-3 pr-3 pt-1 pb-1 rounded-full bg-[#F3E8FF] text-[#6B21A8] text-[11px] font-normal"
-                                  >
-                                    {c.name}
-                                  </Badge>
-                                ))}
-                              </HStack>
-                            </Box>
-                          )}
-
-                          {/* SUB MODULES */}
-                          <VStack className="items-stretch gap-3">
-                            {mod.subModule.map((sub) => {
-                              const subExpanded = expandedSubModules.has(sub.id);
-                              return (
-                                <Box
-                                  key={sub.id}
-                                  borderColor={subExpanded ? '#A7F3D0' : '#E5E7EB'}
-                                  className="border rounded-lg overflow-hidden bg-white"
-                                >
-                                  {/* SUB HEADER */}
-                                  <HStack
-                                    bg={subExpanded ? '#ECFDF5' : 'white'}
-                                    _hover={{
-                                      bg: '#F9FAFB',
-                                    }}
-                                    onClick={() =>
-                                      setExpandedSubModules(
-                                        toggle(expandedSubModules, sub.id),
-                                      )
-                                    }
-                                    className="pl-3 pr-3 pt-2.5 pb-2.5 justify-between cursor-pointer transition-all duration-200"
-                                  >
-                                    <HStack className="gap-2">
-                                      <Box
-                                        className="p-1.5 bg-[#D1FAE5] text-[#059669] rounded-xl"
-                                      >
-                                        <Layers size={12} />
-                                      </Box>
-
-                                      <Box>
-                                        <Text
-                                          className="text-xs font-normal text-gray-700"
-                                        >
-                                          {sub.name}
-                                        </Text>
-
-                                        <Text
-                                          className="text-[11px] text-gray-400"
-                                        >
-                                          {sub.moduleContent.length} contents
-                                        </Text>
-                                      </Box>
-                                    </HStack>
-
-                                    <HStack className="gap-2">
-                                      <Badge
-                                        colorPalette="green"
-                                        className="rounded-full pl-2 pr-2 text-[11px]"
-                                      >
-                                        {sub.moduleContent.length}
-                                      </Badge>
-
-                                      <Box
-                                        transform={
-                                          subExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
-                                        }
-                                        className="transition-all duration-250 text-[#059669]"
-                                      >
-                                        <ChevronDown size={15} />
-                                      </Box>
-                                    </HStack>
-                                  </HStack>
-
-                                  {/* SUB CONTENTS */}
-                                  {subExpanded && (
-                                    <Box
-                                      className="pl-4 pr-4 pt-3 pb-3 border-t border-[#F3F4F6] bg-[#FAFAFA]"
-                                    >
-                                      {sub.moduleContent.length > 0 ? (
-                                        <Grid
-                                          className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"
-                                        >
-                                          {sub.moduleContent.map((c) => (
-                                            <HStack
-                                              key={c.id}
-                                              className="pl-3 pr-3 pt-2 pb-2 bg-white border border-gray-100 rounded-lg justify-between"
-                                            >
-                                              <HStack className="gap-2">
-                                                <Box
-                                                  className="w-1.75 h-1.75 bg-[#8B5CF6] rounded-full"
-                                                />
-                                                <Text
-                                                  className="text-xs font-normal text-gray-700"
-                                                >
-                                                  {c.name}
-                                                </Text>
-                                              </HStack>
-
-                                              <FileText
-                                                size={12}
-                                                className="text-[#8B5CF6]"
-                                              />
-                                            </HStack>
-                                          ))}
-                                        </Grid>
-                                      ) : (
-                                        <Box
-                                          className="text-center pt-4 pb-4 text-gray-400 text-xs"
-                                        >
-                                          No contents available
-                                        </Box>
-                                      )}
-                                    </Box>
-                                  )}
-                                </Box>
-                              );
-                            })}
-                          </VStack>
-                        </Box>
-                      )}
-                    </Box>
+      {/* ── STRUCTURE (tree) ────────────────────────────────────────────── */}
+      {activeTab === 'view' && (
+        <Panel
+          title={
+            <>
+              Sidebar structure <Count>{menu.length}</Count>
+            </>
+          }
+          subtitle="Expand a module to see its sub modules and pages"
+          action={
+            menu.length > 0 && (
+              <button
+                type="button"
+                className="shrink-0 text-[11px] font-semibold whitespace-nowrap text-brand hover:underline"
+                onClick={() => {
+                  const all = expandedModules.size === menu.length;
+                  setExpandedModules(all ? new Set() : new Set(menu.map((m) => m.id)));
+                  setExpandedSubModules(
+                    all ? new Set() : new Set(menu.flatMap((m) => m.subModule.map((s) => s.id))),
                   );
-                })}
-              </VStack>
-            </Box>
-          </Box>
-        )}
-      </VStack>
-    </Box>
-  );
-}
-
-// ─── Shared Table wrapper ──────────────────────────────────────────────────
-
-function StyledTable({
-  headers,
-  children,
-  empty,
-}: {
-  headers: string[];
-  children: React.ReactNode;
-  empty: boolean;
-}) {
-  return (
-    <Table.Root>
-      <Table.Header>
-        <Table.Row className="bg-gray-50">
-          {headers.map((h) => (
-            <Table.ColumnHeader
-              key={h}
-              className="text-[11px] font-normal text-gray-400 uppercase tracking-wide pt-2.5 pb-2.5 pl-4 pr-4"
-            >
-              {h}
-            </Table.ColumnHeader>
-          ))}
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        {empty ? (
-          <Table.Row>
-            <Table.Cell
-              colSpan={headers.length}
-              className="text-center pt-10 pb-10 text-gray-400 text-sm"
-            >
-              No records found
-            </Table.Cell>
-          </Table.Row>
-        ) : (
-          children
-        )}
-      </Table.Body>
-    </Table.Root>
+                }}
+              >
+                {expandedModules.size === menu.length ? 'Collapse all' : 'Expand all'}
+              </button>
+            )
+          }
+        >
+          {menu.length === 0 ? (
+            <p className="px-3 py-10 text-center text-[13px] text-muted">No modules set up yet</p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {menu.map((mod) => {
+                const modOpen = expandedModules.has(mod.id);
+                return (
+                  <li key={mod.id}>
+                    <button
+                      type="button"
+                      aria-expanded={modOpen}
+                      onClick={() => setExpandedModules(toggle(expandedModules, mod.id))}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-gray-50"
+                    >
+                      <ChevronRight
+                        size={14}
+                        className={cn(
+                          'shrink-0 text-muted transition-transform',
+                          modOpen && 'rotate-90',
+                        )}
+                      />
+                      <Database size={14} className="shrink-0 text-brand" />
+                      <span className="flex-1 truncate text-[13px] font-semibold text-ink">
+                        {labelFor(mod.name)}
+                      </span>
+                      <span className="text-[11px] text-muted">
+                        {mod.subModule.length} sub · {totalContents(mod)} pages
+                      </span>
+                    </button>
+                    {modOpen && (
+                      <div className="grid gap-1 border-t border-line bg-gray-50 py-2 pr-3 pl-9">
+                        {mod.moduleContent.map((c) => (
+                          <div
+                            key={c.id}
+                            className="flex items-center gap-2 py-0.5 text-[13px] text-ink"
+                          >
+                            <FileText size={12} className="text-muted" />
+                            {labelFor(c.name)}
+                          </div>
+                        ))}
+                        {mod.subModule.map((sub) => {
+                          const subOpen = expandedSubModules.has(sub.id);
+                          return (
+                            <div key={sub.id}>
+                              <button
+                                type="button"
+                                aria-expanded={subOpen}
+                                onClick={() =>
+                                  setExpandedSubModules(toggle(expandedSubModules, sub.id))
+                                }
+                                className="flex w-full items-center gap-2 rounded py-0.5 text-left text-[13px] hover:text-brand"
+                              >
+                                <ChevronRight
+                                  size={12}
+                                  className={cn(
+                                    'shrink-0 text-muted transition-transform',
+                                    subOpen && 'rotate-90',
+                                  )}
+                                />
+                                <Layers size={12} className="shrink-0 text-muted" />
+                                <span className="font-semibold">{sub.name}</span>
+                                <span className="text-[11px] text-muted">
+                                  ({sub.moduleContent.length})
+                                </span>
+                              </button>
+                              {subOpen && (
+                                <div className="ml-[7px] grid gap-0.5 border-l border-line py-1 pl-5">
+                                  {sub.moduleContent.length > 0 ? (
+                                    sub.moduleContent.map((c) => (
+                                      <div
+                                        key={c.id}
+                                        className="flex items-center gap-2 text-[13px] text-ink"
+                                      >
+                                        <FileText size={12} className="text-muted" />
+                                        {labelFor(c.name)}
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <span className="text-xs text-muted">No pages</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {mod.moduleContent.length === 0 && mod.subModule.length === 0 && (
+                          <span className="text-xs text-muted">Nothing inside this module yet</span>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Panel>
+      )}
+    </div>
   );
 }

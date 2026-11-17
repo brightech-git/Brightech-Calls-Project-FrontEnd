@@ -1,33 +1,22 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import {
-  Box,
-  Button,
-  Flex,
-  Tabs,
-  VStack,
-  HStack,
-  Text,
-  Spinner,
-  Badge,
-  Grid,
-  GridItem,
-} from '@chakra-ui/react';
-
-import {
+  Check,
   ChevronRight,
-  ChevronDown,
+  FileText,
+  Layers,
+  ListChecks,
+  Loader2,
+  Pencil,
   Plus,
-  Trash2,
+  RotateCcw,
+  Search,
   ShieldCheck,
-  Eye,
-  CheckSquare,
-  AlertCircle,
-  Edit2,
+  Trash2,
+  Users,
 } from 'lucide-react';
-import { CustomTable } from '@/components/CustomTable';
-import { toastError, toastCreated } from '@/components/toast/toast';
+import { toastCreated, toastError, toastUpdated } from '@/components/toast/toast';
 import {
   useRoleTransactions,
   useInsertRoleTransaction,
@@ -35,63 +24,50 @@ import {
   useToggleRoleTransactionActive,
   useMenu,
 } from '@/src/module/role-tran/hook/use-role-tran';
-import { RoleTran, RoleTranInput } from '@/src/module/role-tran/type/role-tran.types';
+import type {
+  MenuModule,
+  RoleTran,
+  RoleTranInput,
+} from '@/src/module/role-tran/type/role-tran.types';
 import { useRole } from '@/src/module/role-master/hook/use-role-master';
+import { labelFor } from '@/config/menu/menuLabels';
+import { cn } from '@/lib/utils';
+import {
+  buttonClass,
+  buttonVariants,
+  cardClass,
+  controlClass,
+  iconButtonClass,
+  labelClass,
+} from '@/lib/styles';
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
+// ─── Types & helpers ────────────────────────────────────────────────────────
 
-import { COLORS, RADIUS } from '@/utils/theme';
-const T = {
-  navy: COLORS.primary,
-  navyMID: COLORS.primary,
-  navyLight: COLORS.primaryHover,
-  accent: COLORS.primary,
-  accentLight: COLORS.primaryLight,
-  accentMID: COLORS.primaryLight,
-  green: COLORS.success,
-  greenLight: COLORS.successBg,
-  red: COLORS.error,
-  redLight: COLORS.errorBg,
-  orange: COLORS.warning,
-  text: COLORS.textPrimary,
-  textMID: COLORS.textSecondary,
-  textSub: COLORS.textMuted,
-  textMuted: COLORS.textMuted,
-  border: COLORS.cardBorder,
-  borderMID: COLORS.inputBorder,
-  bg: COLORS.gray50,
-  bgCard: COLORS.cardBg,
-  bgHover: COLORS.primaryLight,
-  radius: RADIUS.md,
-  radiusMd: RADIUS.md,
-  radiusLg: RADIUS.lg,
-} as const;
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface ContentNode {
-  id: number;
-  name: string;
-}
-interface SubModuleNode {
-  id: number;
-  name: string;
-  moduleContent: ContentNode[];
-}
-interface ModuleNode {
-  id: number;
-  name: string;
-  moduleContent: ContentNode[];
-  subModulel: SubModuleNode[];
-}
+type TabKey = 'assign' | 'roles';
 type CheckState = 'none' | 'some' | 'all';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+interface ContentMeta {
+  moduleID: number;
+  moduleNAME: string;
+  subModuleID: number;
+  subModuleNAME: string;
+  contentNAME: string;
+}
 
-function getCheckState(IDs: number[], selected: Set<number>): CheckState {
-  if (!IDs.length) return 'none';
-  const n = IDs.filter((ID) => selected.has(ID)).length;
-  return n === 0 ? 'none' : n === IDs.length ? 'all' : 'some';
+const modKey = (id: number) => `m${id}`;
+const subKey = (id: number) => `s${id}`;
+
+function getCheckState(ids: number[], selected: Set<number>): CheckState {
+  if (!ids.length) return 'none';
+  const n = ids.filter((id) => selected.has(id)).length;
+  return n === 0 ? 'none' : n === ids.length ? 'all' : 'some';
+}
+
+function moduleContentIds(mod: MenuModule): number[] {
+  return [
+    ...(mod.moduleContent ?? []).map((c) => c.id),
+    ...(mod.subModule ?? []).flatMap((s) => (s.moduleContent ?? []).map((c) => c.id)),
+  ];
 }
 
 // ECOM_ROLETRAN persists id + name columns directly (no server-side join), so
@@ -111,775 +87,597 @@ function toRoleTranInputs(txs: RoleTran[]): RoleTranInput[] {
   }));
 }
 
-// ─── TriCheckbox ──────────────────────────────────────────────────────────────
+function compareTxs(a: RoleTran, b: RoleTran): number {
+  return (
+    a.MODULENAME.localeCompare(b.MODULENAME) ||
+    (a.SUBMODULENAME || '').localeCompare(b.SUBMODULENAME || '') ||
+    a.CONTENTNAME.localeCompare(b.CONTENTNAME)
+  );
+}
 
-const TriCheckbox = memo(
-  ({ state, onChange }: { state: CheckState; onChange: () => void }) => (
+const sortTxs = (txs: RoleTran[]) => [...txs].sort(compareTxs);
+
+// Rowspan per row: null means the cell is covered by the span above.
+function computeSpans<T>(rows: T[], key: (r: T) => string): (number | null)[] {
+  return rows.map((row, i) => {
+    if (i > 0 && key(rows[i - 1]) === key(row)) return null;
+    let span = 1;
+    for (let j = i + 1; j < rows.length && key(rows[j]) === key(row); j++) span++;
+    return span;
+  });
+}
+
+// ─── Small building blocks ──────────────────────────────────────────────────
+
+function Panel({
+  title,
+  subtitle,
+  action,
+  footer,
+  children,
+  className,
+}: {
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+  action?: React.ReactNode;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={cn(cardClass, 'flex min-w-0 flex-col overflow-hidden', className)}>
+      <header className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
+        <div className="min-w-0">
+          <h2 className="truncate text-sm font-semibold text-ink">{title}</h2>
+          {subtitle && <p className="text-[11px] text-muted">{subtitle}</p>}
+        </div>
+        {action}
+      </header>
+      {children}
+      {footer && <footer className="border-t border-line px-3 py-2">{footer}</footer>}
+    </section>
+  );
+}
+
+function Count({ active, children }: { active?: boolean; children: React.ReactNode }) {
+  return (
+    <span
+      className={cn(
+        'rounded px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
+        active ? 'bg-brand-soft text-brand' : 'bg-gray-100 text-ink',
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function StatusPill({ active }: { active?: boolean }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold',
+        active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700',
+      )}
+    >
+      <span className={cn('size-1.5 rounded-full', active ? 'bg-emerald-500' : 'bg-rose-500')} />
+      {active ? 'Active' : 'Inactive'}
+    </span>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  text,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-1.5 px-4 py-10 text-center">
+      <span className="mb-1 flex size-9 items-center justify-center rounded-lg bg-gray-100 text-muted">
+        {icon}
+      </span>
+      <p className="text-[13px] font-semibold text-ink">{title}</p>
+      {text && <p className="max-w-64 text-xs text-muted">{text}</p>}
+    </div>
+  );
+}
+
+function TriCheckbox({
+  state,
+  onChange,
+  label,
+}: {
+  state: CheckState;
+  onChange: () => void;
+  label: string;
+}) {
+  return (
     <input
       type="checkbox"
+      aria-label={label}
       ref={(el) => {
         if (el) el.indeterminate = state === 'some';
       }}
       checked={state === 'all'}
       onChange={onChange}
-      style={{
-        accentColor: T.accent,
-      }}
-      className="cursor-pointer w-3.25 h-3.25 shrink-0"
+      className="size-3.5 shrink-0 cursor-pointer accent-brand"
     />
-  ),
-);
-TriCheckbox.displayName = 'TriCheckbox';
+  );
+}
 
-// ─── ContentRow ───────────────────────────────────────────────────────────────
+function Chevron({ open, onClick, label }: { open: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-expanded={open}
+      onClick={onClick}
+      className="flex size-5 shrink-0 items-center justify-center rounded text-muted hover:bg-gray-100 hover:text-ink"
+    >
+      <ChevronRight size={13} className={cn('transition-transform', open && 'rotate-90')} />
+    </button>
+  );
+}
 
-const ContentRow = memo(
-  ({
-    content,
-    selected,
-    onToggle,
-  }: {
-    content: ContentNode;
-    selected: boolean;
-    onToggle: (ID: number) => void;
-  }) => (
+const thClass =
+  'border-b border-line bg-gray-50 px-3 py-2 text-left text-[11px] font-semibold tracking-wide whitespace-nowrap text-ink uppercase';
+const tdClass = 'border-t border-line px-3 py-row align-middle text-[13px] text-ink';
+
+// ─── Permission tree ────────────────────────────────────────────────────────
+
+const PermissionTree = memo(function PermissionTree({
+  menu,
+  selected,
+  staged,
+  collapsed,
+  query,
+  onToggleContent,
+  onToggleGroup,
+  onToggleOpen,
+}: {
+  menu: MenuModule[];
+  selected: Set<number>;
+  staged: Set<number>;
+  collapsed: Set<string>;
+  query: string;
+  onToggleContent: (id: number) => void;
+  onToggleGroup: (ids: number[]) => void;
+  onToggleOpen: (key: string) => void;
+}) {
+  const q = query.trim().toLowerCase();
+  const matches = (name: string) => !q || labelFor(name).toLowerCase().includes(q);
+
+  const renderContent = (id: number, name: string) => (
     <label
-      style={{
-        background: selected ? T.accentLight : 'transparent',
-      }}
-      className="flex items-center gap-2 pt-1 pr-2.5 pb-1 pl-10.5 cursor-pointer rounded-md text-xs select-none transition-colors duration-120"
+      key={id}
+      className={cn(
+        'flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-[13px] select-none hover:bg-gray-50',
+        selected.has(id) && 'bg-brand-soft/60 text-brand hover:bg-brand-soft',
+      )}
     >
       <input
         type="checkbox"
-        checked={selected}
-        onChange={() => onToggle(content.id)}
-        style={{
-          accentColor: T.accent,
-        }}
-        className="cursor-pointer w-3.25 h-3.25 shrink-0"
+        checked={selected.has(id)}
+        onChange={() => onToggleContent(id)}
+        className="size-3.5 shrink-0 cursor-pointer accent-brand"
       />
-      <span
-        style={{
-          color: selected ? '#1D4ED8' : T.textMID,
-        }}
-        className="transition-colors duration-120 text-sm"
-      >
-        {content.name}
-      </span>
+      <FileText size={12} className="shrink-0 text-muted" />
+      <span className="min-w-0 flex-1 truncate">{labelFor(name)}</span>
+      {staged.has(id) && (
+        <span className="shrink-0 rounded bg-gray-100 px-1.5 text-[10px] font-semibold text-muted">
+          In list
+        </span>
+      )}
     </label>
-  ),
-);
-ContentRow.displayName = 'ContentRow';
+  );
 
-// ─── SubModuleRow ─────────────────────────────────────────────────────────────
-
-const SubModuleRow = memo(
-  ({
-    sub,
-    selected,
-    onToggleContent,
-    onToggleGroup,
-    forceOpen,
-  }: {
-    sub: SubModuleNode;
-    selected: Set<number>;
-    onToggleContent: (ID: number) => void;
-    onToggleGroup: (IDs: number[]) => void;
-    forceOpen?: boolean;
-  }) => {
-    const [open, setOpen] = useState(forceOpen ?? true);
-    useEffect(() => {
-      if (forceOpen !== undefined) setOpen(forceOpen);
-    }, [forceOpen]);
-    const IDs = useMemo(() => sub.moduleContent.map((c) => c.id), [sub.moduleContent]);
-    const state = getCheckState(IDs, selected);
-    const checkedCount = IDs.filter((ID) => selected.has(ID)).length;
-    return (
-      <Box>
-        <Flex
-          _hover={{
-            bg: T.bgHover,
-          }}
-          className="items-center gap-1.5 pr-2 pt-1.25 pb-1.25 cursor-pointer rounded-md pl-5 transition-colors duration-120"
-        >
-          <Box
-            as="span"
-            onClick={() => setOpen((o) => !o)}
-            style={{
-              color: T.textSub,
-            }}
-            className="flex items-center shrink-0"
-          >
-            {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-          </Box>
-          <TriCheckbox
-            state={state}
-            onChange={() => onToggleGroup(IDs)}
-          />
-          <Text
-            color={state !== 'none' ? T.accent : T.textSub}
-            onClick={() => setOpen((o) => !o)}
-            className="text-xs font-normal ml-1 cursor-pointer select-none flex-1 transition-colors duration-120"
-          >
-            📁 {sub.name}
-          </Text>
-          {state !== 'none' && (
-            <Box
-              bg={T.accentLight}
-              color={T.accent}
-              className="pl-1.5 pr-1.5 pt-0.25 pb-0.25 rounded-xl text-[11px] font-normal"
-            >
-              {checkedCount}/{IDs.length}
-            </Box>
-          )}
-        </Flex>
-        {open && (
-          <Box>
-            {sub.moduleContent.map((c) => (
-              <ContentRow
-                key={c.id}
-                content={c}
-                selected={selected.has(c.id)}
-                onToggle={onToggleContent}
-              />
-            ))}
-          </Box>
-        )}
-      </Box>
-    );
-  },
-);
-SubModuleRow.displayName = 'SubModuleRow';
-
-// ─── ModuleRow ────────────────────────────────────────────────────────────────
-
-const ModuleRow = memo(
-  ({
-    mod,
-    selected,
-    onToggleContent,
-    onToggleGroup,
-    forceOpen,
-    expandedSubIDs,
-  }: {
-    mod: ModuleNode;
-    selected: Set<number>;
-    onToggleContent: (ID: number) => void;
-    onToggleGroup: (IDs: number[]) => void;
-    forceOpen?: boolean;
-    expandedSubIDs?: Set<number>;
-  }) => {
-    console.log(mod, 'mod');
-    const [open, setOpen] = useState(forceOpen ?? true);
-    useEffect(() => {
-      if (forceOpen !== undefined) setOpen(forceOpen);
-    }, [forceOpen]);
-    const allIDs = useMemo(
-      () => [
-        ...mod.moduleContent.map((c) => c.id),
-        // ...mod.SUBMODULES.flatMap(s => s.CONTENTS.map(c => c.ID)),
-      ],
-      [mod],
-    );
-    const state = getCheckState(allIDs, selected);
-    const checkedCount = allIDs.filter((ID) => selected.has(ID)).length;
-    return (
-      <Box
-        border={`1px solid ${state !== 'none' ? T.accentMID : T.border}`}
-        borderRadius={T.radiusMd}
-        boxShadow={state !== 'none' ? '0 0 0 2px rgba(59,130,246,0.08)' : 'none'}
-        className="mb-1.5 overflow-hidden transition-colors duration-150"
-      >
-        <Flex
-          bg={state !== 'none' ? T.accentLight : T.bg}
-          _hover={{
-            bg: state !== 'none' ? '#DBEAFE' : T.bgHover,
-          }}
-          className="items-center gap-2 pl-3 pr-3 pt-1.75 pb-1.75 cursor-pointer transition-colors duration-120"
-        >
-          <Box
-            as="span"
-            onClick={() => setOpen((o) => !o)}
-            style={{
-              color: T.textSub,
-            }}
-            className="flex items-center shrink-0"
-          >
-            {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          </Box>
-          <TriCheckbox
-            state={state}
-            onChange={() => onToggleGroup(allIDs)}
-          />
-          <Text
-            color={state !== 'none' ? '#1E40AF' : T.textMID}
-            onClick={() => setOpen((o) => !o)}
-            className="text-xs font-normal ml-1 flex-1 cursor-pointer select-none transition-colors duration-120"
-          >
-            {mod.name}
-          </Text>
-          {state !== 'none' && (
-            <Box
-              className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal bg-[#DBEAFE] text-[#1E40AF]"
-            >
-              {checkedCount}/{allIDs.length}
-            </Box>
-          )}
-        </Flex>
-        {open && (
-          <Box
-            bg={T.bgCard}
-            className="pt-1 pb-1"
-          >
-            {mod.moduleContent.map((c) => (
-              <ContentRow
-                key={c.id}
-                content={c}
-                selected={selected.has(c.id)}
-                onToggle={onToggleContent}
-              />
-            ))}
-            {/* {mod.SUBMODULES.map(sub => (
-            <SubModuleRow
-              key={sub.ID} sub={sub} selected={selected}
-              onToggleContent={onToggleContent} onToggleGroup={onToggleGroup}
-              forceOpen={expandedSubIDs ? expandedSubIDs.has(sub.ID) : true}
-            />
-           ))} */}
-          </Box>
-        )}
-      </Box>
-    );
-  },
-);
-ModuleRow.displayName = 'ModuleRow';
-
-// ─── ModuleTree ───────────────────────────────────────────────────────────────
-
-const ModuleTree = memo(
-  ({
-    menuData,
-    selectedContentIDs,
-    onToggleContent,
-    onToggleGroup,
-    expandedModuleIDs,
-    expandedSubIDs,
-  }: {
-    menuData: ModuleNode[];
-    selectedContentIDs: Set<number>;
-    onToggleContent: (ID: number) => void;
-    onToggleGroup: (IDs: number[]) => void;
-    expandedModuleIDs?: Set<number>;
-    expandedSubIDs?: Set<number>;
-  }) => {
-    const allIDs = useMemo(
-      () =>
-        menuData.flatMap((m) => [
-          ...m.moduleContent.map((c) => c.id),
-          // ...m.SUBMODULES.flatMap(s => s.CONTENTS.map(c => c.ID)),
-        ]),
-      [menuData],
-    );
-    const rootState = getCheckState(allIDs, selectedContentIDs);
-    const totalSelected = allIDs.filter((ID) => selectedContentIDs.has(ID)).length;
-    return (
-      <Box>
-        <Flex
-          bg={T.bg}
-          borderRadius={T.radius}
-          border={`1px solid ${T.border}`}
-          className="items-center gap-2 pl-3 pr-3 pt-1.5 pb-1.5 mb-2"
-        >
-          <TriCheckbox
-            state={rootState}
-            onChange={() => onToggleGroup(allIDs)}
-          />
-          <Text
-            color={T.textMID}
-            className="text-base font-normal flex-1"
-          >
-            Select All
-          </Text>
-          {totalSelected > 0 && (
-            <Box
-              bg={T.accentLight}
-              color={T.accent}
-              className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal"
-            >
-              {totalSelected} / {allIDs.length}
-            </Box>
-          )}
-        </Flex>
-        {menuData.map((mod) => (
-          <ModuleRow
-            key={mod.id}
-            mod={mod}
-            selected={selectedContentIDs}
-            onToggleContent={onToggleContent}
-            onToggleGroup={onToggleGroup}
-            forceOpen={expandedModuleIDs ? expandedModuleIDs.has(mod.id) : true}
-            expandedSubIDs={expandedSubIDs}
-          />
-        ))}
-      </Box>
-    );
-  },
-);
-ModuleTree.displayName = 'ModuleTree';
-
-// ─── MergedViewTable ──────────────────────────────────────────────────────────
-
-interface FlatRow {
-  sno?: number;
-  moduleNAME: string;
-  subModuleNAME: string;
-  contentNAME: string;
-  active?: boolean;
-}
-function buildFlatRows(txs: RoleTran[]): FlatRow[] {
-  return [...txs]
-    .sort((a, b) => {
-      const m = a.MODULENAME.localeCompare(b.MODULENAME);
-      if (m) return m;
-      const s = (a.SUBMODULENAME || '').localeCompare(b.SUBMODULENAME || '');
-      if (s) return s;
-      return a.CONTENTNAME.localeCompare(b.CONTENTNAME);
+  const visible = menu
+    .map((mod) => {
+      const modHit = matches(mod.name);
+      const contents = (mod.moduleContent ?? []).filter((c) => modHit || matches(c.name));
+      const subs = (mod.subModule ?? [])
+        .map((s) => {
+          const subHit = modHit || matches(s.name);
+          return {
+            ...s,
+            moduleContent: (s.moduleContent ?? []).filter((c) => subHit || matches(c.name)),
+          };
+        })
+        .filter((s) => s.moduleContent.length > 0);
+      return { mod, contents, subs };
     })
-    .map((tx) => ({
-      sno: tx.SNO,
-      moduleNAME: tx.MODULENAME,
-      subModuleNAME: tx.SUBMODULENAME || '—',
-      contentNAME: tx.CONTENTNAME,
-      active: tx.ACTIVE,
-    }));
-}
+    .filter(({ contents, subs }) => contents.length > 0 || subs.length > 0);
 
-// Compute rowspan array: null = skip cell (covered by rowspan above)
-function computeSpans<T>(rows: T[], key: (r: T, i: number) => string): (number | null)[] {
-  return rows.map((row, i) => {
-    if (i === 0 || key(rows[i - 1], i - 1) !== key(row, i)) {
-      let span = 1;
-      for (let j = i + 1; j < rows.length && key(rows[j], j) === key(row, i); j++) span++;
-      return span;
-    }
-    return null;
-  });
-}
-const MergedViewTable = memo(
-  ({
-    txs,
-    onToggle,
-    onDelete,
-    isToggling,
-    isDeleting,
-  }: {
-    txs: RoleTran[];
-    onToggle: (sno: number) => void;
-    onDelete: (sno: number) => void;
-    isToggling: boolean;
-    isDeleting: boolean;
-  }) => {
-    const rows = useMemo(() => buildFlatRows(txs), [txs]);
-    const moduleSpans = useMemo(() => computeSpans(rows, (r) => r.moduleNAME), [rows]);
-    const subSpans = useMemo(
-      () => computeSpans(rows, (r, i) => `${r.moduleNAME}__${r.subModuleNAME}`),
-      [rows],
-    );
-    const cell: React.CSSProperties = {
-      padding: '9px 14px',
-      fontSize: 13,
-      borderBottom: `1px solid ${T.border}`,
-      verticalAlign: 'middle',
-    };
+  if (!visible.length) {
     return (
-      <Box className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr
-              style={{
-                background: T.navy,
-              }}
-            >
-              {['Module', 'Sub Module', 'Content', 'Status', 'Actions'].map((h, i) => (
-                <th
-                  key={h}
-                  style={{
-                    textAlign: i >= 3 ? 'center' : 'left',
-                    borderBottom: `2px solid ${T.navyLight}`,
-                  }}
-                  className="py-2.75 px-3.5 text-[#E2E8F0] font-semibold text-[11px] tracking-wide uppercase whitespace-nowrap"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr
-                key={i}
-                style={{
-                  background: i % 2 === 0 ? T.bgCard : T.bg,
-                }}
-                className="transition-colors duration-100"
-              >
-                {moduleSpans[i] !== null && (
-                  <td
-                    rowSpan={moduleSpans[i]!}
-                    style={{
-                      ...cell,
-                      background: T.accentLight,
-                      borderRight: `2px solid ${T.accentMID}`,
-                      borderBottom: `1px solid ${T.accentMID}`,
-                    }}
-                    className="text-center align-middle min-w-30"
-                  >
-                    <Box
-                      className="inline-block bg-[#DBEAFE] text-[#1E40AF] pl-3 pr-3 pt-1 pb-1 rounded-md text-xs font-normal max-w-37.5 break-words text-center"
-                    >
-                      {row.moduleNAME}
-                    </Box>
-                  </td>
-                )}
-
-                {subSpans[i] !== null && (
-                  <td
-                    rowSpan={subSpans[i]!}
-                    style={{
-                      ...cell,
-                      borderRight: `1px solid ${T.border}`,
-                      borderBottom: `1px solid ${T.border}`,
-                    }}
-                    className="bg-[#F7FAFF] text-center align-middle min-w-27.5"
-                  >
-                    {row.subModuleNAME === '—' ? (
-                      <Text
-                        color={T.textMuted}
-                        className="text-sm"
-                      >
-                        —
-                      </Text>
-                    ) : (
-                      <Box
-                        className="inline-block bg-[#F5F3FF] text-[#6D28D9] pl-2 pr-2 pt-0.5 pb-0.5 rounded-md text-[11px] font-normal max-w-32.5 break-words text-center"
-                      >
-                        📁 {row.subModuleNAME}
-                      </Box>
-                    )}
-                  </td>
-                )}
-
-                {/* Content */}
-                <td
-                  style={{
-                    ...cell,
-                    color: T.text,
-                  }}
-                  className="font-normal"
-                >
-                  {row.contentNAME}
-                </td>
-
-                {/* Status */}
-                <td
-                  style={{
-                    ...cell,
-                  }}
-                  className="text-center"
-                >
-                  <Box
-                    bg={row.active ? T.greenLight : T.redLight}
-                    color={row.active ? '#065F46' : '#991B1B'}
-                    className="inline-flex items-center gap-1 pl-2.5 pr-2.5 pt-0.75 pb-0.75 rounded-full text-[11px] font-normal"
-                  >
-                    <Box
-                      bg={row.active ? T.green : T.red}
-                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                    />
-                    {row.active ? 'Active' : 'Inactive'}
-                  </Box>
-                </td>
-
-                {/* Actions */}
-                <td
-                  style={{
-                    ...cell,
-                  }}
-                  className="text-center"
-                >
-                  <HStack className="gap-1.5 justify-center">
-                    <button
-                      onClick={() => row.sno && onToggle(row.sno)}
-                      disabled={isToggling || !row.sno}
-                      title={row.active ? 'Deactivate' : 'Activate'}
-                      style={{
-                        borderColor: row.active ? '#F59E0B' : T.green,
-                        color: row.active ? T.orange : T.green,
-                        background: row.active ? '#FFFBEB' : '#F0FDF4',
-                        opacity: isToggling || !row.sno ? 0.5 : 1,
-                      }}
-                      className="py-0.75 px-2.5 text-[11px] font-semibold rounded-md cursor-pointer border transition-all duration-120"
-                    >
-                      {row.active ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button
-                      onClick={() => row.sno && onDelete(row.sno)}
-                      disabled={isDeleting || !row.sno}
-                      title="Delete"
-                      style={{
-                        border: `1px solid ${T.redLight}`,
-                        background: T.redLight,
-                        color: T.red,
-                        opacity: isDeleting || !row.sno ? 0.5 : 1,
-                      }}
-                      className="py-1 px-2 rounded-md cursor-pointer flex items-center transition-all duration-120"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </HStack>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Box>
+      <p className="px-2 py-6 text-center text-xs text-muted">
+        {q ? `No pages match “${query}”` : 'No pages have been added to the navigation yet'}
+      </p>
     );
-  },
-);
-MergedViewTable.displayName = 'MergedViewTable';
+  }
 
-// ─── RoleCard ─────────────────────────────────────────────────────────────────
-
-const RoleCard = memo(
-  ({
-    roleNAME,
-    txs,
-    onEdit,
-    onToggle,
-    onDelete,
-    isToggling,
-    isDeleting,
-  }: {
-    roleNAME: string;
-    txs: RoleTran[];
-    onEdit: (roleNAME: string, txs: RoleTran[]) => void;
-    onToggle: (sno: number) => void;
-    onDelete: (sno: number) => void;
-    isToggling: boolean;
-    isDeleting: boolean;
-  }) => {
-    const [expanded, setExpanded] = useState(false);
-    const activeCount = txs.filter((t) => t.ACTIVE).length;
-    return (
-      <Box
-        border={`1px solid ${T.border}`}
-        borderRadius={T.radiusLg}
-        _hover={{
-          boxShadow: '0 3px 12px rgba(0,0,0,0.1)',
-        }}
-        className="mb-4 overflow-hidden shadow-md transition-shadow duration-150"
-      >
-        {/* Header */}
-        <Flex
-          bg={T.navyMID}
-          onClick={() => setExpanded((e) => !e)}
-          className="justify-between items-center pl-4 pr-4 pt-3 pb-3 cursor-pointer"
-        >
-          <HStack className="gap-3">
-            <Box
-              className="w-8 h-8 rounded-lg bg-[rgba(255,255,255,0.12)] flex items-center justify-center"
-            >
-              <ShieldCheck
-                size={15}
-                className="text-white"
-              />
-            </Box>
-            <Box>
-              <Text
-                className="font-normal text-white text-sm"
-              >
-                {roleNAME}
-              </Text>
-              <HStack className="gap-2 mt-0.5">
-                <Box
-                  className="pl-1.5 pr-1.5 pt-0.25 pb-0.25 rounded-xl text-[11px] font-normal bg-[rgba(255,255,255,0.15)] text-white"
-                >
-                  {txs.length} permission{txs.length !== 1 ? 's' : ''}
-                </Box>
-                <Box
-                  bg={activeCount > 0 ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.2)'}
-                  color={activeCount > 0 ? '#6EE7B7' : '#FCA5A5'}
-                  className="pl-1.5 pr-1.5 pt-0.25 pb-0.25 rounded-xl text-[11px] font-normal"
-                >
-                  {activeCount} active
-                </Box>
-              </HStack>
-            </Box>
-          </HStack>
-          <HStack
-            onClick={(e) => e.stopPropagation()}
-            className="gap-2"
+  return (
+    <ul className="grid gap-1">
+      {visible.map(({ mod, contents, subs }) => {
+        const ids = moduleContentIds(mod);
+        const state = getCheckState(ids, selected);
+        const picked = ids.filter((id) => selected.has(id)).length;
+        const open = !!q || !collapsed.has(modKey(mod.id));
+        return (
+          <li
+            key={mod.id}
+            className={cn('rounded-md border border-line', state !== 'none' && 'border-brand/40')}
           >
-            <button
-              onClick={() => onEdit(roleNAME, txs)}
-              className="flex items-center gap-1.25 py-1.25 px-3 rounded-md text-xs font-semibold bg-[rgba(255,255,255,0.12)] text-white border border-[rgba(255,255,255,0.2)] cursor-pointer transition-colors duration-120"
+            <div
+              className={cn(
+                'flex items-center gap-1.5 px-1.5 py-1',
+                state !== 'none' ? 'bg-brand-soft/50' : 'bg-gray-50',
+                open && 'border-b border-line',
+              )}
             >
-              <Edit2 size={12} /> Edit
-            </button>
-            <button
-              onClick={() => setExpanded((e) => !e)}
-              className="flex items-center gap-1.25 py-1.25 px-3 rounded-md text-xs font-semibold bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.7)] border border-[rgba(255,255,255,0.12)] cursor-pointer transition-colors duration-120"
-            >
-              {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-              {expanded ? 'Hide' : 'Show'}
-            </button>
-          </HStack>
-        </Flex>
+              <Chevron
+                open={open}
+                onClick={() => onToggleOpen(modKey(mod.id))}
+                label={`Toggle ${labelFor(mod.name)}`}
+              />
+              <TriCheckbox
+                state={state}
+                onChange={() => onToggleGroup(ids)}
+                label={`Select all in ${labelFor(mod.name)}`}
+              />
+              <button
+                type="button"
+                onClick={() => onToggleOpen(modKey(mod.id))}
+                className="min-w-0 flex-1 truncate text-left text-[13px] font-semibold text-ink"
+              >
+                {labelFor(mod.name)}
+              </button>
+              <Count active={picked > 0}>
+                {picked}/{ids.length}
+              </Count>
+            </div>
+            {open && (
+              <div className="grid gap-0.5 p-1">
+                {contents.map((c) => renderContent(c.id, c.name))}
+                {subs.map((sub) => {
+                  const subIds = sub.moduleContent.map((c) => c.id);
+                  const subState = getCheckState(subIds, selected);
+                  const subOpen = !!q || !collapsed.has(subKey(sub.id));
+                  return (
+                    <div key={sub.id}>
+                      <div className="flex items-center gap-1.5 px-1 py-0.5">
+                        <Chevron
+                          open={subOpen}
+                          onClick={() => onToggleOpen(subKey(sub.id))}
+                          label={`Toggle ${sub.name}`}
+                        />
+                        <TriCheckbox
+                          state={subState}
+                          onChange={() => onToggleGroup(subIds)}
+                          label={`Select all in ${sub.name}`}
+                        />
+                        <Layers size={12} className="shrink-0 text-muted" />
+                        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">
+                          {labelFor(sub.name)}
+                        </span>
+                      </div>
+                      {subOpen && (
+                        <div className="ml-3.5 grid gap-0.5 border-l border-line pl-2">
+                          {sub.moduleContent.map((c) => renderContent(c.id, c.name))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+});
 
-        {/* Table */}
-        {expanded && (
-          <MergedViewTable
-            txs={txs}
-            onToggle={onToggle}
-            onDelete={onDelete}
-            isToggling={isToggling}
-            isDeleting={isDeleting}
+// ─── Saved permissions for one role ─────────────────────────────────────────
+
+const RolePermissionTable = memo(function RolePermissionTable({
+  txs,
+  onToggle,
+  onDelete,
+  busy,
+}: {
+  txs: RoleTran[];
+  onToggle: (sno: number) => void;
+  onDelete: (sno: number) => void;
+  busy: boolean;
+}) {
+  const rows = useMemo(() => sortTxs(txs), [txs]);
+  const moduleSpans = useMemo(() => computeSpans(rows, (r) => r.MODULENAME), [rows]);
+  const subSpans = useMemo(
+    () => computeSpans(rows, (r) => `${r.MODULENAME}__${r.SUBMODULENAME || ''}`),
+    [rows],
+  );
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            <th className={thClass}>Module</th>
+            <th className={thClass}>Sub module</th>
+            <th className={thClass}>Page</th>
+            <th className={cn(thClass, 'w-24')}>Status</th>
+            <th className={cn(thClass, 'w-36 text-right')}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={row.SNO ?? i} className="hover:bg-gray-50/60">
+              {moduleSpans[i] !== null && (
+                <td
+                  rowSpan={moduleSpans[i]!}
+                  className={cn(tdClass, 'border-r bg-white align-top font-semibold')}
+                >
+                  {labelFor(row.MODULENAME)}
+                </td>
+              )}
+              {subSpans[i] !== null && (
+                <td
+                  rowSpan={subSpans[i]!}
+                  className={cn(tdClass, 'border-r bg-white align-top text-muted')}
+                >
+                  {row.SUBMODULENAME ? labelFor(row.SUBMODULENAME) : '—'}
+                </td>
+              )}
+              <td className={tdClass}>{labelFor(row.CONTENTNAME)}</td>
+              <td className={tdClass}>
+                <StatusPill active={row.ACTIVE} />
+              </td>
+              <td className={tdClass}>
+                <div className="flex justify-end gap-1">
+                  <button
+                    type="button"
+                    disabled={busy || !row.SNO}
+                    onClick={() => row.SNO && onToggle(row.SNO)}
+                    className={cn(buttonClass, 'h-7 px-2 text-xs')}
+                  >
+                    {row.ACTIVE ? 'Deactivate' : 'Activate'}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Delete permission"
+                    title="Delete"
+                    disabled={busy || !row.SNO}
+                    onClick={() => row.SNO && onDelete(row.SNO)}
+                    className={cn(
+                      iconButtonClass,
+                      'hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600',
+                    )}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+});
+
+function RoleCard({
+  roleNAME,
+  txs,
+  open,
+  onOpenChange,
+  onEdit,
+  onToggle,
+  onDelete,
+  busy,
+}: {
+  roleNAME: string;
+  txs: RoleTran[];
+  open: boolean;
+  onOpenChange: () => void;
+  onEdit: (roleNAME: string, txs: RoleTran[]) => void;
+  onToggle: (sno: number) => void;
+  onDelete: (sno: number) => void;
+  busy: boolean;
+}) {
+  const activeCount = txs.filter((t) => t.ACTIVE).length;
+  const moduleCount = new Set(txs.map((t) => t.MODULENAME)).size;
+  return (
+    <section className={cn(cardClass, 'overflow-hidden')}>
+      <div className="flex items-center gap-2 px-3 py-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={onOpenChange}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        >
+          <ChevronRight
+            size={14}
+            className={cn('shrink-0 text-muted transition-transform', open && 'rotate-90')}
           />
-        )}
-      </Box>
-    );
-  },
-);
-RoleCard.displayName = 'RoleCard';
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-brand-soft text-brand">
+            <ShieldCheck size={14} />
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-[13px] font-semibold text-ink">{roleNAME}</span>
+            <span className="block text-[11px] text-muted">
+              {txs.length} page{txs.length !== 1 ? 's' : ''} across {moduleCount} module
+              {moduleCount !== 1 ? 's' : ''}
+            </span>
+          </span>
+        </button>
+        <span
+          className={cn(
+            'hidden rounded-full px-2 py-0.5 text-[11px] font-semibold sm:inline-flex',
+            activeCount === txs.length
+              ? 'bg-emerald-50 text-emerald-700'
+              : activeCount === 0
+                ? 'bg-rose-50 text-rose-700'
+                : 'bg-amber-50 text-amber-700',
+          )}
+        >
+          {activeCount}/{txs.length} active
+        </span>
+        <button
+          type="button"
+          onClick={() => onEdit(roleNAME, txs)}
+          className={cn(buttonClass, 'h-7 px-2.5 text-xs')}
+        >
+          <Pencil size={12} /> Edit
+        </button>
+      </div>
+      {open && (
+        <div className="border-t border-line">
+          <RolePermissionTable txs={txs} onToggle={onToggle} onDelete={onDelete} busy={busy} />
+        </div>
+      )}
+    </section>
+  );
+}
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main page ──────────────────────────────────────────────────────────────
 
 export default function RoleTranCreationPage() {
-  const [tabValue, setTabValue] = useState<string>('create');
+  const [tab, setTab] = useState<TabKey>('assign');
   const [selectedRoleID, setSelectedRoleID] = useState<number | undefined>(undefined);
   const [selectedRoleNAME, setSelectedRoleNAME] = useState('');
   const [active, setActive] = useState(true);
   const [selectedContentIDs, setSelectedContentIDs] = useState<Set<number>>(new Set());
-  const [expandedModuleIDs, setExpandedModuleIDs] = useState<Set<number> | undefined>(
-    undefined,
-  );
-  const [expandedSubIDs, setExpandedSubIDs] = useState<Set<number> | undefined>(
-    undefined,
-  );
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [treeQuery, setTreeQuery] = useState('');
   const [rows, setRows] = useState<RoleTran[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingRole, setEditingRole] = useState<{
     roleNAME: string;
     originalRows: RoleTran[];
   } | null>(null);
-  const { data: menu = [] } = useMenu();
+  const [roleQuery, setRoleQuery] = useState('');
+  const [openRoles, setOpenRoles] = useState<Set<string>>(new Set());
+
+  const { data: menuData } = useMenu();
+  const menu = useMemo(() => (menuData ?? []) as MenuModule[], [menuData]);
   const {
     data: roleTransactions,
     isLoading: isLoadingTransactions,
     refetch,
   } = useRoleTransactions();
-  console.log(roleTransactions, menu, 'roleTransactions');
   const { mutate: insertRoles, isPending: isInserting } = useInsertRoleTransaction();
   const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteRoleTransaction();
-  const { mutate: toggleTransaction, isPending: isToggling } =
-    useToggleRoleTransactionActive();
+  const { mutate: toggleTransaction, isPending: isToggling } = useToggleRoleTransactionActive();
   const { roles, loading: loadingRoles } = useRole();
-  console.log(menu, 'roleTransactions');
 
-  // ── Content meta lookup ────────────────────────────────────────────────────
+  // ── Lookups ────────────────────────────────────────────────────────────────
   const contentMeta = useMemo(() => {
-    const map = new Map<
-      number,
-      {
-        moduleID: number;
-        moduleNAME: string;
-        subModuleID: number;
-        subModuleNAME: string;
-        contentNAME: string;
-      }
-    >();
-    (menu as unknown as ModuleNode[]).forEach((mod) => {
-      console.log(mod, 'modmod');
-      mod.moduleContent?.forEach((c) => {
+    const map = new Map<number, ContentMeta>();
+    menu.forEach((mod) => {
+      mod.moduleContent?.forEach((c) =>
         map.set(c.id, {
           moduleID: mod.id,
           moduleNAME: mod.name,
           subModuleID: 0,
           subModuleNAME: '',
           contentNAME: c.name,
-        });
-      });
-      // mod.SUBMODULES?.forEach(sub => {
-      //   sub.CONTENTS?.forEach(c => {
-      //     map.set(c.ID, { moduleID: mod.ID, moduleNAME: mod.NAME, subModuleID: sub.ID, subModuleNAME: sub.NAME, contentNAME: c.NAME });
-      //   });
-      // });
+        }),
+      );
+      mod.subModule?.forEach((sub) =>
+        sub.moduleContent?.forEach((c) =>
+          map.set(c.id, {
+            moduleID: mod.id,
+            moduleNAME: mod.name,
+            subModuleID: sub.id,
+            subModuleNAME: sub.name,
+            contentNAME: c.name,
+          }),
+        ),
+      );
     });
     return map;
   }, [menu]);
-  const computeExpandedIDs = useCallback(
-    (contentIDs: Set<number>) => {
-      const modIDs = new Set<number>();
-      const subIDs = new Set<number>();
-      contentIDs.forEach((cID) => {
-        const m = contentMeta.get(cID);
-        if (m) {
-          modIDs.add(m.moduleID);
-          if (m.subModuleID) subIDs.add(m.subModuleID);
-        }
-      });
-      return {
-        modIDs,
-        subIDs,
-      };
-    },
-    [contentMeta],
+
+  const allContentIDs = useMemo(() => menu.flatMap(moduleContentIds), [menu]);
+  const allGroupKeys = useMemo(
+    () => menu.flatMap((m) => [modKey(m.id), ...(m.subModule ?? []).map((s) => subKey(s.id))]),
+    [menu],
   );
 
-  // ── Toggle helpers ─────────────────────────────────────────────────────────
-  const handleToggleContent = useCallback((contentID: number) => {
+  // Open only the modules/sub modules that hold the given pages.
+  const focusOn = useCallback(
+    (contentIDs: Set<number>) => {
+      const open = new Set<string>();
+      contentIDs.forEach((id) => {
+        const m = contentMeta.get(id);
+        if (!m) return;
+        open.add(modKey(m.moduleID));
+        if (m.subModuleID) open.add(subKey(m.subModuleID));
+      });
+      setCollapsed(new Set(allGroupKeys.filter((k) => !open.has(k))));
+    },
+    [contentMeta, allGroupKeys],
+  );
+
+  // ── Tree toggles ───────────────────────────────────────────────────────────
+  const handleToggleContent = useCallback((id: number) => {
     setSelectedContentIDs((prev) => {
       const next = new Set(prev);
-      next.has(contentID) ? next.delete(contentID) : next.add(contentID);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
-  const handleToggleGroup = useCallback((IDs: number[]) => {
+
+  const handleToggleGroup = useCallback((ids: number[]) => {
     setSelectedContentIDs((prev) => {
       const next = new Set(prev);
-      const allSelected = IDs.every((ID) => next.has(ID));
-      if (allSelected) IDs.forEach((ID) => next.delete(ID));
-      else IDs.forEach((ID) => next.add(ID));
+      if (ids.every((id) => next.has(id))) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
       return next;
     });
   }, []);
-  const isFormValID = selectedRoleID !== undefined && selectedContentIDs.size > 0;
+
+  const handleToggleOpen = useCallback((key: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  const isFormValid = selectedRoleID !== undefined && selectedContentIDs.size > 0;
 
   // ── Clear ──────────────────────────────────────────────────────────────────
   const handleClear = useCallback(() => {
     setSelectedRoleID(undefined);
     setSelectedRoleNAME('');
     setSelectedContentIDs(new Set());
-    setExpandedModuleIDs(undefined);
-    setExpandedSubIDs(undefined);
+    setCollapsed(new Set());
+    setTreeQuery('');
     setRows([]);
     setEditingIndex(null);
     setEditingRole(null);
     setActive(true);
   }, []);
 
-  // ── Add / edit rows ────────────────────────────────────────────────────────
+  // ── Stage / edit rows ──────────────────────────────────────────────────────
   const handleAddRows = useCallback(() => {
-    if (!isFormValID) {
-      toastError('Please select a role and at least one content');
+    if (!isFormValid) {
+      toastError('Add permissions', 'Select a role and at least one page');
       return;
     }
-    console.log(selectedContentIDs, 'selectedContentIDs');
-    const newRows: RoleTran[] = Array.from(selectedContentIDs).map((contentID) => {
+    const newRows: RoleTran[] = [];
+    selectedContentIDs.forEach((contentID) => {
       const meta = contentMeta.get(contentID);
-      console.log(meta, contentID, 'meta');
-      if (!meta) throw new Error(`Content ${contentID} not found`);
-      return {
+      if (!meta) return;
+      newRows.push({
         ROLEID: selectedRoleID!,
         ROLENAME: selectedRoleNAME,
         MODULEID: meta.moduleID,
@@ -889,31 +687,34 @@ export default function RoleTranCreationPage() {
         CONTENTID: contentID,
         CONTENTNAME: meta.contentNAME,
         ACTIVE: active,
-      };
+      });
     });
     if (editingIndex !== null) {
       setRows((prev) => {
-        const u = [...prev];
-        u[editingIndex] = newRows[0];
-        return u;
+        const next = [...prev];
+        next[editingIndex] = newRows[0];
+        return next;
       });
       setEditingIndex(null);
     } else {
-      const existing = new Set(rows.map((r) => `${r.ROLEID}-${r.CONTENTID}`));
-      const unique = newRows.filter((r) => !existing.has(`${r.ROLEID}-${r.CONTENTID}`));
-      setRows((prev) => [...prev, ...unique]);
+      // Re-adding a page already in the list updates its status instead of duplicating it.
+      setRows((prev) => {
+        const byKey = new Map(prev.map((r) => [`${r.ROLEID}-${r.CONTENTID}`, r]));
+        newRows.forEach((r) => byKey.set(`${r.ROLEID}-${r.CONTENTID}`, r));
+        return Array.from(byKey.values());
+      });
     }
     setSelectedContentIDs(new Set());
   }, [
-    isFormValID,
+    isFormValid,
     selectedContentIDs,
     contentMeta,
     selectedRoleID,
     selectedRoleNAME,
     active,
     editingIndex,
-    rows,
   ]);
+
   const handleEditRow = useCallback(
     (index: number) => {
       const row = rows[index];
@@ -922,639 +723,543 @@ export default function RoleTranCreationPage() {
         setSelectedRoleID(role.ROLEID);
         setSelectedRoleNAME(role.ROLENAME);
       }
-      const IDs = new Set([row.CONTENTID]);
-      setSelectedContentIDs(IDs);
-      const { modIDs, subIDs } = computeExpandedIDs(IDs);
-      setExpandedModuleIDs(modIDs);
-      setExpandedSubIDs(subIDs);
+      const ids = new Set([row.CONTENTID]);
+      setSelectedContentIDs(ids);
+      focusOn(ids);
       setActive(row.ACTIVE ?? true);
       setEditingIndex(index);
-      setTabValue('create');
+      setTab('assign');
     },
-    [rows, roles, computeExpandedIDs],
+    [rows, roles, focusOn],
   );
+
   const handleDeleteRow = useCallback(
     (index: number) => {
       setRows((prev) => prev.filter((_, i) => i !== index));
       if (editingIndex === index) {
         setEditingIndex(null);
         setSelectedContentIDs(new Set());
+      } else if (editingIndex !== null && index < editingIndex) {
+        setEditingIndex(editingIndex - 1);
       }
     },
     [editingIndex],
   );
+
   const handleEditRole = useCallback(
     (roleNAME: string, txs: RoleTran[]) => {
       const first = txs[0];
       setSelectedRoleID(first.ROLEID);
       setSelectedRoleNAME(first.ROLENAME);
       setRows(txs);
-      setEditingRole({
-        roleNAME,
-        originalRows: txs,
-      });
+      setEditingRole({ roleNAME, originalRows: txs });
       setEditingIndex(null);
-      const IDs = new Set(txs.map((tx) => tx.CONTENTID));
-      setSelectedContentIDs(IDs);
-      const { modIDs, subIDs } = computeExpandedIDs(IDs);
-      setExpandedModuleIDs(modIDs);
-      setExpandedSubIDs(subIDs);
+      // Rows are already staged, so start with an empty selection for adding more.
+      setSelectedContentIDs(new Set());
+      focusOn(new Set(txs.map((tx) => tx.CONTENTID)));
+      setTreeQuery('');
       setActive(true);
-      setTabValue('create');
+      setTab('assign');
     },
-    [computeExpandedIDs],
+    [focusOn],
   );
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
+  // ── Save ───────────────────────────────────────────────────────────────────
   const handleSubmitSuccess = useCallback(() => {
-    toastCreated('Role permissions saved successfully');
+    if (editingRole) toastUpdated('Role permissions');
+    else toastCreated('Role permissions');
     handleClear();
     refetch();
-  }, [handleClear, refetch]);
+  }, [editingRole, handleClear, refetch]);
+
   const handleSubmit = useCallback(() => {
     if (!rows.length) {
-      toastError('Please add at least one role transaction');
+      toastError('Save permissions', 'Add at least one page to the list');
       return;
     }
     const payload = toRoleTranInputs(rows);
-    console.log(payload, 'payload');
-    if (editingRole) {
-      const snos = editingRole.originalRows.filter((tx) => tx.SNO).map((tx) => tx.SNO!);
-      if (!snos.length) {
-        insertRoles(payload, {
-          onSuccess: handleSubmitSuccess,
-        });
-        return;
-      }
-      let done = 0;
-      let errored = false;
-      snos.forEach((sno) =>
-        deleteTransaction(sno, {
-          onSuccess: () => {
-            done++;
-            if (done === snos.length && !errored)
-              insertRoles(payload, {
-                onSuccess: handleSubmitSuccess,
-              });
-          },
-          onError: () => {
-            if (!errored) {
-              errored = true;
-              toastError('Error deleting old permissions');
-            }
-          },
-        }),
-      );
-    } else {
-      insertRoles(payload, {
-        onSuccess: handleSubmitSuccess,
-      });
+    const snos = editingRole
+      ? editingRole.originalRows.filter((tx) => tx.SNO).map((tx) => tx.SNO!)
+      : [];
+    if (!snos.length) {
+      insertRoles(payload, { onSuccess: handleSubmitSuccess });
+      return;
     }
+    // Editing replaces the role's saved permissions: delete the old rows, then insert.
+    let done = 0;
+    let errored = false;
+    snos.forEach((sno) =>
+      deleteTransaction(sno, {
+        onSuccess: () => {
+          done++;
+          if (done === snos.length && !errored)
+            insertRoles(payload, { onSuccess: handleSubmitSuccess });
+        },
+        onError: () => {
+          if (!errored) {
+            errored = true;
+            toastError('Remove old permissions');
+          }
+        },
+      }),
+    );
   }, [rows, editingRole, insertRoles, deleteTransaction, handleSubmitSuccess]);
+
   const handleDeleteFromDB = useCallback(
     (sno: number) => {
       if (window.confirm('Delete this permission?'))
-        deleteTransaction(sno, {
-          onSuccess: () => refetch(),
-        });
+        deleteTransaction(sno, { onSuccess: () => refetch() });
     },
     [deleteTransaction, refetch],
   );
+
   const handleToggleFromDB = useCallback(
     (sno: number) => {
-      toggleTransaction(sno, {
-        onSuccess: () => refetch(),
-      });
+      toggleTransaction(sno, { onSuccess: () => refetch() });
     },
     [toggleTransaction, refetch],
   );
 
-  // ── Staging table columns ──────────────────────────────────────────────────
+  // ── Derived ────────────────────────────────────────────────────────────────
   const groupedByRole = useMemo(() => {
-    if (!roleTransactions) return {} as Record<string, RoleTran[]>;
     const g: Record<string, RoleTran[]> = {};
-    roleTransactions.forEach((tx) => {
+    (roleTransactions ?? []).forEach((tx) => {
       (g[tx.ROLENAME] = g[tx.ROLENAME] || []).push(tx);
     });
     return g;
   }, [roleTransactions]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
+  const roleEntries = useMemo(() => {
+    const q = roleQuery.trim().toLowerCase();
+    return Object.entries(groupedByRole)
+      .filter(([name]) => !q || name.toLowerCase().includes(q))
+      .sort(([a], [b]) => a.localeCompare(b));
+  }, [groupedByRole, roleQuery]);
+
+  const stagedRows = useMemo(
+    () =>
+      rows
+        .map((row, index) => ({ row, index }))
+        .sort((a, b) => a.row.ROLENAME.localeCompare(b.row.ROLENAME) || compareTxs(a.row, b.row)),
+    [rows],
+  );
+
+  const stagedForRole = useMemo(
+    () => new Set(rows.filter((r) => r.ROLEID === selectedRoleID).map((r) => r.CONTENTID)),
+    [rows, selectedRoleID],
+  );
+
+  const rootState = getCheckState(allContentIDs, selectedContentIDs);
+  const allExpanded = collapsed.size === 0;
+  const roleCount = Object.keys(groupedByRole).length;
+  const savingBusy = isInserting || (isDeleting && !!editingRole);
+
+  // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <Box
-      className="font-normal [&_table]:w-full [&_table]:border-collapse [&_th]:bg-slate-50 [&_th]:px-3.5 [&_th]:py-row [&_th]:text-xs [&_th]:tracking-wide [&_th]:text-muted [&_th]:uppercase [&_td]:border-b [&_td]:border-slate-100 [&_td]:px-3.5 [&_td]:py-row [&_td]:text-sm [&_tbody_tr:hover]:bg-brand-soft [&_button]:min-h-9 [&_button]:rounded-lg [&_[role=tab]]:min-h-11 [&_[role=tab][data-selected]]:bg-brand-soft [&_[role=tab][data-selected]]:text-brand"
-      bg={T.bgCard}
-      rounded={T.radiusLg}
-      shadow="sm"
-      border={`1px solid ${T.border}`}
-    >
-      <Tabs.Root
-        value={tabValue}
-        onValueChange={(d: any) => setTabValue(d.value)}
-        variant="enclosed"
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3">
+      {/* Header */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold text-ink">Role permissions</h1>
+          <p className="text-xs text-muted">
+            Choose which pages each role can open. Pages come from Navigation modules.
+          </p>
+        </div>
+        <div className="flex gap-2 text-xs text-ink">
+          <span className="rounded-md border border-line px-2.5 py-1">
+            <strong>{roleCount}</strong> roles configured
+          </span>
+          <span className="rounded-md border border-line px-2.5 py-1">
+            <strong>{roleTransactions?.length ?? 0}</strong> permissions
+          </span>
+          <span className="rounded-md border border-line px-2.5 py-1">
+            <strong>{allContentIDs.length}</strong> pages
+          </span>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div
+        role="tablist"
+        aria-label="Role permissions"
+        className="flex gap-1 overflow-x-auto border-b border-line"
       >
-        <Tabs.List
-          borderBottom={`2px solid ${T.border}`}
-          bg={T.bg}
-          borderRadius={`${T.radiusMd} ${T.radiusMd} 0 0`}
-          className="p-1 gap-1"
-        >
-          {[
-            {
-              value: 'create',
-              label: 'Create Role Transaction',
-              icon: <ShieldCheck size={14} />,
-            },
-            {
-              value: 'view',
-              label: 'View Role Transactions',
-              icon: <Eye size={14} />,
-            },
-          ].map((tab) => (
-            <Tabs.Trigger
-              key={tab.value}
-              value={tab.value}
-              className="flex items-center gap-1.5 py-1.75 px-4 rounded-lg text-sm font-semibold transition-all duration-150"
+        {(
+          [
+            { key: 'assign', label: 'Assign permissions', icon: <ListChecks size={14} /> },
+            { key: 'roles', label: 'Saved by role', icon: <Users size={14} /> },
+          ] as const
+        ).map((t) => {
+          const isActive = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                '-mb-px inline-flex items-center gap-1.5 border-b-2 border-transparent px-3 py-2 text-[13px] whitespace-nowrap text-muted transition-colors hover:text-ink',
+                isActive && 'border-brand font-semibold text-brand hover:text-brand',
+              )}
             >
-              {tab.icon} {tab.label}
-            </Tabs.Trigger>
-          ))}
-        </Tabs.List>
+              {t.icon}
+              {t.label}
+              {t.key === 'assign' && rows.length > 0 && <Count active>{rows.length}</Count>}
+            </button>
+          );
+        })}
+      </div>
 
-        {/* ── CREATE TAB ──────────────────────────────────────────────────── */}
-        <Tabs.Content value="create">
-          <Grid
-            className="grid-cols-1 md:grid-cols-[1fr_1.6fr] gap-3 p-4"
-          >
-            {/* LEFT: form + tree */}
-            <GridItem>
-              <Box
-                bg={T.bg}
-                rounded={T.radiusLg}
-                border={`1px solid ${T.border}`}
-                className="p-4 shadow-sm"
+      {/* ── ASSIGN ───────────────────────────────────────────────────────── */}
+      {tab === 'assign' && (
+        <>
+          {editingRole && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <span>
+                Editing saved permissions for <strong>{editingRole.roleNAME}</strong>. Saving
+                replaces what is stored for this role.
+              </span>
+              <button
+                type="button"
+                onClick={handleClear}
+                className="inline-flex items-center gap-1 font-semibold hover:underline"
               >
-                {/* Section header */}
-                <HStack className="gap-2 mb-4">
-                  <Box
-                    bg={T.navyMID}
-                    className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-                  >
-                    <ShieldCheck
-                      size={14}
-                      className="text-white"
-                    />
-                  </Box>
-                  <Box>
-                    <Text
-                      color={T.text}
-                      className="text-sm font-normal"
-                    >
-                      {editingRole
-                        ? `Editing: ${editingRole.roleNAME}`
-                        : editingIndex !== null
-                          ? 'Edit Transaction'
-                          : 'New Transaction'}
-                    </Text>
-                    {editingRole && (
-                      <Text
-                        color={T.orange}
-                        className="text-xs"
-                      >
-                        ⚠ Editing existing role permissions
-                      </Text>
-                    )}
-                  </Box>
-                </HStack>
+                <RotateCcw size={11} /> Cancel edit
+              </button>
+            </div>
+          )}
 
-                <VStack className="gap-4 items-stretch">
-                  {/* Role selector */}
-                  <Box>
-                    <Text
-                      color={T.textSub}
-                      className="text-xs font-normal mb-1.5 uppercase tracking-wide"
-                    >
-                      Role *
-                    </Text>
-                    {loadingRoles ? (
-                      <Flex className="items-center gap-2">
-                        <Spinner size="sm" />
-                        <Text
-                          color={T.textMuted}
-                          className="text-xs"
-                        >
-                          Loading roles…
-                        </Text>
-                      </Flex>
-                    ) : (
-                      <select
-                        style={{
-                          borderRadius: T.radius,
-                          border: `1px solid ${T.borderMID}`,
-                          background: T.bgCard,
-                          color: T.text,
-                        }}
-                        value={selectedRoleID ?? ''}
-                        onChange={(e) => {
-                          const ID = Number(e.target.value);
-                          const r = roles.find((r) => r.ROLEID === ID);
-                          if (r) {
-                            setSelectedRoleID(r.ROLEID);
-                            setSelectedRoleNAME(r.ROLENAME);
-                          } else {
-                            setSelectedRoleID(undefined);
-                            setSelectedRoleNAME('');
-                          }
-                        }}
-                        className="w-full py-2 px-3 text-sm outline-none cursor-pointer"
-                      >
-                        <option value="">Select role…</option>
-                        {roles.map((r) => (
-                          <option
-                            key={r.ROLEID}
-                            value={r.ROLEID}
-                          >
-                            {r.ROLENAME}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </Box>
-
-                  {/* Active toggle */}
-                  <label
-                    style={{
-                      borderRadius: T.radius,
-                      background: active ? T.greenLight : T.bg,
-                      border: `1px solid ${active ? '#A7F3D0' : T.border}`,
-                      color: active ? '#065F46' : T.textMID,
+          <div className="flex items-start gap-3 max-lg:flex-col max-lg:items-stretch">
+            {/* Left: role + page picker */}
+            <Panel
+              title={editingIndex !== null ? 'Edit row' : 'Pick pages'}
+              subtitle="Select a role, then tick the pages it can open"
+              className="w-96 shrink-0 max-lg:w-full lg:sticky lg:top-0 lg:max-h-[calc(100dvh-8rem)]"
+              action={
+                editingIndex !== null && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingIndex(null);
+                      setSelectedContentIDs(new Set());
                     }}
-                    className="flex items-center p-3 gap-2 cursor-pointer select-none py-1.75 px-2.5 transition-all duration-150 text-sm font-semibold"
+                    className="inline-flex items-center gap-1 text-[11px] text-muted hover:text-ink"
+                  >
+                    <RotateCcw size={11} /> Cancel
+                  </button>
+                )
+              }
+              footer={
+                <button
+                  type="button"
+                  onClick={handleAddRows}
+                  disabled={!isFormValid}
+                  className={cn(buttonClass, buttonVariants.primary, 'w-full')}
+                >
+                  {editingIndex !== null ? <Check size={14} /> : <Plus size={14} />}
+                  {editingIndex !== null
+                    ? 'Update row'
+                    : selectedContentIDs.size > 0
+                      ? `Add ${selectedContentIDs.size} page${selectedContentIDs.size !== 1 ? 's' : ''} to list`
+                      : 'Add to list'}
+                </button>
+              }
+            >
+              <div className="grid gap-3 border-b border-line p-3">
+                <div className="grid grid-cols-[1fr_auto] items-end gap-2">
+                  <label className="grid gap-1">
+                    <span className={labelClass}>Role</span>
+                    <select
+                      value={selectedRoleID ?? ''}
+                      disabled={loadingRoles || !!editingRole}
+                      onChange={(e) => {
+                        const r = roles.find((x) => x.ROLEID === Number(e.target.value));
+                        setSelectedRoleID(r?.ROLEID);
+                        setSelectedRoleNAME(r?.ROLENAME ?? '');
+                      }}
+                      className={cn(controlClass, 'cursor-pointer')}
+                    >
+                      <option value="">{loadingRoles ? 'Loading roles…' : 'Select role…'}</option>
+                      {roles.map((r) => (
+                        <option key={r.ROLEID} value={r.ROLEID}>
+                          {r.ROLENAME}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label
+                    className={cn(
+                      'flex h-control cursor-pointer items-center gap-2 rounded-md border px-2.5 text-[13px] font-semibold select-none',
+                      active
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : 'border-line text-muted',
+                    )}
                   >
                     <input
                       type="checkbox"
                       checked={active}
                       onChange={(e) => setActive(e.target.checked)}
-                      style={{
-                        accentColor: T.green,
-                      }}
-                      className="w-3.5 p-3 h-3.5"
+                      className="size-3.5 cursor-pointer accent-emerald-600"
                     />
-                    Active Permission
+                    Active
                   </label>
+                </div>
 
-                  <Box borderTop={`1px solid ${T.border}`} />
+                <div className="relative">
+                  <Search
+                    size={13}
+                    className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted"
+                  />
+                  <input
+                    type="search"
+                    value={treeQuery}
+                    onChange={(e) => setTreeQuery(e.target.value)}
+                    placeholder="Search pages"
+                    aria-label="Search pages"
+                    className={cn(controlClass, 'pl-8')}
+                  />
+                </div>
 
-                  {/* Permission tree */}
-                  <Box>
-                    <HStack
-                      className="justify-between mb-2"
-                    >
-                      <Text
-                        color={T.textSub}
-                        className="text-xs font-normal uppercase tracking-wide"
-                      >
-                        Permissions
-                      </Text>
-                      {selectedContentIDs.size > 0 && (
-                        <Box
-                          bg={T.accentLight}
-                          color={T.accent}
-                          className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal"
-                        >
-                          {selectedContentIDs.size} selected
-                        </Box>
-                      )}
-                    </HStack>
-                    <Box
-                      border={`1px solid ${T.border}`}
-                      rounded={T.radius}
-                      bg={T.bgCard}
-                      css={{
-                        '&::-webkit-scrollbar': {
-                          width: '4px',
-                        },
-                        '&::-webkit-scrollbar-track': {
-                          background: 'transparent',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                          background: T.borderMID,
-                          borderRadius: '4px',
-                        },
-                      }}
-                      className="max-h-85 overflow-y-auto p-2"
-                    >
-                      {!menu.length ? (
-                        <Flex
-                          className="justify-center items-center h-20 gap-2"
-                        >
-                          <Spinner size="sm" />
-                          <Text
-                            color={T.textMuted}
-                            className="text-xs"
-                          >
-                            Loading permissions…
-                          </Text>
-                        </Flex>
-                      ) : (
-                        <ModuleTree
-                          menuData={menu as unknown as ModuleNode[]}
-                          selectedContentIDs={selectedContentIDs}
-                          onToggleContent={handleToggleContent}
-                          onToggleGroup={handleToggleGroup}
-                          expandedModuleIDs={expandedModuleIDs}
-                          expandedSubIDs={expandedSubIDs}
-                        />
-                      )}
-                    </Box>
-                  </Box>
-
-                  {/* Add row button */}
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <label className="flex cursor-pointer items-center gap-2 font-semibold text-ink select-none">
+                    <TriCheckbox
+                      state={rootState}
+                      onChange={() => handleToggleGroup(allContentIDs)}
+                      label="Select all pages"
+                    />
+                    Select all
+                    <Count active={selectedContentIDs.size > 0}>
+                      {selectedContentIDs.size}/{allContentIDs.length}
+                    </Count>
+                  </label>
                   <button
-                    onClick={handleAddRows}
-                    disabled={!isFormValID}
-                    style={{
-                      borderRadius: T.radius,
-                      cursor: isFormValID ? 'pointer' : 'not-allowed',
-                      background: isFormValID ? T.navyMID : T.border,
-                      color: isFormValID ? 'white' : T.textMuted,
-                    }}
-                    className="flex items-center justify-center gap-1.75 w-full py-2 px-4 text-sm font-semibold border-0 transition-all duration-150"
+                    type="button"
+                    onClick={() => setCollapsed(allExpanded ? new Set(allGroupKeys) : new Set())}
+                    className="text-muted hover:text-ink"
                   >
-                    <Plus size={15} />
-                    {editingIndex !== null ? 'Update Row' : 'Add Row(s)'}
+                    {allExpanded ? 'Collapse all' : 'Expand all'}
                   </button>
+                </div>
+              </div>
 
-                  {(editingIndex !== null || editingRole) && (
-                    <button
-                      onClick={handleClear}
-                      style={{
-                        borderRadius: T.radius,
-                        color: T.textMID,
-                        border: `1px solid ${T.border}`,
-                      }}
-                      className="w-full py-1.75 px-4 text-sm font-semibold cursor-pointer bg-transparent transition-all duration-150"
-                    >
-                      Cancel Edit
-                    </button>
-                  )}
-                </VStack>
-              </Box>
-            </GridItem>
-
-            {/* RIGHT: staging table */}
-            <GridItem>
-              <Box
-                border={`1px solid ${T.border}`}
-                rounded={T.radiusLg}
-                bg={T.bgCard}
-                className="p-3 h-full shadow-sm"
-              >
-                <HStack
-                  className="justify-between mb-3"
-                >
-                  <HStack className="gap-2">
-                    <Text
-                      color={T.text}
-                      className="text-sm font-normal"
-                    >
-                      Staged Transactions
-                    </Text>
-                    <Box
-                      bg={rows.length ? T.accentLight : T.bg}
-                      color={rows.length ? T.accent : T.textMuted}
-                      className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal"
-                    >
-                      {rows.length}
-                    </Box>
-                    {editingRole && (
-                      <Box
-                        color={T.orange}
-                        className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal bg-[#FFFBEB]"
-                      >
-                        Editing Role
-                      </Box>
-                    )}
-                  </HStack>
-                  {rows.length > 0 && (
-                    <button
-                      onClick={handleClear}
-                      style={{
-                        color: T.textMuted,
-                      }}
-                      className="text-[11px] cursor-pointer bg-transparent border-0 py-0.5 px-1.5"
-                    >
-                      Clear all
-                    </button>
-                  )}
-                </HStack>
-
-                {rows.length === 0 ? (
-                  <Flex
-                    direction="column"
-                    color={T.textMuted}
-                    className="justify-center items-center h-50 gap-3"
-                  >
-                    <Box
-                      bg={T.bg}
-                      className="w-11 h-11 rounded-xl flex items-center justify-center"
-                    >
-                      <AlertCircle
-                        size={20}
-                        color={T.textMuted}
-                      />
-                    </Box>
-                    <Text className="text-sm">
-                      No rows added yet
-                    </Text>
-                    <Text
-                      color={T.textMuted}
-                      className="text-xs text-center max-w-50"
-                    >
-                      Select a role and permissions, then click "Add Row(s)"
-                    </Text>
-                  </Flex>
+              <div className="min-h-40 flex-1 overflow-y-auto p-2 max-lg:max-h-[420px]">
+                {!menuData ? (
+                  <p className="flex items-center justify-center gap-2 py-8 text-xs text-muted">
+                    <Loader2 size={14} className="animate-spin" /> Loading pages…
+                  </p>
                 ) : (
-                  <VStack className="items-stretch gap-4">
-                    <Box className="overflow-x-auto">
-                      <CustomTable
-                        columns={[
-                          {
-                            key: 'MODULENAME',
-                            header: 'Module',
-                            render: (row) => row.MODULENAME,
-                          },
-                          {
-                            key: 'SUBMODULENAME',
-                            header: 'Sub Module',
-                            render: (row) => row.SUBMODULENAME || '—',
-                          },
-                          {
-                            key: 'CONTENTNAME',
-                            header: 'Content',
-                            render: (row) => row.CONTENTNAME,
-                          },
-                          {
-                            key: 'ACTIVE',
-                            header: 'Active',
-                            render: (row) => (
-                              <Box
-                                bg={row.ACTIVE ? T.greenLight : T.redLight}
-                                color={row.ACTIVE ? '#065F46' : '#991B1B'}
-                                className="inline-block pl-2 pr-2 pt-0.25 pb-0.25 rounded-xl text-[11px] font-normal"
-                              >
-                                {row.ACTIVE ? 'Yes' : 'No'}
-                              </Box>
-                            ),
-                          },
-                          {
-                            key: 'actions',
-                            header: 'Actions',
-                            render: (_row, IDx) => (
-                              <HStack
-                                className="gap-1 justify-center"
-                              >
-                                <button
-                                  onClick={() => handleEditRow(IDx)}
-                                  style={{
-                                    background: T.accentLight,
-                                    color: T.accent,
-                                    border: `1px solid ${T.accentMID}`,
-                                  }}
-                                  className="py-0.75 px-2 text-[11px] rounded-md cursor-pointer font-semibold"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteRow(IDx)}
-                                  style={{
-                                    background: T.redLight,
-                                    color: T.red,
-                                    border: `1px solid #FECACA`,
-                                  }}
-                                  className="py-1 px-1.75 rounded-md cursor-pointer flex items-center"
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              </HStack>
-                            ),
-                          },
-                        ]}
-                        data={rows}
-                        showSearch={false}
-                        showPagination={false}
-                        title="Selected permissions"
-                      />
-                    </Box>
-                    <HStack
-                      borderTop={`1px solid ${T.border}`}
-                      className="justify-end gap-2 pt-1"
-                    >
-                      <button
-                        onClick={handleSubmit}
-                        disabled={isInserting}
-                        style={{
-                          borderRadius: T.radius,
-                          background: isInserting ? T.border : T.green,
-                          color: isInserting ? T.textMuted : 'white',
-                          cursor: isInserting ? 'not-allowed' : 'pointer',
-                        }}
-                        className="flex items-center gap-1.5 py-1.75 px-4.5 text-sm font-bold border-0 transition-all duration-150"
-                      >
-                        <CheckSquare size={14} />
-                        {isInserting ? 'Submitting…' : 'Submit All'}
-                      </button>
-                    </HStack>
-                  </VStack>
+                  <PermissionTree
+                    menu={menu}
+                    selected={selectedContentIDs}
+                    staged={stagedForRole}
+                    collapsed={collapsed}
+                    query={treeQuery}
+                    onToggleContent={handleToggleContent}
+                    onToggleGroup={handleToggleGroup}
+                    onToggleOpen={handleToggleOpen}
+                  />
                 )}
-              </Box>
-            </GridItem>
-          </Grid>
-        </Tabs.Content>
+              </div>
+            </Panel>
 
-        {/* ── VIEW TAB ────────────────────────────────────────────────────── */}
-        <Tabs.Content value="view">
-          <VStack className="items-stretch gap-4 p-4">
-            {isLoadingTransactions ? (
-              <Flex
-                className="justify-center items-center min-h-75 gap-3"
-              >
-                <Spinner
-                  size="lg"
-                  color={T.accent}
+            {/* Right: staged list */}
+            <Panel
+              className="flex-1"
+              title={
+                <span className="flex items-center gap-2">
+                  {editingRole ? `Permissions for ${editingRole.roleNAME}` : 'Ready to save'}
+                  <Count active={rows.length > 0}>{rows.length}</Count>
+                </span>
+              }
+              subtitle="Review the list, then save it to the role"
+              action={
+                rows.length > 0 &&
+                !editingRole && (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    className="text-[11px] text-muted hover:text-ink"
+                  >
+                    Clear list
+                  </button>
+                )
+              }
+              footer={
+                rows.length > 0 && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-muted">
+                      {rows.filter((r) => r.ACTIVE).length} active ·{' '}
+                      {rows.filter((r) => !r.ACTIVE).length} inactive
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={savingBusy}
+                      className={cn(buttonClass, buttonVariants.primary)}
+                    >
+                      {savingBusy ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Check size={14} />
+                      )}
+                      {savingBusy ? 'Saving…' : 'Save permissions'}
+                    </button>
+                  </div>
+                )
+              }
+            >
+              {rows.length === 0 ? (
+                <EmptyState
+                  icon={<ListChecks size={18} />}
+                  title="Nothing to save yet"
+                  text="Pick a role and tick pages on the left, then press “Add to list”."
                 />
-                <Text
-                  color={T.textMuted}
-                  className="text-sm"
-                >
-                  Loading permissions…
-                </Text>
-              </Flex>
-            ) : roleTransactions && roleTransactions.length > 0 ? (
-              <>
-                <HStack className="justify-between">
-                  <HStack className="gap-2">
-                    <Text
-                      color={T.text}
-                      className="text-sm font-normal"
-                    >
-                      Role Permissions
-                    </Text>
-                    <Box
-                      bg={T.accentLight}
-                      color={T.accent}
-                      className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal"
-                    >
-                      {Object.keys(groupedByRole).length} roles ·{' '}
-                      {roleTransactions.length} total
-                    </Box>
-                  </HStack>
-                </HStack>
-                {Object.entries(groupedByRole).map(([roleNAME, txs]) => (
-                  <RoleCard
-                    key={roleNAME}
-                    roleNAME={roleNAME}
-                    txs={txs}
-                    onEdit={handleEditRole}
-                    onToggle={handleToggleFromDB}
-                    onDelete={handleDeleteFromDB}
-                    isToggling={isToggling}
-                    isDeleting={isDeleting}
-                  />
-                ))}
-              </>
-            ) : (
-              <Flex
-                direction="column"
-                className="justify-center items-center min-h-75 gap-3"
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr>
+                        <th className={thClass}>Role</th>
+                        <th className={thClass}>Module</th>
+                        <th className={thClass}>Page</th>
+                        <th className={cn(thClass, 'w-24')}>Status</th>
+                        <th className={cn(thClass, 'w-20 text-right')}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stagedRows.map(({ row, index }) => (
+                        <tr
+                          key={`${row.ROLEID}-${row.CONTENTID}`}
+                          className={cn(
+                            'hover:bg-gray-50/60',
+                            editingIndex === index && 'bg-brand-soft/50',
+                          )}
+                        >
+                          <td className={cn(tdClass, 'whitespace-nowrap')}>{row.ROLENAME}</td>
+                          <td className={tdClass}>
+                            {labelFor(row.MODULENAME)}
+                            {row.SUBMODULENAME && (
+                              <span className="text-muted"> / {labelFor(row.SUBMODULENAME)}</span>
+                            )}
+                          </td>
+                          <td className={cn(tdClass, 'font-semibold')}>
+                            {labelFor(row.CONTENTNAME)}
+                          </td>
+                          <td className={tdClass}>
+                            <StatusPill active={row.ACTIVE} />
+                          </td>
+                          <td className={tdClass}>
+                            <div className="flex justify-end gap-1">
+                              <button
+                                type="button"
+                                aria-label="Edit row"
+                                title="Edit"
+                                onClick={() => handleEditRow(index)}
+                                className={cn(
+                                  iconButtonClass,
+                                  'hover:border-brand hover:text-brand',
+                                )}
+                              >
+                                <Pencil size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                aria-label="Remove row"
+                                title="Remove"
+                                onClick={() => handleDeleteRow(index)}
+                                className={cn(
+                                  iconButtonClass,
+                                  'hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600',
+                                )}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Panel>
+          </div>
+        </>
+      )}
+
+      {/* ── SAVED BY ROLE ───────────────────────────────────────────────── */}
+      {tab === 'roles' && (
+        <div className="grid gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="relative w-full max-w-xs">
+              <Search
+                size={13}
+                className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted"
+              />
+              <input
+                type="search"
+                value={roleQuery}
+                onChange={(e) => setRoleQuery(e.target.value)}
+                placeholder="Search roles"
+                aria-label="Search roles"
+                className={cn(controlClass, 'pl-8')}
+              />
+            </div>
+            {roleEntries.length > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setOpenRoles(
+                    openRoles.size === roleEntries.length
+                      ? new Set()
+                      : new Set(roleEntries.map(([n]) => n)),
+                  )
+                }
+                className="text-xs text-muted hover:text-ink"
               >
-                <Box
-                  bg={T.bg}
-                  className="w-13 h-13 rounded-lg flex items-center justify-center"
-                >
-                  <ShieldCheck
-                    size={24}
-                    color={T.textMuted}
-                  />
-                </Box>
-                <Text
-                  color={T.textMID}
-                  className="text-sm font-normal"
-                >
-                  No permissions found
-                </Text>
-                <Text
-                  color={T.textMuted}
-                  className="text-xs"
-                >
-                  Create role transactions in the Create tab
-                </Text>
-              </Flex>
+                {openRoles.size === roleEntries.length ? 'Collapse all' : 'Expand all'}
+              </button>
             )}
-          </VStack>
-        </Tabs.Content>
-      </Tabs.Root>
-    </Box>
+          </div>
+
+          {isLoadingTransactions ? (
+            <p className="flex items-center justify-center gap-2 py-10 text-xs text-muted">
+              <Loader2 size={14} className="animate-spin" /> Loading permissions…
+            </p>
+          ) : roleEntries.length === 0 ? (
+            <section className={cardClass}>
+              <EmptyState
+                icon={<ShieldCheck size={18} />}
+                title={roleQuery ? 'No roles match your search' : 'No permissions saved yet'}
+                text={roleQuery ? undefined : 'Assign pages to a role on the first tab.'}
+              />
+            </section>
+          ) : (
+            roleEntries.map(([roleNAME, txs]) => (
+              <RoleCard
+                key={roleNAME}
+                roleNAME={roleNAME}
+                txs={txs}
+                open={openRoles.has(roleNAME)}
+                onOpenChange={() =>
+                  setOpenRoles((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(roleNAME)) next.delete(roleNAME);
+                    else next.add(roleNAME);
+                    return next;
+                  })
+                }
+                onEdit={handleEditRole}
+                onToggle={handleToggleFromDB}
+                onDelete={handleDeleteFromDB}
+                busy={isToggling || isDeleting}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </div>
   );
 }
