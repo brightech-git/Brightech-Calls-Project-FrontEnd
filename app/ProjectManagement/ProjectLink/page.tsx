@@ -1,1 +1,1 @@
-export { default } from '@/features/project-links/page';
+export { default } from '@/src/module/project-link/component/project-link-page';

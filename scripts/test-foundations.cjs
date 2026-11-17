@@ -148,7 +148,7 @@ async function main() {
   assert.equal(retry(0, new errors.ApiError('Unavailable', 503)), true);
   assert.equal(retry(1, new Error('Network')), false);
   query.clear();
-  const schema = load('features/project-links/schema.ts');
+  const schema = load('src/module/project-link/type/project-link.schema.ts');
   assert.equal(
     schema.projectLinkSchema.safeParse(schema.projectLinkDefaults).success,
     false,
@@ -220,7 +220,7 @@ async function main() {
       },
     };
   };
-  const bookings = load('services/TaskAssignmentService.ts');
+  const bookings = load('src/module/task-assignment/api/task-assignment.api.ts');
   const table = await bookings.getCallsBookingsForTable({ asOn: false, clientId: '5' });
   assert.equal(table.content.length, 2, 'The table must include subsequent API pages');
   assert.equal(bookingPages.length, 2);

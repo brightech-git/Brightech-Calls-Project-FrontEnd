@@ -3,13 +3,13 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { Menu, Search, ArrowUpRight, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { Menu, Search, ArrowUpRight, ChevronRight } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import { useSidebar } from '@/context/layout/SideBarContext';
 import AppearanceSettings from '@/components/AppearanceSettings';
 import { useCurrentPageHeader } from '@/context/PageHeaderContext';
 import { useAccessibleMenu } from '@/hooks/ApiHooks/Menu/useAccessibleMenu';
-import { MenuEntryConfig, menuConfig } from '@/config/menu/menuConfig';
+import type { MenuEntryConfig } from '@/config/menu/menuConfig';
 import { PAGE_CONFIG } from '@/config/pageConfig';
 import { useDialogFocus } from '@/hooks/useDialogFocus';
 import QueryErrorNotice from '@/components/QueryErrorNotice';
@@ -108,11 +108,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   useDialogFocus();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { sidebarCollapsed: collapsed, toggleSidebar: toggleCollapsed } = useSidebar();
-  const { title, subtitle } = useCurrentPageHeader();
   const pathname = usePathname();
-  const page = PAGE_CONFIG[pathname];
-  const PageIcon =
-    flatten(menuConfig).find((entry) => entry.href === pathname)?.icon || LayoutDashboard;
   return (
     <div className="flex h-dvh overflow-hidden bg-white font-sans text-ink">
       <a

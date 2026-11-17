@@ -1,39 +1,46 @@
 # Frontend design system
 
-The Calls frontend uses a shared business-workspace design inspired by the existing saving-scheme theme presets and the Payroll page reference. Backend code and API routes are unchanged.
+The Calls frontend follows the Saving Scheme frontend: Tailwind CSS v4 for all styling, Poppins as the only font, and one folder per screen under `src/module`.
 
-## Appearance
+## Look and feel
 
-Use the palette button at the top right of the workspace. Choose Graphite, Ocean, Forest, Violet, or Ember; comfortable or compact spacing; standard or larger text. Settings are saved per browser under `calls-appearance` and synchronized across tabs.
+- White background (`--bg`, `--surface`), black text (`--text-main`), light grey borders (`--border`).
+- Poppins from Google Fonts, loaded once in `app/layout.tsx` with `next/font` in weights 400 (regular), 600 (semibold) and 700 (bold). It is exposed as `--font-poppins` and as Tailwind's `font-sans`. `font-medium` maps to 600, so no weight is synthesised.
+- Compact by default: 32px controls, 6px table row padding, 12px page spacing. The palette button in the top bar can switch to comfortable spacing, larger text, or another accent preset (saved per browser under `calls-appearance`).
 
-- `utils/theme.ts`: semantic color and typography tokens; named presets.
-- `context/ThemeContext.tsx`: validates, persists, and applies appearance settings.
-- `app/globals.css`: Tailwind v4 import, semantic `@theme` tokens, appearance variables, and base typography.
-- `utils/ui.ts`: statically discoverable Tailwind utilities shared by the shell, forms, tables, sign-in, dashboard, and role screens. Semantic marker classes remain for navigation and focus hooks.
-- `utils/fonts.ts`: global system-font stack; see `app/globals.css`.
-- `config/pageConfig.ts`: titles, descriptions, and breadcrumb groups for every workspace route.
+## Styling rules
 
-Prefer semantic colors from `COLORS`, type sizes from `FONT`, and CSS variables such as `--control-height`, `--row-padding`, and `--page-space` over hardcoded values. The revised interface uses light work surfaces and a white navigation panel. The global Segoe UI / Arial stack avoids external font downloads and uses consistent regular, medium, semibold and bold weights.
+- Write Tailwind utilities directly in `className`. Do not add component CSS to `app/globals.css`; it only holds the Tailwind import, theme tokens and a small base layer.
+- Compose conditional classes with `cn()` from `lib/utils.ts` (clsx + tailwind-merge).
+- Reuse the class sets in `lib/styles.ts` for repeated controls: `controlClass` (inputs and selects), `buttonClass` with `buttonVariants`, `iconButtonClass`, `cardClass`, `labelClass`, `fieldErrorClass`, `statusTones`.
+- Theme tokens available as utilities: `bg-brand`, `bg-brand-soft`, `text-ink`, `text-muted`, `border-line`, `border-line-strong`, `h-control`, `py-row`, `p-page`.
+- Chakra UI still provides some behaviour (dialogs, drawers, popovers, comboboxes). Its styles live in cascade layers (`chakra-*`) declared before Tailwind's `components` and `utilities` layers, so Tailwind classes win without `!important`. Chakra fonts point at Poppins (`lib/chakra-system.ts`).
 
-Use Tailwind utilities such as `bg-brand`, `text-ink`, `border-line`, `h-control`, and `p-page` for new styling. The PostCSS integration uses `@tailwindcss/postcss`. Component stylesheets and inline JSX style blocks were replaced with utilities. Runtime-dependent values, third-party widget styling, and exported print-document styles remain where necessary. Existing Chakra components retain their behavior; important Tailwind utilities take precedence over their generated styles.
+## Folder structure
 
-## Shared record forms
-
-Existing form implementations keep their data and submit handlers. Their shared classes are `workspace-modal-overlay`, `workspace-modal`, and `workspace-form-grid`. A custom dialog has `data-workspace-dialog`, `role="dialog"`, `aria-modal="true"`, and an accessible name. Its close button has `data-dialog-close` and an accessible label. `useDialogFocus` handles initial focus, Tab containment, Escape, and focus restoration.
+```
+app/                      routes only; each page.tsx re-exports a module screen
+src/module/<screen>/
+  api/<screen>.api.ts     axios calls for the screen
+  hook/use-<screen>.ts    react-query hooks
+  type/<screen>.types.ts  types, schemas and screen config
+  component/<screen>-page.tsx
+  index.ts                public exports of the module
+components/               shared UI (table, form fields, dialogs, sidebar, top bar)
+lib/                      api client helpers, query client, session, cn(), class sets
+utils/                    pure helpers (formatting, validation, theme tokens)
+hooks/                    shared hooks (menu access, dialog focus)
+types/                    shared types (API response, pagination, form)
+config/                   menu and page titles
+```
 
 ## Navigation and feedback
 
 - Search pages in the top bar, or press Ctrl/Cmd K. Only accessible menu pages are included.
-- A phone-sized viewport uses a navigation drawer; desktop navigation can collapse.
-- Collapsed desktop groups open accessible submenu flyouts without expanding the sidebar. Escape and outside clicks dismiss them; selecting a page closes the flyout. The shared sidebar context persists collapse state under `sidebar-collapsed`.
+- Phones get a navigation drawer; on desktop the sidebar can collapse to icons, with flyout submenus.
 - Active query failures show a retry notice while keeping the form mounted.
-- Unexpected route errors show a recovery view using the installed Next.js `unstable_retry` API.
-- Account data and query caches are cleared on logout. Login refreshes menu permissions.
+- Custom dialogs use `data-workspace-dialog`, `role="dialog"`, `aria-modal="true"` and a `data-dialog-close` button; `useDialogFocus` handles focus, Tab containment, Escape and focus restoration.
 
 ## Validation
 
-Run `npm run build` for TypeScript validation and static export. Existing lint debt remains in older components; the new shell, appearance, session, error, and dashboard components have targeted lint checks. Browser checks use isolated local API fixtures, never saved into source or used to modify backend records. Test data is not part of the shipped frontend.
-
-The frontend still depends on the API availability and authorization behavior of the existing backend. This design pass does not add endpoints for legacy staff/operator/user-role features.
-
-See `docs/modernization.md` for the shared API, component, formatting, caching and feature architecture.
+Run `npm run build` for TypeScript validation and the static export, and `npm run test:foundations` for the API, session and formatting checks. See `docs/modernization.md` for the API, caching and formatting contracts.
