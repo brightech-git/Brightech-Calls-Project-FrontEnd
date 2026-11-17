@@ -2,7 +2,8 @@
 // hooks/auth/useAuth.ts
 // ─────────────────────────────────────────────
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { saveSession } from '@/lib/auth/session';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   loginUser,
@@ -11,7 +12,7 @@ import {
   getUserById,
   updateUser,
   deleteUser,
-} from "@/services/AuthService";
+} from '@/services/AuthService';
 
 import {
   LoginPayload,
@@ -19,7 +20,8 @@ import {
   UpdateUserPayload,
   AuthResponse,
   UserRecord,
-} from "@/types/Auth/Auth";
+} from '@/types/Auth/Auth';
+import { ApiResponse } from '@/types/ApiResponse';
 
 // LOGIN HOOK
 export const useLogin = () => {
@@ -27,29 +29,33 @@ export const useLogin = () => {
 
   return useMutation({
     mutationFn: (payload: LoginPayload) => {
-      console.log("Hook received login payload:", payload);
       return loginUser(payload);
     },
 
-    onSuccess: (data: AuthResponse) => {
-      console.log("Login Success:", data);
+    onSuccess: (data: ApiResponse<AuthResponse>) => {
+      const session = data.data;
+      saveSession({
+        isLoggedIn: 'true',
+        calls_token: session.token ?? '',
+        userId: String(session.userId ?? ''),
+        staffId: String(session.staffId ?? ''),
+        username: session.username ?? '',
+        staffName: session.staffName ?? '',
+        role: session.roleName ?? session.role ?? '',
+        mobileNo: session.mobileNo ?? '',
+        active: session.active ?? '',
+        isClient: session.isClient ?? 'N',
+        clientId: String(session.clientId ?? ''),
+        menuIds: session.menuIds ? JSON.stringify(session.menuIds) : null,
+        user: JSON.stringify({ ...data, data: { ...session, token: undefined } }),
+      });
 
-      localStorage.setItem("isLoggedIn",  "true");
-      localStorage.setItem("token",       data.token ?? "");
-      localStorage.setItem("userId",      String(data.userId ?? ""));
-      localStorage.setItem("staffId",     String(data.staffId ?? ""));
-      localStorage.setItem("username",    data.username ?? "");
-      localStorage.setItem("staffName",   data.staffName ?? "");
-      localStorage.setItem("role",        data.role ?? "");
-      localStorage.setItem("mobileNo",    data.mobileNo ?? "");
-      localStorage.setItem("active",      data.active ?? "");
-      localStorage.setItem("user",        JSON.stringify(data));
-
-      queryClient.invalidateQueries({ queryKey: ["auth-login"] });
+      queryClient.clear();
+      window.dispatchEvent(new Event('calls-session-change'));
     },
 
     onError: (error) => {
-      console.log("Login Error:", error);
+      console.log('Login Error:', error);
     },
   });
 };
@@ -60,39 +66,36 @@ export const useRegister = () => {
 
   return useMutation({
     mutationFn: (payload: RegisterPayload) => {
-      console.log("Hook received register payload:", payload);
       return registerUser(payload);
     },
 
-    onSuccess: (data: AuthResponse) => {
-      console.log("Register Success:", data);
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data));
-
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['all-users'] });
+      void queryClient.invalidateQueries({ queryKey: ['dashboard-employees'] });
       queryClient.invalidateQueries({
-        queryKey: ["auth-register"],
+        queryKey: ['auth-register'],
       });
     },
 
     onError: (error) => {
-      console.log("Register Error:", error);
+      console.log('Register Error:', error);
     },
   });
 };
 
 // GET ALL USERS HOOK
 export const useGetAllUsers = () => {
-  return useQuery<UserRecord[]>({
-    queryKey: ["all-users"],
+  return useQuery<ApiResponse<UserRecord[]>, Error, UserRecord[]>({
+    queryKey: ['all-users'],
     queryFn: getAllUsers,
+    select: (res) => res?.data ?? [],
   });
 };
 
 // GET USER BY ID HOOK
 export const useGetUserById = (id: string) => {
   return useQuery<UserRecord>({
-    queryKey: ["user", id],
+    queryKey: ['user', id],
     queryFn: () => getUserById(id),
     enabled: !!id,
   });
@@ -105,7 +108,7 @@ export const useUpdateUser = () => {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateUserPayload }) =>
       updateUser(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["all-users"] });
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
     },
   });
 };
@@ -116,7 +119,7 @@ export const useDeleteUser = () => {
   return useMutation({
     mutationFn: (id: string) => deleteUser(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["all-users"] });
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
     },
   });
 };

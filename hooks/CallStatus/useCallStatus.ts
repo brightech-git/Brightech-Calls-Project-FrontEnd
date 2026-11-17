@@ -1,59 +1,64 @@
+import { invalidateCallQueries } from '@/lib/query/invalidate';
 // ─────────────────────────────────────────────
 // hooks/CallStatus/useCallStatus.ts
 // ─────────────────────────────────────────────
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   createCallStatus,
   deleteCallStatus,
-  getAllCallStatus,
-  getCallStatusById,
-} from "@/services/CallStatusService";
+  getActiveBookingsWithLastStatus,
+  getCallStatusHistory,
+} from '@/services/CallStatusService';
 
-import {
-  CallStatusPayload,
-} from "@/types/CallStatus/CallStatus";
+import { CallStatusPayload } from '@/types/CallStatus/CallStatus';
 
-const CALLSTATUS_KEY = ["callstatus-list"];
+const ACTIVE_BOOKINGS_KEY = ['callstatus-active-bookings'];
 
-// GET ALL
-export const useCallStatusList = () =>
+// ACTIVE (Y) BOOKINGS + LAST STATUS — Call Status list page
+export const useActiveBookingsWithLastStatus = () =>
   useQuery({
-    queryKey: CALLSTATUS_KEY,
-    queryFn: getAllCallStatus,
+    queryKey: ACTIVE_BOOKINGS_KEY,
+    queryFn: getActiveBookingsWithLastStatus,
+    select: (res) => res.data ?? [],
   });
 
-// GET BY TICKET ID
-export const useGetCallStatusById = (id: string) =>
+// FULL TICKET DETAIL (booking summary + full status history) — used by
+// both the Call Status detail page and the Task Assignment preview.
+export const useCallStatusTicketDetail = (tktId?: number | null) =>
   useQuery({
-    queryKey: ["callstatus", id],
-    queryFn: () => getCallStatusById(id),
-    enabled: !!id,
+    queryKey: ['callstatus-ticket-detail', tktId],
+    queryFn: () => getCallStatusHistory(tktId as number),
+    enabled: !!tktId,
+    select: (res) => res.data,
   });
 
-// CREATE
+// STATUS HISTORY ONLY (used by the Task Assignment preview)
+export const useCallStatusHistory = (tktId?: number | null) =>
+  useQuery({
+    queryKey: ['callstatus-history', tktId],
+    queryFn: () => getCallStatusHistory(tktId as number),
+    enabled: !!tktId,
+    select: (res) => res.data?.statuses ?? [],
+  });
+
+// CREATE (supports multiple media files)
 export const useCreateCallStatus = () => {
-
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      payload,
-      image,
-    }: {
-      payload: CallStatusPayload;
-      image?: File | null;
-    }) =>
-      createCallStatus(payload, image),
+    mutationFn: ({ payload, media }: { payload: CallStatusPayload; media?: File[] }) =>
+      createCallStatus(payload, media),
 
-    onSuccess: () => {
+    onSuccess: (_res, variables) => {
+      invalidateCallQueries(qc);
+      qc.invalidateQueries({ queryKey: ACTIVE_BOOKINGS_KEY });
       qc.invalidateQueries({
-        queryKey: CALLSTATUS_KEY,
+        queryKey: ['callstatus-ticket-detail', variables.payload.tktId],
+      });
+      qc.invalidateQueries({
+        queryKey: ['callstatus-history', variables.payload.tktId],
       });
     },
   });
@@ -61,17 +66,14 @@ export const useCreateCallStatus = () => {
 
 // DELETE
 export const useDeleteCallStatus = () => {
-
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      deleteCallStatus(id),
+    mutationFn: (id: string) => deleteCallStatus(id),
 
     onSuccess: () => {
-      qc.invalidateQueries({
-        queryKey: CALLSTATUS_KEY,
-      });
+      invalidateCallQueries(qc);
+      qc.invalidateQueries({ queryKey: ACTIVE_BOOKINGS_KEY });
     },
   });
 };
