@@ -1,5 +1,7 @@
 'use client';
 
+import { cn } from '@/lib/utils';
+import { buttonClass } from '@/lib/styles';
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, FileText, X } from 'lucide-react';
 import { ResolveImage } from '@/utils/format/resolveImage';
@@ -38,7 +40,7 @@ export function AttachmentTile({
   return (
     <button
       type="button"
-      className="attachment-tile"
+      className={cn(buttonClass, 'flex size-20 flex-col items-center justify-center gap-1 overflow-hidden p-1 text-[11px] text-muted [&_img]:min-h-0 [&_img]:w-full [&_img]:flex-1 [&_img]:object-cover [&>span]:w-full [&>span]:truncate')}
       onClick={onOpen}
       title={name}
       aria-label={'Preview ' + name}
@@ -152,14 +154,14 @@ function FilePreview({ url, extension }: { url: string; extension: string }) {
   if (preview.kind === 'pdf')
     return (
       <iframe
-        className="attachment-pdf"
+        className="block h-[68dvh] w-full border-0"
         src={preview.url}
         title="PDF preview"
       />
     );
   return (
     <pre
-      className={preview.kind === 'document' ? 'attachment-document' : 'attachment-text'}
+      className={cn('m-0 whitespace-pre-wrap wrap-anywhere', preview.kind === 'document' && 'font-sans leading-relaxed')}
     >
       {preview.content || 'This file is empty.'}
     </pre>
@@ -196,7 +198,7 @@ export function MediaLightbox({
   return (
     <dialog
       ref={dialog}
-      className="attachment-dialog"
+      className="m-auto max-h-[92dvh] w-[min(960px,calc(100%-24px))] flex-col rounded-lg border border-line bg-white p-0 text-ink backdrop:bg-black/65 open:flex"
       aria-label={name}
       onKeyDown={(event) => {
         if (event.key === 'Escape') event.stopPropagation();
@@ -206,11 +208,11 @@ export function MediaLightbox({
         onClose();
       }}
     >
-      <div className="attachment-dialog-header">
+      <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2 wrap-anywhere">
         <strong>{name}</strong>
         <button
           type="button"
-          className="button"
+          className={buttonClass}
           onClick={onClose}
           aria-label="Close preview"
         >
@@ -218,7 +220,7 @@ export function MediaLightbox({
         </button>
       </div>
       <div
-        className="attachment-preview"
+        className="min-h-0 overflow-auto overscroll-contain p-3 [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_video]:mx-auto [&_video]:block [&_video]:max-w-full"
         key={index}
         tabIndex={0}
         aria-label="Scrollable attachment preview"
@@ -241,10 +243,10 @@ export function MediaLightbox({
           />
         )}
       </div>
-      <div className="attachment-dialog-footer">
+      <div className="flex items-center justify-end gap-2 border-t border-line px-3 py-2">
         {url && (
           <a
-            className="button"
+            className={buttonClass}
             href={url}
             target="_blank"
             rel="noopener noreferrer"
@@ -256,7 +258,7 @@ export function MediaLightbox({
           <>
             <button
               type="button"
-              className="button"
+              className={buttonClass}
               aria-label="Previous attachment"
               onClick={() => onIndexChange((index - 1 + count) % count)}
             >
@@ -267,7 +269,7 @@ export function MediaLightbox({
             </span>
             <button
               type="button"
-              className="button"
+              className={buttonClass}
               aria-label="Next attachment"
               onClick={() => onIndexChange((index + 1) % count)}
             >

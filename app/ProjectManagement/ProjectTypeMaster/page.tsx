@@ -1,6 +1,7 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -70,9 +71,7 @@ const COLUMNS: TableColumn<ProjectTypeRecord_Table>[] = [
           background: row.active ? COLORS.successBg : COLORS.errorBg,
           color: row.active ? COLORS.success : COLORS.error,
         }}
-        className={ui(
-          '[padding:2px_10px] [border-radius:20px] [font-size:var(--font-xs)] [font-weight:600]',
-        )}
+        className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
       >
         {row.active ? 'Active' : 'Inactive'}
       </span>
@@ -227,7 +226,7 @@ export default function ProjectTypeMasterPage() {
         searchPlaceholder="Search project type..."
         emptyMessage="No project types found."
         toolbarRight={
-          <div className={ui('[display:flex] [align-items:center] [gap:8px]')}>
+          <div className="flex items-center gap-2">
             <DataExport
               data={projectTypes as ProjectTypeRecord_Table[]}
               columns={EXPORT_COLUMNS}
@@ -237,7 +236,7 @@ export default function ProjectTypeMasterPage() {
               buttonSize="sm"
             />
             <button
-              className={ui('ptm-btn-primary')}
+              className={cn(buttonClass, buttonVariants.primary)}
               onClick={openCreate}
             >
               <Plus size={13} />
@@ -251,23 +250,23 @@ export default function ProjectTypeMasterPage() {
 
       {open && (
         <div
-          className={ui('ptm-modal-overlay workspace-modal-overlay')}
+          className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
           <div
-            className={ui('ptm-modal-box workspace-modal')}
+            className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
             data-workspace-dialog
             role="dialog"
             aria-modal="true"
             aria-label="Project type details"
           >
-            <div className={ui('ptm-modal-head')}>
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-line bg-slate-50/60 px-4 py-3 max-sm:px-3">
               <div>
-                <div className={ui('ptm-modal-title')}>
+                <div className="text-lg tracking-tight text-ink">
                   {editRow ? 'Edit Project Type' : 'Add Project Type'}
                 </div>
 
-                <div className={ui('ptm-modal-sub')}>
+                <div className="mt-1 text-xs text-muted">
                   {editRow
                     ? `Editing: ${editRow.projectTypeName}`
                     : 'Fill project type details'}
@@ -275,7 +274,7 @@ export default function ProjectTypeMasterPage() {
               </div>
 
               <button
-                className={ui('ptm-close-btn')}
+                className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
                 data-dialog-close
                 aria-label="Close form"
                 onClick={() => setOpen(false)}
@@ -285,10 +284,10 @@ export default function ProjectTypeMasterPage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className={ui('ptm-modal-body')}>
-                <div className={ui('ptm-grid workspace-form-grid')}>
-                  <div className={ui('ptm-field-row')}>
-                    <label className={ui('ptm-field-label')}>Project Type Name *</label>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Project Type Name *</label>
                     <Controller
                       name="projectTypeName"
                       control={control}
@@ -299,19 +298,19 @@ export default function ProjectTypeMasterPage() {
                           isCapitalized
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Enter project type name"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.projectTypeName && (
-                      <span className={ui('ptm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.projectTypeName.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('ptm-field-row')}>
-                    <label className={ui('ptm-field-label')}>Display Order *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Display Order *</label>
                     <Controller
                       name="displayOrder"
                       control={control}
@@ -324,19 +323,19 @@ export default function ProjectTypeMasterPage() {
                             field.onChange(value === '' ? 0 : Number(value))
                           }
                           placeholder="Enter display order"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.displayOrder && (
-                      <span className={ui('ptm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.displayOrder.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('ptm-field-row')}>
-                    <label className={ui('ptm-field-label')}>Status *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Status *</label>
                     <Controller
                       name="active"
                       control={control}
@@ -353,7 +352,7 @@ export default function ProjectTypeMasterPage() {
                       )}
                     />
                     {errors.active && (
-                      <span className={ui('ptm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.active.message}
                       </span>
                     )}
@@ -361,10 +360,10 @@ export default function ProjectTypeMasterPage() {
                 </div>
               </div>
 
-              <div className={ui('ptm-modal-footer')}>
+              <div className="flex shrink-0 justify-end gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3">
                 <button
                   type="button"
-                  className={ui('ptm-btn-secondary')}
+                  className={buttonClass}
                   onClick={() => setOpen(false)}
                 >
                   Cancel
@@ -372,7 +371,7 @@ export default function ProjectTypeMasterPage() {
 
                 <button
                   type="submit"
-                  className={ui('ptm-btn-primary')}
+                  className={cn(buttonClass, buttonVariants.primary)}
                   disabled={isPending}
                 >
                   <Pencil size={12} />

@@ -1,6 +1,7 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { cn } from '@/lib/utils';
+import { controlClass } from '@/lib/styles';
 import * as React from 'react';
 import { Input, IconButton, InputProps, Box } from '@chakra-ui/react';
 import { FiMenu, FiEye, FiEyeOff } from 'react-icons/fi';
@@ -8,17 +9,12 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, InputProps>(
   function PasswordInput(props, ref) {
     const [show, setShow] = React.useState(false);
     return (
-      <Box className={ui('[position:relative]! [width:100%]!')}>
+      <Box className="relative w-full">
         <Input
           ref={ref}
           type={show ? 'text' : 'password'}
           {...props}
-          className={ui(
-            'form-control ' +
-              ui(
-                '[padding-right:3rem]! [min-height:var(--control-height)]! [font-size:var(--font-sm)]! [border-radius:10px]!',
-              ),
-          )}
+          className={cn(controlClass, 'pr-10')}
         />
 
         <IconButton
@@ -27,9 +23,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, InputProps>(
           size="sm"
           variant="ghost"
           onClick={() => setShow(!show)}
-          className={ui(
-            '[position:absolute]! [right:0.25rem]! [top:50%]! [transform:translateY(-50%)]!',
-          )}
+          className="absolute right-1 top-1/2 -translate-y-1/2"
         >
           {' '}
           {show ? <FiEye /> : <FiEyeOff />}{' '}

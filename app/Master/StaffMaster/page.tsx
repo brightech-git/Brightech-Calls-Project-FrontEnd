@@ -1,6 +1,7 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -107,9 +108,7 @@ const COLUMNS: TableColumn<StaffRecord_Table>[] = [
           background: row.ACTIVE === 'Y' ? COLORS.successBg : COLORS.errorBg,
           color: row.ACTIVE === 'Y' ? COLORS.success : COLORS.error,
         }}
-        className={ui(
-          '[padding:2px_10px] [border-radius:20px] [font-size:var(--font-xs)] [font-weight:600]',
-        )}
+        className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
       >
         {row.ACTIVE === 'Y' ? 'Active' : 'Inactive'}
       </span>
@@ -250,7 +249,7 @@ export default function StaffMasterPage() {
         emptyMessage="No staff found. Add your first record."
         toolbarRight={
           <button
-            className={ui('sm-btn-primary')}
+            className={cn(buttonClass, buttonVariants.primary)}
             onClick={openCreate}
           >
             <Plus size={14} /> Add Staff
@@ -261,29 +260,29 @@ export default function StaffMasterPage() {
       {/* Modal */}
       {open && (
         <div
-          className={ui('sm-modal-overlay workspace-modal-overlay')}
+          className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
           <div
-            className={ui('sm-modal-box workspace-modal')}
+            className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
             data-workspace-dialog
             role="dialog"
             aria-modal="true"
             aria-label="Staff details"
           >
-            <div className={ui('sm-modal-head')}>
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-line bg-slate-50/60 px-4 py-3 max-sm:px-3">
               <div>
-                <div className={ui('sm-modal-title')}>
+                <div className="text-lg tracking-tight text-ink">
                   {editRow ? 'Edit Staff' : 'Add New Staff'}
                 </div>
-                <div className={ui('sm-modal-sub')}>
+                <div className="mt-1 text-xs text-muted">
                   {editRow
                     ? `Editing: ${editRow.STAFFNAME}`
                     : 'Fill in the details below'}
                 </div>
               </div>
               <button
-                className={ui('sm-close-btn')}
+                className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
                 data-dialog-close
                 aria-label="Close form"
                 onClick={() => setOpen(false)}
@@ -293,11 +292,11 @@ export default function StaffMasterPage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className={ui('sm-modal-body')}>
-                <div className={ui('sm-section-label')}>Basic Information</div>
-                <div className={ui('[display:flex] [flex-direction:column] [gap:6px]')}>
-                  <div className={ui('sm-field-row')}>
-                    <label className={ui('sm-field-label')}>Staff Name *</label>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Basic Information</div>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Staff Name *</label>
                     <Controller
                       name="STAFFNAME"
                       control={control}
@@ -308,19 +307,19 @@ export default function StaffMasterPage() {
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Enter staff name"
                           isCapitalized
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.STAFFNAME && (
-                      <span className={ui('sm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.STAFFNAME.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('sm-field-row')}>
-                    <label className={ui('sm-field-label')}>Mobile No *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Mobile No *</label>
                     <Controller
                       name="MOBILENO"
                       control={control}
@@ -331,19 +330,19 @@ export default function StaffMasterPage() {
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="e.g. 9659721856"
                           inputModeType="mobile"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.MOBILENO && (
-                      <span className={ui('sm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.MOBILENO.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('sm-field-row')}>
-                    <label className={ui('sm-field-label')}>Role *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Role *</label>
                     <Controller
                       name="ROLE"
                       control={control}
@@ -353,17 +352,17 @@ export default function StaffMasterPage() {
                           onChange={(val) => field.onChange(val)}
                           items={ROLE_OPTIONS}
                           placeholder="Select role"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.ROLE && (
-                      <span className={ui('sm-field-error')}>{errors.ROLE.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">{errors.ROLE.message}</span>
                     )}
                   </div>
 
-                  <div className={ui('sm-field-row')}>
-                    <label className={ui('sm-field-label')}>Status</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Status</label>
                     <Controller
                       name="ACTIVE"
                       control={control}
@@ -382,14 +381,14 @@ export default function StaffMasterPage() {
                       )}
                     />
                     {errors.ACTIVE && (
-                      <span className={ui('sm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ACTIVE.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('sm-field-row')}>
-                    <label className={ui('sm-field-label')}>Date of Join</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Date of Join</label>
                     <Controller
                       name="DOJ"
                       control={control}
@@ -402,15 +401,15 @@ export default function StaffMasterPage() {
                       )}
                     />
                     {errors.DOJ && (
-                      <span className={ui('sm-field-error')}>{errors.DOJ.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">{errors.DOJ.message}</span>
                     )}
                   </div>
                 </div>
 
-                <div className={ui('sm-section-label')}>Address</div>
-                <div className={ui('[display:flex] [flex-direction:column] [gap:6px]')}>
-                  <div className={ui('sm-field-row')}>
-                    <label className={ui('sm-field-label')}>Address 1</label>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Address</div>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Address 1</label>
                     <Controller
                       name="ADDRESS1"
                       control={control}
@@ -420,19 +419,19 @@ export default function StaffMasterPage() {
                           field="ADDRESS1"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Street"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.ADDRESS1 && (
-                      <span className={ui('sm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ADDRESS1.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('sm-field-row')}>
-                    <label className={ui('sm-field-label')}>Address 2</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Address 2</label>
                     <Controller
                       name="ADDRESS2"
                       control={control}
@@ -442,19 +441,19 @@ export default function StaffMasterPage() {
                           field="ADDRESS2"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Area"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.ADDRESS2 && (
-                      <span className={ui('sm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ADDRESS2.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('sm-field-row')}>
-                    <label className={ui('sm-field-label')}>City</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">City</label>
                     <Controller
                       name="ADDRESS3"
                       control={control}
@@ -464,12 +463,12 @@ export default function StaffMasterPage() {
                           field="ADDRESS3"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="City"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.ADDRESS3 && (
-                      <span className={ui('sm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ADDRESS3.message}
                       </span>
                     )}
@@ -477,17 +476,17 @@ export default function StaffMasterPage() {
                 </div>
               </div>
 
-              <div className={ui('sm-modal-footer')}>
+              <div className="flex shrink-0 justify-end gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3">
                 <button
                   type="button"
-                  className={ui('sm-btn-secondary')}
+                  className={buttonClass}
                   onClick={() => setOpen(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className={ui('sm-btn-primary')}
+                  className={cn(buttonClass, buttonVariants.primary)}
                   disabled={isPending}
                 >
                   <Pencil size={13} />

@@ -1,6 +1,5 @@
 'use client';
 
-import { ui } from '@/utils/ui';
 import { useState, useRef, useEffect } from 'react';
 import { Palette, X, RotateCcw, Check } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
@@ -29,11 +28,11 @@ export default function AppearanceSettings() {
   }, [open]);
   return (
     <div
-      className={ui('appearance-root')}
+      className="relative"
       ref={root}
     >
       <button
-        className={ui('shell-icon-button')}
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border-0 bg-slate-50 text-muted transition-colors hover:bg-brand-soft hover:text-brand"
         aria-label="Appearance settings"
         aria-expanded={open}
         aria-controls="appearance-panel"
@@ -44,16 +43,16 @@ export default function AppearanceSettings() {
       {open && (
         <section
           id="appearance-panel"
-          className={ui('appearance-panel')}
+          className="absolute top-[calc(100%+12px)] right-0 w-80 max-w-[calc(100vw-32px)] rounded-lg border border-line bg-white p-4 shadow-lg [&_fieldset]:my-5 [&_legend]:mb-2.5 [&_legend]:text-xs [&_legend]:text-muted"
           aria-label="Appearance settings"
         >
-          <div className={ui('appearance-heading')}>
+          <div className="flex items-start justify-between gap-3 [&_strong]:text-lg [&_p]:mt-1 [&_p]:text-xs [&_p]:text-muted">
             <div>
               <strong>Make it yours</strong>
               <p>Personalize your workspace.</p>
             </div>
             <button
-              className={ui('shell-icon-button')}
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border-0 bg-slate-50 text-muted transition-colors hover:bg-brand-soft hover:text-brand"
               aria-label="Close appearance settings"
               onClick={() => setOpen(false)}
             >
@@ -62,11 +61,11 @@ export default function AppearanceSettings() {
           </div>
           <fieldset>
             <legend>Color palette</legend>
-            <div className={ui('appearance-presets')}>
+            <div className="grid grid-cols-4 gap-2">
               {(Object.keys(THEME_PRESETS) as ThemePreset[]).map((key) => (
                 <button
                   key={key}
-                  className={ui('appearance-swatch')}
+                  className="grid justify-items-center gap-2 rounded-lg border border-line bg-white px-1 py-2 text-xs text-muted aria-pressed:border-brand aria-pressed:bg-brand-soft aria-pressed:text-brand [&>span]:grid [&>span]:size-7 [&>span]:place-items-center [&>span]:rounded-full [&>span]:text-white"
                   aria-pressed={appearance.preset === key}
                   onClick={() =>
                     setAppearance({
@@ -88,7 +87,7 @@ export default function AppearanceSettings() {
           </fieldset>
           <fieldset>
             <legend>Spacing</legend>
-            <div className={ui('appearance-segments')}>
+            <div className="flex gap-1 rounded-xl bg-slate-100 p-1 [&>button]:flex-1 [&>button]:rounded-lg [&>button]:border-0 [&>button]:bg-transparent [&>button]:p-2 [&>button]:text-xs [&>button]:text-muted [&>button[aria-pressed=true]]:bg-white [&>button[aria-pressed=true]]:text-brand [&>button[aria-pressed=true]]:shadow-sm">
               {(['comfortable', 'compact'] as const).map((density) => (
                 <button
                   key={density}
@@ -106,7 +105,7 @@ export default function AppearanceSettings() {
           </fieldset>
           <fieldset>
             <legend>Text size</legend>
-            <div className={ui('appearance-segments')}>
+            <div className="flex gap-1 rounded-xl bg-slate-100 p-1 [&>button]:flex-1 [&>button]:rounded-lg [&>button]:border-0 [&>button]:bg-transparent [&>button]:p-2 [&>button]:text-xs [&>button]:text-muted [&>button[aria-pressed=true]]:bg-white [&>button[aria-pressed=true]]:text-brand [&>button[aria-pressed=true]]:shadow-sm">
               {(['standard', 'large'] as const).map((textSize) => (
                 <button
                   key={textSize}
@@ -123,12 +122,12 @@ export default function AppearanceSettings() {
             </div>
           </fieldset>
           <button
-            className={ui('appearance-reset')}
+            className="flex items-center gap-2 border-0 bg-transparent py-1 text-xs text-muted hover:text-brand"
             onClick={resetAppearance}
           >
             <RotateCcw size={14} /> Reset to default
           </button>
-          <p className={ui('appearance-note')}>Saved on this browser automatically.</p>
+          <p className="mt-4 border-t border-line pt-3 text-xs text-muted">Saved on this browser automatically.</p>
         </section>
       )}
     </div>

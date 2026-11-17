@@ -1,6 +1,7 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 export default function WorkspaceError({
@@ -13,7 +14,7 @@ export default function WorkspaceError({
 }) {
   return (
     <section
-      className={ui('workspace-error-state')}
+      className="mx-auto flex max-w-xl flex-col items-center px-4 py-10 text-center [&>span]:mb-6 [&>span]:grid [&>span]:size-18 [&>span]:place-items-center [&>span]:rounded-2xl [&>span]:bg-rose-50 [&>span]:text-rose-600 [&>h2]:mb-3 [&>h2]:text-2xl [&>p]:mb-7 [&>p]:text-sm [&>p]:leading-8 [&>p]:text-muted [&>div]:flex [&>div]:flex-wrap [&>div]:justify-center [&>div]:gap-3"
       role="alert"
     >
       <span>
@@ -26,7 +27,7 @@ export default function WorkspaceError({
       </p>
       <div>
         <button
-          className={ui('ui-button primary')}
+          className={cn(buttonClass, buttonVariants.primary)}
           onClick={unstable_retry}
         >
           <RefreshCw size={16} />
@@ -34,7 +35,7 @@ export default function WorkspaceError({
         </button>
         <Link
           href="/Home"
-          className={ui('ui-button')}
+          className={buttonClass}
         >
           <ArrowLeft size={16} />
           Back to overview

@@ -191,13 +191,13 @@ export default function ProjectLinksPage() {
   }
   const data = (links.data ?? []) as ProjectLinkRecord_Table[];
   return (
-    <div className="workspace-page">
-      <div className="workspace-toolbar">
+    <div className="grid min-w-0 gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1>Project links</h1>
-          <p>Client connections and access details</p>
+          <h1 className="text-lg font-semibold text-ink">Project links</h1>
+          <p className="text-xs text-muted">Client connections and access details</p>
         </div>
-        <div className="workspace-actions">
+        <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
           <Button
             loading={links.isFetching}
             onClick={() => links.refetch()}
@@ -220,7 +220,7 @@ export default function ProjectLinksPage() {
           </Button>
         </div>
       </div>
-      <div className="filter-grid">
+      <div className="flex flex-wrap items-end gap-2 border-b border-line pb-3 [&>*]:min-w-36 [&>*]:flex-1">
         <SelectField
           label="Client"
           value={filters.clientId}
@@ -333,7 +333,7 @@ export default function ProjectLinksPage() {
           onSubmit={form.handleSubmit(submit)}
           noValidate
         >
-          <div className="form-grid">
+          <div className="mb-3 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
             {(['clientId', 'projectTypeId'] as const).map((name) => (
               <Controller
                 key={name}
@@ -359,9 +359,10 @@ export default function ProjectLinksPage() {
             control={form.control}
             disabled={pending}
           />
-          <label className="check-field">
+          <label className="my-3 flex items-center gap-2 text-[13px]">
             <input
               type="checkbox"
+              className="size-4 accent-brand"
               {...form.register('active')}
               disabled={pending}
             />

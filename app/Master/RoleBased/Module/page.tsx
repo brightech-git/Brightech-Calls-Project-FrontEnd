@@ -1,6 +1,6 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Box, Button, Grid, VStack, Text, HStack, Badge, Table } from '@chakra-ui/react';
 import {
@@ -99,31 +99,21 @@ const selectClasses =
 
 const FormPanel = ({ children }: { children: React.ReactNode }) => (
   <Box
-    className={ui(
-      'module-form-panel role-panel' +
-        ' ' +
-        '[width:340px]! [flex-shrink:0]! [background:white]! [padding:20px]! [border-radius:20px]! [border-width:1px]! [border-color:var(--color-gray-100)]! [box-shadow:0_1px_8px_rgba(0,0,0,0.05)]! [height:fit-content]! [position:sticky]! [top:20px]!',
-    )}
+    className="max-w-full max-lg:w-full items-stretch max-sm:p-4 w-85 shrink-0 bg-white p-3 rounded-lg border border-gray-100 shadow-sm h-fit sticky top-5"
   >
     {children}
   </Box>
 );
 const DataPanel = ({ children }: { children: React.ReactNode }) => (
   <Box
-    className={ui(
-      'module-list-panel' +
-        ' ' +
-        '[flex:1]! [min-width:0]! [background:white]! [border-radius:20px]! [border-width:1px]! [border-color:var(--color-gray-100)]! [box-shadow:0_1px_8px_rgba(0,0,0,0.05)]! [overflow:hidden]!',
-    )}
+    className="flex-1 min-w-0 bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden"
   >
     {children}
   </Box>
 );
 const FieldLabel = ({ children }: { children: React.ReactNode }) => (
   <Text
-    className={ui(
-      '[font-size:var(--font-sm)]! font-normal! [color:var(--text-main)]! [margin-bottom:4px]!',
-    )}
+    className="text-sm font-normal text-ink mb-1"
   >
     {children}
   </Text>
@@ -151,9 +141,9 @@ const ActionButton = ({
     onMouseLeave={(e) => {
       (e.currentTarget as HTMLButtonElement).style.background = `${color}15`;
     }}
-    className={ui(
-      className +
-        ' [display:inline-flex] [align-items:center] [justify-content:center] [width:28px] [height:28px] [border-radius:7px] [border:none] [cursor:pointer] [transition:all_0.15s]',
+    className={cn(
+      'inline-flex size-7 cursor-pointer items-center justify-center rounded-md border-0 transition-all duration-150',
+      className,
     )}
   >
     {children}
@@ -373,39 +363,33 @@ export default function RoleTranPage() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <Box className={ui('role-workspace')}>
-      <VStack className={ui('[align-items:stretch]! [gap:8px]!')}>
+    <Box className="font-normal [&_table]:w-full [&_table]:border-collapse [&_th]:bg-slate-50 [&_th]:px-3.5 [&_th]:py-row [&_th]:text-xs [&_th]:tracking-wide [&_th]:text-muted [&_th]:uppercase [&_td]:border-b [&_td]:border-slate-100 [&_td]:px-3.5 [&_td]:py-row [&_td]:text-sm [&_tbody_tr:hover]:bg-brand-soft [&_button]:min-h-9 [&_button]:rounded-lg [&_[role=tab]]:min-h-11 [&_[role=tab][data-selected]]:bg-brand-soft [&_[role=tab][data-selected]]:text-brand">
+      <VStack className="items-stretch gap-2">
         {/* ── HEADER ─────────────────────────────────────────────────────── */}
         <Box
-          className={ui(
-            '[background:white]! [padding:8px]! [border-radius:20px]! [border-width:1px]! [border-color:var(--color-gray-100)]! [box-shadow:0_1px_8px_rgba(0,0,0,0.05)]! [position:relative]! [overflow:hidden]!',
-          )}
+          className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm relative overflow-hidden"
         >
           <Box
             bg={activeConfig.color}
             borderLeftRadius="xl"
-            className={ui('[position:absolute]!')}
+            className="absolute"
           />
           <HStack
-            className={ui('[justify-content:space-between]! [align-items:center]!')}
+            className="justify-between items-center"
           >
             <Box>
               <Text
-                className={ui(
-                  '[font-size:var(--font-xl)]! font-normal! [color:var(--color-gray-800)]!',
-                )}
+                className="text-xl font-normal text-ink"
               >
                 Navigation structure
               </Text>
-              <Text className={ui('[color:var(--color-gray-400)]! [font-size:12.5px]!')}>
+              <Text className="text-gray-400 text-xs">
                 Manage Modules, Sub Modules & Contents
               </Text>
             </Box>
             <Badge
               colorPalette="blue"
-              className={ui(
-                '[padding-left:12px]! [padding-right:12px]! [padding-top:4px]! [padding-bottom:4px]! [border-radius:9999px]! [font-size:11px]! font-normal!',
-              )}
+              className="pl-3 pr-3 pt-1 pb-1 rounded-full text-[11px] font-normal"
             >
               {modules.length} Modules
             </Badge>
@@ -414,16 +398,12 @@ export default function RoleTranPage() {
 
         {/* ── TABS ───────────────────────────────────────────────────────── */}
         <Box
-          className={ui(
-            'module-tab-strip' +
-              ' ' +
-              '[background:white]! [padding-left:8px]! [padding-right:8px]! [padding-top:6px]! [padding-bottom:6px]! [border-radius:20px]! [border-width:1px]! [border-color:var(--color-gray-100)]! [box-shadow:0_1px_8px_rgba(0,0,0,0.05)]!',
-          )}
+          className="mb-4 max-w-full overflow-x-auto p-1.5 [&_button]:flex-1 [&_button]:justify-center [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-4 [&_button]:py-2.5 [&_button[aria-selected=true]]:bg-brand-soft [&_button[aria-selected=true]]:text-brand [&_button]:max-sm:shrink-0 [&_button]:max-sm:whitespace-nowrap bg-white pl-2 pr-2 pt-1.5 pb-1.5 rounded-full border border-gray-100 shadow-sm"
         >
           <HStack
             role="tablist"
             aria-label="Navigation structure"
-            className={ui('[gap:4px]!')}
+            className="gap-1"
           >
             {TABS.map((tab) => {
               const isActive = activeTab === tab.key;
@@ -440,15 +420,13 @@ export default function RoleTranPage() {
                     color: isActive ? 'white' : 'gray.700',
                   }}
                   onClick={() => setActiveTab(tab.key)}
-                  className={ui(
-                    '[flex:1]! [padding-left:12px]! [padding-right:12px]! [padding-top:8px]! [padding-bottom:8px]! [border-radius:14px]! [cursor:pointer]! [transition:all_0.2s]!',
-                  )}
+                  className="flex-1 pl-3 pr-3 pt-2 pb-2 rounded-lg cursor-pointer transition-all duration-200"
                 >
-                  <HStack className={ui('[justify-content:center]! [gap:6px]!')}>
+                  <HStack className="justify-center gap-1.5">
                     {tab.icon}
                     <Text
                       fontWeight={isActive ? '700' : '500'}
-                      className={ui('[font-size:13px]!')}
+                      className="text-sm"
                     >
                       {tab.label}
                     </Text>
@@ -462,29 +440,23 @@ export default function RoleTranPage() {
         {/* ── MODULE TAB ─────────────────────────────────────────────────── */}
         {activeTab === 'module' && (
           <HStack
-            className={ui(
-              'module-columns' + ' ' + '[align-items:flex-start]! [gap:24px]!',
-            )}
+            className="flex max-lg:flex-col max-lg:items-stretch items-start gap-3"
           >
             {/* LEFT: Form */}
             <FormPanel>
-              <VStack className={ui('[align-items:stretch]! [gap:16px]!')}>
+              <VStack className="items-stretch gap-4">
                 <HStack
-                  className={ui('[justify-content:space-between]! [align-items:center]!')}
+                  className="justify-between items-center"
                 >
                   <Text
-                    className={ui(
-                      'font-normal! [font-size:13.5px]! [color:var(--color-gray-700)]!',
-                    )}
+                    className="font-normal text-sm text-gray-700"
                   >
                     {editingModuleId ? 'Edit Module' : 'New Module'}
                   </Text>
                   {editingModuleId && (
                     <button
                       onClick={resetModuleEdit}
-                      className={ui(
-                        '[background:none] [border:none] [cursor:pointer] [color:var(--text-muted)] [font-size:11px] [display:flex] [align-items:center] [gap:4px]',
-                      )}
+                      className="bg-transparent border-0 cursor-pointer text-muted text-[11px] flex items-center gap-1"
                     >
                       <RefreshCw size={11} /> Reset
                     </button>
@@ -517,11 +489,9 @@ export default function RoleTranPage() {
                   colorScheme={editingModuleId ? 'orange' : 'blue'}
                   onClick={handleSaveModule}
                   // disabled={!moduleName.trim()}
-                  className={ui(
-                    '[background:var(--primary)]! [color:white]! [min-height:var(--control-height)]! [height:38px]! [border-radius:8px]! font-normal! [font-size:13px]! [width:100%]!',
-                  )}
+                  className="bg-brand text-white min-h-control h-9.5 rounded-lg font-normal text-sm w-full"
                 >
-                  <HStack className={ui('[gap:6px]!')}>
+                  <HStack className="gap-1.5">
                     {editingModuleId ? <RefreshCw size={13} /> : <Plus size={13} />}
                     <span>{editingModuleId ? 'Update Module' : 'Create Module'}</span>
                   </HStack>
@@ -532,22 +502,16 @@ export default function RoleTranPage() {
             {/* RIGHT: Data */}
             <DataPanel>
               <HStack
-                className={ui(
-                  '[padding-left:20px]! [padding-right:20px]! [padding-top:14px]! [padding-bottom:14px]! [border-bottom:1px_solid_#F1F5F9]! [justify-content:space-between]!',
-                )}
+                className="pl-5 pr-5 pt-3.5 pb-3.5 border-b border-[#F1F5F9] justify-between"
               >
                 <Text
-                  className={ui(
-                    'font-normal! [font-size:13px]! [color:var(--color-gray-600)]!',
-                  )}
+                  className="font-normal text-sm text-gray-600"
                 >
                   All Modules
                 </Text>
                 <Badge
                   colorPalette="blue"
-                  className={ui(
-                    '[padding-left:10px]! [padding-right:10px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:9999px]! [font-size:11px]!',
-                  )}
+                  className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
                 >
                   {modules.length} records
                 </Badge>
@@ -562,42 +526,38 @@ export default function RoleTranPage() {
                     _hover={{
                       bg: 'gray.50',
                     }}
-                    className={ui('[transition:background_0.15s]!')}
+                    className="transition-colors duration-150"
                   >
                     <Table.Cell
-                      className={ui(
-                        '[color:var(--color-gray-400)]! [font-size:12px]! [width:40px]!',
-                      )}
+                      className="text-gray-400 text-xs w-10"
                     >
                       {idx + 1}
                     </Table.Cell>
-                    <Table.Cell className={ui('font-normal! [font-size:13.5px]!')}>
+                    <Table.Cell className="font-normal text-sm">
                       {item.name}
                     </Table.Cell>
                     <Table.Cell>
                       <Badge
                         colorPalette={item.active ? 'green' : 'red'}
-                        className={ui(
-                          '[padding-left:10px]! [padding-right:10px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:9999px]! [font-size:11px]!',
-                        )}
+                        className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
                       >
                         {item.active ? 'Active' : 'Inactive'}
                       </Badge>
                     </Table.Cell>
                     <Table.Cell>
-                      <HStack className={ui('[gap:6px]!')}>
+                      <HStack className="gap-1.5">
                         <ActionButton
                           onClick={() => {
                             setEditingModuleId(item.id);
                             setModuleName(item.name);
                           }}
-                          className={ui('[color:#2563EB]!')}
+                          className="text-[#2563EB]"
                         >
                           <Pencil size={12} />
                         </ActionButton>
                         <ActionButton
                           onClick={() => deleteModule(item.id)}
-                          className={ui('[color:#DC2626]!')}
+                          className="text-red-600"
                         >
                           <Trash2 size={12} />
                         </ActionButton>
@@ -613,29 +573,23 @@ export default function RoleTranPage() {
         {/* ── SUB MODULE TAB ─────────────────────────────────────────────── */}
         {activeTab === 'submodule' && (
           <HStack
-            className={ui(
-              'module-columns' + ' ' + '[align-items:flex-start]! [gap:24px]!',
-            )}
+            className="flex max-lg:flex-col max-lg:items-stretch items-start gap-3"
           >
             {/* LEFT: Form */}
             <FormPanel>
-              <VStack className={ui('[align-items:stretch]! [gap:16px]!')}>
+              <VStack className="items-stretch gap-4">
                 <HStack
-                  className={ui('[justify-content:space-between]! [align-items:center]!')}
+                  className="justify-between items-center"
                 >
                   <Text
-                    className={ui(
-                      'font-normal! [font-size:13.5px]! [color:var(--color-gray-700)]!',
-                    )}
+                    className="font-normal text-sm text-gray-700"
                   >
                     {editingSubModuleId ? 'Edit Sub Module' : 'New Sub Module'}
                   </Text>
                   {editingSubModuleId && (
                     <button
                       onClick={resetSubEdit}
-                      className={ui(
-                        '[background:none] [border:none] [cursor:pointer] [color:var(--text-muted)] [font-size:11px] [display:flex] [align-items:center] [gap:4px]',
-                      )}
+                      className="bg-transparent border-0 cursor-pointer text-muted text-[11px] flex items-center gap-1"
                     >
                       <RefreshCw size={11} /> Reset
                     </button>
@@ -692,11 +646,9 @@ export default function RoleTranPage() {
                   colorScheme={editingSubModuleId ? 'orange' : 'green'}
                   onClick={handleSaveSubModule}
                   disabled={!subModuleName.trim() || !selectedModuleId}
-                  className={ui(
-                    '[background:var(--primary)]! [color:white]! [min-height:var(--control-height)]! [height:38px]! [border-radius:8px]! font-normal! [font-size:13px]! [width:100%]!',
-                  )}
+                  className="bg-brand text-white min-h-control h-9.5 rounded-lg font-normal text-sm w-full"
                 >
-                  <HStack className={ui('[gap:6px]!')}>
+                  <HStack className="gap-1.5">
                     {editingSubModuleId ? <RefreshCw size={13} /> : <Plus size={13} />}
                     <span>{editingSubModuleId ? 'Update' : 'Create'}</span>
                   </HStack>
@@ -707,22 +659,16 @@ export default function RoleTranPage() {
             {/* RIGHT: Data */}
             <DataPanel>
               <HStack
-                className={ui(
-                  '[padding-left:20px]! [padding-right:20px]! [padding-top:14px]! [padding-bottom:14px]! [border-bottom:1px_solid_#F1F5F9]! [justify-content:space-between]!',
-                )}
+                className="pl-5 pr-5 pt-3.5 pb-3.5 border-b border-[#F1F5F9] justify-between"
               >
                 <Text
-                  className={ui(
-                    'font-normal! [font-size:13px]! [color:var(--color-gray-600)]!',
-                  )}
+                  className="font-normal text-sm text-gray-600"
                 >
                   All Sub Modules
                 </Text>
                 <Badge
                   colorPalette="green"
-                  className={ui(
-                    '[padding-left:10px]! [padding-right:10px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:9999px]! [font-size:11px]!',
-                  )}
+                  className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
                 >
                   {subModules?.length} records
                 </Badge>
@@ -737,42 +683,38 @@ export default function RoleTranPage() {
                     _hover={{
                       bg: 'gray.50',
                     }}
-                    className={ui('[transition:background_0.15s]!')}
+                    className="transition-colors duration-150"
                   >
                     <Table.Cell
-                      className={ui(
-                        '[color:var(--color-gray-400)]! [font-size:12px]! [width:40px]!',
-                      )}
+                      className="text-gray-400 text-xs w-10"
                     >
                       {idx + 1}
                     </Table.Cell>
-                    <Table.Cell className={ui('font-normal! [font-size:13.5px]!')}>
+                    <Table.Cell className="font-normal text-sm">
                       {item.name}
                     </Table.Cell>
                     <Table.Cell>
                       <Badge
                         colorPalette="blue"
-                        className={ui(
-                          '[padding-left:10px]! [padding-right:10px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:9999px]! [font-size:11px]!',
-                        )}
+                        className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
                       >
                         {modules.find((m) => m.id === item.moduleId)?.name}
                       </Badge>
                     </Table.Cell>
                     <Table.Cell>
-                      <HStack className={ui('[gap:6px]!')}>
+                      <HStack className="gap-1.5">
                         <ActionButton
                           onClick={() => {
                             setEditingSubModuleId(item.id);
                             setSubModuleName(item.name);
                           }}
-                          className={ui('[color:#2563EB]!')}
+                          className="text-[#2563EB]"
                         >
                           <Pencil size={12} />
                         </ActionButton>
                         <ActionButton
                           onClick={() => deleteSubModule(item.id)}
-                          className={ui('[color:#DC2626]!')}
+                          className="text-red-600"
                         >
                           <Trash2 size={12} />
                         </ActionButton>
@@ -788,29 +730,23 @@ export default function RoleTranPage() {
         {/* ── CONTENT TAB ────────────────────────────────────────────────── */}
         {activeTab === 'content' && (
           <HStack
-            className={ui(
-              'module-columns' + ' ' + '[align-items:flex-start]! [gap:24px]!',
-            )}
+            className="flex max-lg:flex-col max-lg:items-stretch items-start gap-3"
           >
             {/* LEFT: Form */}
             <FormPanel>
-              <VStack className={ui('[align-items:stretch]! [gap:16px]!')}>
+              <VStack className="items-stretch gap-4">
                 <HStack
-                  className={ui('[justify-content:space-between]! [align-items:center]!')}
+                  className="justify-between items-center"
                 >
                   <Text
-                    className={ui(
-                      'font-normal! [font-size:13.5px]! [color:var(--color-gray-700)]!',
-                    )}
+                    className="font-normal text-sm text-gray-700"
                   >
                     {editingContentId ? 'Edit Content' : 'New Content'}
                   </Text>
                   {editingContentId && (
                     <button
                       onClick={resetContentEdit}
-                      className={ui(
-                        '[background:none] [border:none] [cursor:pointer] [color:var(--text-muted)] [font-size:11px] [display:flex] [align-items:center] [gap:4px]',
-                      )}
+                      className="bg-transparent border-0 cursor-pointer text-muted text-[11px] flex items-center gap-1"
                     >
                       <RefreshCw size={11} /> Reset
                     </button>
@@ -846,9 +782,7 @@ export default function RoleTranPage() {
                     <FieldLabel>
                       Sub Module{' '}
                       <span
-                        className={ui(
-                          '[color:var(--text-muted)] [font-weight:400] [text-transform:none] [letter-spacing:0]',
-                        )}
+                        className="text-muted font-normal normal-case tracking-normal"
                       >
                         (optional)
                       </span>
@@ -900,24 +834,18 @@ export default function RoleTranPage() {
                           Select Items
                           {selectedCount > 0 && (
                             <span
-                              className={ui(
-                                '[margin-left:6px] [background:#7C3AED] [color:#fff] [border-radius:10px] [padding:1px_7px] [font-size:10px]',
-                              )}
+                              className="ml-1.5 bg-[#7C3AED] text-white rounded-xl py-0.25 px-1.75 text-[11px]"
                             >
                               {selectedCount}
                             </span>
                           )}
                         </FieldLabel>
                         <Box
-                          className={ui(
-                            '[border:1px_solid_#E2E8F0]! [border-radius:8px]! [max-height:200px]! [overflow-y:auto]! [background:#FAFAFA]!',
-                          )}
+                          className="border border-[#E2E8F0] rounded-lg max-h-50 overflow-y-auto bg-[#FAFAFA]"
                         >
                           {items.length > 0 ? (
                             <VStack
-                              className={ui(
-                                '[align-items:stretch]! [gap:0]! [padding:8px]!',
-                              )}
+                              className="items-stretch gap-0 p-2"
                             >
                               {items.map((item) => {
                                 const checked = selectedContentItemIds.has(item.id);
@@ -929,17 +857,13 @@ export default function RoleTranPage() {
                                       color: checked ? '#5B21B6' : '#374151',
                                       fontWeight: checked ? 600 : 400,
                                     }}
-                                    className={ui(
-                                      '[display:flex] [align-items:center] [gap:8px] [cursor:pointer] [padding:5px_8px] [border-radius:6px] [font-size:12.5px] [transition:all_0.15s]',
-                                    )}
+                                    className="flex items-center gap-2 cursor-pointer py-1.25 px-2 rounded-md text-xs transition-all duration-150"
                                   >
                                     <input
                                       type="checkbox"
                                       checked={checked}
                                       onChange={() => toggleContentItem(item.id)}
-                                      className={ui(
-                                        '[accent-color:#8B5CF6] [width:13px] [height:13px]',
-                                      )}
+                                      className="accent-[#8B5CF6] w-3.25 h-3.25"
                                     />
                                     {item.label}
                                   </label>
@@ -948,9 +872,7 @@ export default function RoleTranPage() {
                             </VStack>
                           ) : (
                             <Text
-                              className={ui(
-                                '[color:var(--color-gray-400)]! [font-size:12px]! [text-align:center]! [padding-top:16px]! [padding-bottom:16px]!',
-                              )}
+                              className="text-gray-400 text-xs text-center pt-4 pb-4"
                             >
                               No items available
                             </Text>
@@ -972,11 +894,9 @@ export default function RoleTranPage() {
                       ? !contentName.trim()
                       : selectedContentItemIds.size === 0)
                   }
-                  className={ui(
-                    '[background:var(--primary)]! [color:white]! [min-height:var(--control-height)]! [height:38px]! [border-radius:8px]! font-normal! [font-size:13px]! [width:100%]!',
-                  )}
+                  className="bg-brand text-white min-h-control h-9.5 rounded-lg font-normal text-sm w-full"
                 >
-                  <HStack className={ui('[gap:6px]!')}>
+                  <HStack className="gap-1.5">
                     {editingContentId ? <RefreshCw size={13} /> : <Plus size={13} />}
                     <span>{editingContentId ? 'Update' : 'Create'}</span>
                   </HStack>
@@ -987,22 +907,16 @@ export default function RoleTranPage() {
             {/* RIGHT: Data */}
             <DataPanel>
               <HStack
-                className={ui(
-                  '[padding-left:20px]! [padding-right:20px]! [padding-top:14px]! [padding-bottom:14px]! [border-bottom:1px_solid_#F1F5F9]! [justify-content:space-between]!',
-                )}
+                className="pl-5 pr-5 pt-3.5 pb-3.5 border-b border-[#F1F5F9] justify-between"
               >
                 <Text
-                  className={ui(
-                    'font-normal! [font-size:13px]! [color:var(--color-gray-600)]!',
-                  )}
+                  className="font-normal text-sm text-gray-600"
                 >
                   All Contents
                 </Text>
                 <Badge
                   colorPalette="purple"
-                  className={ui(
-                    '[padding-left:10px]! [padding-right:10px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:9999px]! [font-size:11px]!',
-                  )}
+                  className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
                 >
                   {contents.length} records
                 </Badge>
@@ -1021,52 +935,46 @@ export default function RoleTranPage() {
                       _hover={{
                         bg: 'gray.50',
                       }}
-                      className={ui('[transition:background_0.15s]!')}
+                      className="transition-colors duration-150"
                     >
                       <Table.Cell
-                        className={ui(
-                          '[color:var(--color-gray-400)]! [font-size:12px]! [width:40px]!',
-                        )}
+                        className="text-gray-400 text-xs w-10"
                       >
                         {idx + 1}
                       </Table.Cell>
-                      <Table.Cell className={ui('font-normal! [font-size:13.5px]!')}>
+                      <Table.Cell className="font-normal text-sm">
                         {item.name}
                       </Table.Cell>
                       <Table.Cell>
                         {subModuleName ? (
                           <Badge
                             colorPalette="purple"
-                            className={ui(
-                              '[padding-left:10px]! [padding-right:10px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:9999px]! [font-size:11px]!',
-                            )}
+                            className="pl-2.5 pr-2.5 pt-0.5 pb-0.5 rounded-full text-[11px]"
                           >
                             {subModuleName}
                           </Badge>
                         ) : (
                           <Text
-                            className={ui(
-                              '[font-size:12px]! [color:var(--color-gray-400)]!',
-                            )}
+                            className="text-xs text-gray-400"
                           >
                             —
                           </Text>
                         )}
                       </Table.Cell>
                       <Table.Cell>
-                        <HStack className={ui('[gap:6px]!')}>
+                        <HStack className="gap-1.5">
                           <ActionButton
                             onClick={() => {
                               setEditingContentId(item.id);
                               setContentName(item.name);
                             }}
-                            className={ui('[color:#2563EB]!')}
+                            className="text-[#2563EB]"
                           >
                             <Pencil size={12} />
                           </ActionButton>
                           <ActionButton
                             onClick={() => deleteContent(item.id)}
-                            className={ui('[color:#DC2626]!')}
+                            className="text-red-600"
                           >
                             <Trash2 size={12} />
                           </ActionButton>
@@ -1084,26 +992,20 @@ export default function RoleTranPage() {
         {activeTab === 'view' && (
           <Box>
             <Box
-              className={ui(
-                '[background:white]! [border-radius:2xl]! [border-width:1px]! [border-color:var(--color-gray-100)]! [box-shadow:0_4px_18px_rgba(0,0,0,0.05)]! [overflow:hidden]!',
-              )}
+              className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden"
             >
               {/* Header */}
               <HStack
-                className={ui(
-                  '[padding-left:20px]! [padding-right:20px]! [padding-top:16px]! [padding-bottom:16px]! [justify-content:space-between]! [border-bottom:1px_solid_#F1F5F9]! [background:linear-gradient(90deg,#F8FAFC,#FFFFFF)]!',
-                )}
+                className="pl-5 pr-5 pt-4 pb-4 justify-between border-b border-[#F1F5F9] [background:linear-gradient(90deg,#F8FAFC,#FFFFFF)]"
               >
                 <Box>
                   <Text
-                    className={ui(
-                      'font-normal! [font-size:15px]! [color:var(--color-gray-700)]!',
-                    )}
+                    className="font-normal text-base text-gray-700"
                   >
                     Module Hierarchy
                   </Text>
                   <Text
-                    className={ui('[font-size:12px]! [color:var(--color-gray-400)]!')}
+                    className="text-xs text-gray-400"
                   >
                     Expand modules and sub modules to explore contents
                   </Text>
@@ -1111,9 +1013,7 @@ export default function RoleTranPage() {
 
                 <Badge
                   colorPalette="orange"
-                  className={ui(
-                    '[padding-left:12px]! [padding-right:12px]! [padding-top:4px]! [padding-bottom:4px]! [border-radius:9999px]! [font-size:11px]! font-normal!',
-                  )}
+                  className="pl-3 pr-3 pt-1 pb-1 rounded-full text-[11px] font-normal"
                 >
                   {menu.length} Modules
                 </Badge>
@@ -1121,16 +1021,14 @@ export default function RoleTranPage() {
 
               {/* Body */}
               <VStack
-                className={ui('[align-items:stretch]! [gap:12px]! [padding:16px]!')}
+                className="items-stretch gap-3 p-4"
               >
                 {menu.length === 0 && (
                   <Box
-                    className={ui(
-                      '[padding-top:48px]! [padding-bottom:48px]! [text-align:center]!',
-                    )}
+                    className="pt-12 pb-12 text-center"
                   >
                     <Text
-                      className={ui('[color:var(--color-gray-400)]! [font-size:13px]!')}
+                      className="text-gray-400 text-sm"
                     >
                       No hierarchy data available
                     </Text>
@@ -1148,9 +1046,7 @@ export default function RoleTranPage() {
                           ? '0 6px 18px rgba(37,99,235,0.08)'
                           : '0 1px 4px rgba(0,0,0,0.03)'
                       }
-                      className={ui(
-                        '[border-width:1px]! [border-radius:20px]! [overflow:hidden]! [transition:all_0.2s]!',
-                      )}
+                      className="border rounded-lg overflow-hidden transition-all duration-200"
                     >
                       {/* MODULE HEADER */}
                       <HStack
@@ -1163,43 +1059,33 @@ export default function RoleTranPage() {
                         onClick={() =>
                           setExpandedModules(toggle(expandedModules, mod.id))
                         }
-                        className={ui(
-                          '[padding-left:16px]! [padding-right:16px]! [padding-top:12px]! [padding-bottom:12px]! [justify-content:space-between]! [cursor:pointer]! [transition:all_0.2s]!',
-                        )}
+                        className="pl-4 pr-4 pt-3 pb-3 justify-between cursor-pointer transition-all duration-200"
                       >
-                        <HStack className={ui('[align-items:flex-start]! [gap:12px]!')}>
+                        <HStack className="items-start gap-3">
                           <Box
-                            className={ui(
-                              '[padding:8px]! [background:#DBEAFE]! [color:#2563EB]! [border-radius:14px]! [margin-top:1px]!',
-                            )}
+                            className="p-2 bg-[#DBEAFE] text-[#2563EB] rounded-lg mt-0.25"
                           >
                             <Database size={15} />
                           </Box>
 
                           <Box>
-                            <HStack className={ui('[gap:8px]! [margin-bottom:4px]!')}>
+                            <HStack className="gap-2 mb-1">
                               <Text
-                                className={ui(
-                                  'font-normal! [font-size:14px]! [color:var(--color-gray-800)]!',
-                                )}
+                                className="font-normal text-base text-ink"
                               >
                                 {mod.name}
                               </Text>
 
                               <Badge
                                 colorPalette="blue"
-                                className={ui(
-                                  '[border-radius:9999px]! [font-size:10px]! [padding-left:8px]! [padding-right:8px]!',
-                                )}
+                                className="rounded-full text-[11px] pl-2 pr-2"
                               >
                                 {mod.subModule.length} Sub
                               </Badge>
 
                               <Badge
                                 colorPalette="purple"
-                                className={ui(
-                                  '[border-radius:9999px]! [font-size:10px]! [padding-left:8px]! [padding-right:8px]!',
-                                )}
+                                className="rounded-full text-[11px] pl-2 pr-2"
                               >
                                 {mod.moduleContent.length +
                                   mod.subModule.reduce(
@@ -1211,9 +1097,7 @@ export default function RoleTranPage() {
                             </HStack>
 
                             <Text
-                              className={ui(
-                                '[font-size:11px]! [color:var(--color-gray-500)]!',
-                              )}
+                              className="text-[11px] text-gray-500"
                             >
                               Click to expand hierarchy details
                             </Text>
@@ -1222,7 +1106,7 @@ export default function RoleTranPage() {
 
                         <Box
                           transform={modExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'}
-                          className={ui('[transition:all_0.25s]! [color:#2563EB]!')}
+                          className="transition-all duration-250 text-[#2563EB]"
                         >
                           <ChevronDown size={18} />
                         </Box>
@@ -1231,30 +1115,24 @@ export default function RoleTranPage() {
                       {/* MODULE CONTENT */}
                       {modExpanded && (
                         <Box
-                          className={ui(
-                            '[padding-left:16px]! [padding-right:16px]! [padding-bottom:16px]! [background:#FCFCFD]! [border-top:1px_solid_#EEF2F7]!',
-                          )}
+                          className="pl-4 pr-4 pb-4 bg-[#FCFCFD] border-t border-[#EEF2F7]"
                         >
                           {/* DIRECT CONTENTS */}
                           {mod.moduleContent.length > 0 && (
                             <Box
-                              className={ui('[margin-bottom:16px]! [margin-top:16px]!')}
+                              className="mb-4 mt-4"
                             >
                               <Text
-                                className={ui(
-                                  '[font-size:10px]! font-normal! [color:var(--color-gray-400)]! [text-transform:uppercase]! [margin-bottom:8px]! [letter-spacing:0.6px]!',
-                                )}
+                                className="text-[11px] font-normal text-gray-400 uppercase mb-2 tracking-wide"
                               >
                                 Direct Contents
                               </Text>
 
-                              <HStack className={ui('[flex-wrap:wrap]! [gap:8px]!')}>
+                              <HStack className="flex-wrap gap-2">
                                 {mod.moduleContent.map((c) => (
                                   <Badge
                                     key={c.id}
-                                    className={ui(
-                                      '[padding-left:12px]! [padding-right:12px]! [padding-top:4px]! [padding-bottom:4px]! [border-radius:9999px]! [background:#F3E8FF]! [color:#6B21A8]! [font-size:11px]! font-normal!',
-                                    )}
+                                    className="pl-3 pr-3 pt-1 pb-1 rounded-full bg-[#F3E8FF] text-[#6B21A8] text-[11px] font-normal"
                                   >
                                     {c.name}
                                   </Badge>
@@ -1264,16 +1142,14 @@ export default function RoleTranPage() {
                           )}
 
                           {/* SUB MODULES */}
-                          <VStack className={ui('[align-items:stretch]! [gap:12px]!')}>
+                          <VStack className="items-stretch gap-3">
                             {mod.subModule.map((sub) => {
                               const subExpanded = expandedSubModules.has(sub.id);
                               return (
                                 <Box
                                   key={sub.id}
                                   borderColor={subExpanded ? '#A7F3D0' : '#E5E7EB'}
-                                  className={ui(
-                                    '[border-width:1px]! [border-radius:14px]! [overflow:hidden]! [background:white]!',
-                                  )}
+                                  className="border rounded-lg overflow-hidden bg-white"
                                 >
                                   {/* SUB HEADER */}
                                   <HStack
@@ -1286,44 +1162,34 @@ export default function RoleTranPage() {
                                         toggle(expandedSubModules, sub.id),
                                       )
                                     }
-                                    className={ui(
-                                      '[padding-left:12px]! [padding-right:12px]! [padding-top:10px]! [padding-bottom:10px]! [justify-content:space-between]! [cursor:pointer]! [transition:all_0.2s]!',
-                                    )}
+                                    className="pl-3 pr-3 pt-2.5 pb-2.5 justify-between cursor-pointer transition-all duration-200"
                                   >
-                                    <HStack className={ui('[gap:8px]!')}>
+                                    <HStack className="gap-2">
                                       <Box
-                                        className={ui(
-                                          '[padding:6px]! [background:#D1FAE5]! [color:#059669]! [border-radius:10px]!',
-                                        )}
+                                        className="p-1.5 bg-[#D1FAE5] text-[#059669] rounded-xl"
                                       >
                                         <Layers size={12} />
                                       </Box>
 
                                       <Box>
                                         <Text
-                                          className={ui(
-                                            '[font-size:12.5px]! font-normal! [color:var(--color-gray-700)]!',
-                                          )}
+                                          className="text-xs font-normal text-gray-700"
                                         >
                                           {sub.name}
                                         </Text>
 
                                         <Text
-                                          className={ui(
-                                            '[font-size:10px]! [color:var(--color-gray-400)]!',
-                                          )}
+                                          className="text-[11px] text-gray-400"
                                         >
                                           {sub.moduleContent.length} contents
                                         </Text>
                                       </Box>
                                     </HStack>
 
-                                    <HStack className={ui('[gap:8px]!')}>
+                                    <HStack className="gap-2">
                                       <Badge
                                         colorPalette="green"
-                                        className={ui(
-                                          '[border-radius:9999px]! [padding-left:8px]! [padding-right:8px]! [font-size:10px]!',
-                                        )}
+                                        className="rounded-full pl-2 pr-2 text-[11px]"
                                       >
                                         {sub.moduleContent.length}
                                       </Badge>
@@ -1332,9 +1198,7 @@ export default function RoleTranPage() {
                                         transform={
                                           subExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
                                         }
-                                        className={ui(
-                                          '[transition:all_0.25s]! [color:#059669]!',
-                                        )}
+                                        className="transition-all duration-250 text-[#059669]"
                                       >
                                         <ChevronDown size={15} />
                                       </Box>
@@ -1344,33 +1208,23 @@ export default function RoleTranPage() {
                                   {/* SUB CONTENTS */}
                                   {subExpanded && (
                                     <Box
-                                      className={ui(
-                                        '[padding-left:16px]! [padding-right:16px]! [padding-top:12px]! [padding-bottom:12px]! [border-top:1px_solid_#F3F4F6]! [background:#FAFAFA]!',
-                                      )}
+                                      className="pl-4 pr-4 pt-3 pb-3 border-t border-[#F3F4F6] bg-[#FAFAFA]"
                                     >
                                       {sub.moduleContent.length > 0 ? (
                                         <Grid
-                                          className={ui(
-                                            '[grid-template-columns:repeat(1,1fr)]! md:[grid-template-columns:repeat(2,1fr)]! lg:[grid-template-columns:repeat(3,1fr)]! [gap:8px]!',
-                                          )}
+                                          className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"
                                         >
                                           {sub.moduleContent.map((c) => (
                                             <HStack
                                               key={c.id}
-                                              className={ui(
-                                                '[padding-left:12px]! [padding-right:12px]! [padding-top:8px]! [padding-bottom:8px]! [background:white]! [border-width:1px]! [border-color:var(--color-gray-100)]! [border-radius:14px]! [justify-content:space-between]!',
-                                              )}
+                                              className="pl-3 pr-3 pt-2 pb-2 bg-white border border-gray-100 rounded-lg justify-between"
                                             >
-                                              <HStack className={ui('[gap:8px]!')}>
+                                              <HStack className="gap-2">
                                                 <Box
-                                                  className={ui(
-                                                    '[width:7px]! [height:7px]! [background:#8B5CF6]! [border-radius:9999px]!',
-                                                  )}
+                                                  className="w-1.75 h-1.75 bg-[#8B5CF6] rounded-full"
                                                 />
                                                 <Text
-                                                  className={ui(
-                                                    '[font-size:12px]! font-normal! [color:var(--color-gray-700)]!',
-                                                  )}
+                                                  className="text-xs font-normal text-gray-700"
                                                 >
                                                   {c.name}
                                                 </Text>
@@ -1378,16 +1232,14 @@ export default function RoleTranPage() {
 
                                               <FileText
                                                 size={12}
-                                                className={ui('[color:#8B5CF6]!')}
+                                                className="text-[#8B5CF6]"
                                               />
                                             </HStack>
                                           ))}
                                         </Grid>
                                       ) : (
                                         <Box
-                                          className={ui(
-                                            '[text-align:center]! [padding-top:16px]! [padding-bottom:16px]! [color:var(--color-gray-400)]! [font-size:12px]!',
-                                          )}
+                                          className="text-center pt-4 pb-4 text-gray-400 text-xs"
                                         >
                                           No contents available
                                         </Box>
@@ -1426,13 +1278,11 @@ function StyledTable({
   return (
     <Table.Root>
       <Table.Header>
-        <Table.Row className={ui('[background:var(--color-gray-50)]!')}>
+        <Table.Row className="bg-gray-50">
           {headers.map((h) => (
             <Table.ColumnHeader
               key={h}
-              className={ui(
-                '[font-size:10.5px]! font-normal! [color:var(--color-gray-400)]! [text-transform:uppercase]! [letter-spacing:0.5px]! [padding-top:10px]! [padding-bottom:10px]! [padding-left:16px]! [padding-right:16px]!',
-              )}
+              className="text-[11px] font-normal text-gray-400 uppercase tracking-wide pt-2.5 pb-2.5 pl-4 pr-4"
             >
               {h}
             </Table.ColumnHeader>
@@ -1444,9 +1294,7 @@ function StyledTable({
           <Table.Row>
             <Table.Cell
               colSpan={headers.length}
-              className={ui(
-                '[text-align:center]! [padding-top:40px]! [padding-bottom:40px]! [color:var(--color-gray-400)]! [font-size:13px]!',
-              )}
+              className="text-center pt-10 pb-10 text-gray-400 text-sm"
             >
               No records found
             </Table.Cell>

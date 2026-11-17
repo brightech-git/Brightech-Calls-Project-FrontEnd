@@ -1,6 +1,7 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -138,7 +139,7 @@ function buildColumns(
       key: 'CREATEDAT',
       header: 'Created',
       render: (row) => (
-        <div className={ui('[font-size:12px]')}>{formatDateForShow(row.CREATEDAT)}</div>
+        <div className="text-xs">{formatDateForShow(row.CREATEDAT)}</div>
       ),
     },
     {
@@ -148,9 +149,7 @@ function buildColumns(
       width: '80px',
       render: (row) => (
         <span
-          className={ui(
-            '[display:inline-flex] [align-items:center] [gap:4px] [font-size:11px] [color:var(--text-muted)]',
-          )}
+          className="inline-flex items-center gap-1 text-[11px] text-muted"
         >
           <ImageIcon size={13} /> {row.media?.length ?? 0}
         </span>
@@ -170,9 +169,7 @@ function buildColumns(
             background: row.ACTIVE === 'Y' ? COLORS.successBg : COLORS.errorBg,
             color: row.ACTIVE === 'Y' ? COLORS.success : COLORS.error,
           }}
-          className={ui(
-            '[padding:2px_10px] [border-radius:20px] [font-size:11px] [font-weight:600] [cursor:pointer] [user-select:none]',
-          )}
+          className="py-0.5 px-2.5 rounded-full text-[11px] font-semibold cursor-pointer select-none"
         >
           {row.ACTIVE === 'Y' ? 'Active' : 'Inactive'}
         </span>
@@ -443,22 +440,18 @@ export default function ClientVisitMasterPage() {
     ];
     return (
       <div
-        className={ui(
-          "[display:flex] [flex-direction:column] [gap:10px] [font-family:var(--font-poppins),_'Poppins',_sans-serif]",
-        )}
+        className="flex flex-col gap-2.5"
       >
         <div
-          className={ui(
-            '[display:grid] [grid-template-columns:repeat(3,_1fr)] [gap:6px_24px]',
-          )}
+          className="grid grid-cols-3 gap-y-1.5 gap-x-6"
         >
           {fields.map(([label, val]) => (
             <div
               key={label}
-              className={ui('[font-size:12px]')}
+              className="text-xs"
             >
-              <span className={ui('[font-weight:600] [color:#34445d]')}>{label}: </span>
-              <span className={ui('[color:var(--text-main)]')}>{String(val ?? '—')}</span>
+              <span className="font-semibold text-ink">{label}: </span>
+              <span className="text-ink">{String(val ?? '—')}</span>
             </div>
           ))}
         </div>
@@ -466,13 +459,11 @@ export default function ClientVisitMasterPage() {
         {r.media && r.media.length > 0 && (
           <div>
             <div
-              className={ui(
-                '[font-size:10px] [font-weight:700] [text-transform:uppercase] [letter-spacing:0.08em] [color:var(--text-muted)] [margin-bottom:6px]',
-              )}
+              className="text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5"
             >
               Media
             </div>
-            <div className={ui('[display:flex] [flex-wrap:wrap] [gap:8px]')}>
+            <div className="flex flex-wrap gap-2">
               {r.media.map((m, idx) => (
                 <div
                   key={m.id ?? idx}
@@ -485,21 +476,19 @@ export default function ClientVisitMasterPage() {
                   style={{
                     border: `1px solid ${COLORS.cardBorder}`,
                   }}
-                  className={ui(
-                    '[width:70px] [height:70px] [border-radius:10px] [overflow:hidden] [cursor:pointer]',
-                  )}
+                  className="w-17.5 h-17.5 rounded-xl overflow-hidden cursor-pointer"
                 >
                   {m.mediaType === 'VIDEO' ? (
                     <video
                       src={mediaUrl(m.mediaUrl ?? '')}
                       muted
-                      className={ui('[width:100%] [height:100%] [object-fit:cover]')}
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <img
                       src={mediaUrl(m.mediaUrl ?? '')}
                       alt={`media-${idx}`}
-                      className={ui('[width:100%] [height:100%] [object-fit:cover]')}
+                      className="w-full h-full object-cover"
                     />
                   )}
                 </div>
@@ -530,16 +519,12 @@ export default function ClientVisitMasterPage() {
     <>
       {/* Filters */}
       <div
-        className={ui(
-          'mb-3 rounded-xl border border-gray-200 bg-white p-2 shadow-sm workspace-filterbar' +
-            ' ' +
-            '[padding:1rem]',
-        )}
+        className="rounded-lg border border-line bg-white mb-3 flex flex-wrap items-end justify-between gap-4 [&_label]:text-xs [&_label]:text-muted [&>div]:max-w-full p-4"
       >
-        <div className={ui('flex flex-wrap items-end gap-3')}>
+        <div className="flex flex-wrap items-end gap-3">
           {/* From Date */}
-          <div className={ui('flex min-w-[140px] flex-col gap-1.5')}>
-            <label className={ui('text-xs font-semibold text-gray-700')}>From Date</label>
+          <div className="flex min-w-[140px] flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-700">From Date</label>
 
             <DatePickerInput
               onChange={(val) => updateFilter('fromDate', val)}
@@ -550,8 +535,8 @@ export default function ClientVisitMasterPage() {
           </div>
 
           {/* To Date */}
-          <div className={ui('flex min-w-[140px] flex-col gap-1.5')}>
-            <label className={ui('text-xs font-semibold text-gray-700')}>To Date</label>
+          <div className="flex min-w-[140px] flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-700">To Date</label>
 
             <DatePickerInput
               onChange={(val) => updateFilter('toDate', val)}
@@ -563,8 +548,8 @@ export default function ClientVisitMasterPage() {
           </div>
 
           {/* Status */}
-          <div className={ui('flex min-w-[150px] flex-col gap-1.5')}>
-            <label className={ui('text-xs font-semibold text-gray-700')}>Status</label>
+          <div className="flex min-w-[150px] flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-700">Status</label>
 
             <SelectCombobox
               items={statusList}
@@ -574,7 +559,7 @@ export default function ClientVisitMasterPage() {
           </div>
 
           {/* Search */}
-          <div className={ui('min-w-[180px]')}>
+          <div className="min-w-[180px]">
             <InputField
               label="Search"
               placeholder="Search by name..."
@@ -584,7 +569,7 @@ export default function ClientVisitMasterPage() {
           </div>
 
           {/* Mobile */}
-          <div className={ui('min-w-[160px]')}>
+          <div className="min-w-[160px]">
             <InputField
               label="Mobile"
               placeholder="Enter mobile number"
@@ -594,7 +579,7 @@ export default function ClientVisitMasterPage() {
           </div>
 
           {/* Area */}
-          <div className={ui('min-w-[150px]')}>
+          <div className="min-w-[150px]">
             <InputField
               label="Area"
               placeholder="Enter area"
@@ -604,7 +589,7 @@ export default function ClientVisitMasterPage() {
           </div>
 
           {/* City */}
-          <div className={ui('min-w-[150px]')}>
+          <div className="min-w-[150px]">
             <InputField
               label="City"
               placeholder="Enter city"
@@ -614,15 +599,13 @@ export default function ClientVisitMasterPage() {
           </div>
 
           {/* Active */}
-          <div className={ui('flex min-w-[125px] flex-col gap-1.5')}>
-            <label className={ui('text-xs font-semibold text-gray-700')}>Active</label>
+          <div className="flex min-w-[125px] flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-700">Active</label>
 
             <select
               value={filterInputs.active}
               onChange={(e) => updateFilter('active', e.target.value)}
-              className={ui(
-                '\r\n          h-9 w-full rounded-md\r\n          border border-gray-300\r\n          bg-white px-3\r\n          text-sm text-gray-700\r\n          outline-none\r\n          transition\r\n          focus:border-blue-500\r\n          focus:ring-2\r\n          focus:ring-blue-100\r\n        ',
-              )}
+              className="h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             >
               <option value="">All</option>
               <option value="Y">Active</option>
@@ -631,12 +614,12 @@ export default function ClientVisitMasterPage() {
           </div>
 
           {/* Actions */}
-          <div className={ui('ml-auto flex items-center gap-2')}>
+          <div className="ml-auto flex items-center gap-2">
             {/* Reset */}
             <button
               type="button"
               onClick={resetFilters}
-              className={ui('cv-btn-secondary')}
+              className={buttonClass}
             >
               <RotateCcw size={14} />
               Reset
@@ -646,16 +629,7 @@ export default function ClientVisitMasterPage() {
             {/* <button
               type="button"
               onClick={handleApplyFilters}
-              className="
-             inline-flex h-9 items-center gap-1.5
-             rounded-md
-             bg-blue-600 px-3.5
-             text-sm font-medium text-white
-             shadow-sm
-             transition
-             hover:bg-blue-700
-             active:scale-[0.98]
-             "
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-blue-600 px-3.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98]"
              >
               <Search size={14} />
               Apply
@@ -665,7 +639,7 @@ export default function ClientVisitMasterPage() {
             <button
               type="button"
               onClick={openCreate}
-              className={ui('cv-btn-primary')}
+              className={cn(buttonClass, buttonVariants.primary)}
             >
               <Plus size={14} />
               Add Client Visit
@@ -697,29 +671,29 @@ export default function ClientVisitMasterPage() {
       {/* Modal */}
       {open && (
         <div
-          className={ui('cv-modal-overlay workspace-modal-overlay')}
+          className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
           <div
-            className={ui('cv-modal-box workspace-modal')}
+            className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
             data-workspace-dialog
             role="dialog"
             aria-modal="true"
             aria-label="Client visit details"
           >
-            <div className={ui('cv-modal-head')}>
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-line bg-slate-50/60 px-4 py-3 max-sm:px-3">
               <div>
-                <div className={ui('cv-modal-title')}>
+                <div className="text-lg tracking-tight text-ink">
                   {editRow ? 'Edit Client Visit' : 'Add Client Visit'}
                 </div>
-                <div className={ui('cv-modal-sub')}>
+                <div className="mt-1 text-xs text-muted">
                   {editRow
                     ? `Editing: ${editRow.COMPANYNAME}`
                     : 'Fill in the details below'}
                 </div>
               </div>
               <button
-                className={ui('cv-close-btn')}
+                className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
                 data-dialog-close
                 aria-label="Close form"
                 onClick={() => setOpen(false)}
@@ -735,11 +709,11 @@ export default function ClientVisitMasterPage() {
                 toast.error('Validation Error', msg);
               })}
             >
-              <div className={ui('cv-modal-body')}>
-                <div className={ui('cv-section-label')}>Basic Information</div>
-                <div className={ui('cv-grid-2 workspace-form-grid')}>
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>Client Name *</label>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Basic Information</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Client Name *</label>
                     <Controller
                       name="COMPANYNAME"
                       control={control}
@@ -750,12 +724,12 @@ export default function ClientVisitMasterPage() {
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Full client name"
                           isCapitalized
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.COMPANYNAME && (
-                      <span className={ui('cv-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.COMPANYNAME.message}
                       </span>
                     )}
@@ -778,8 +752,8 @@ export default function ClientVisitMasterPage() {
                     />
                    </div> */}
 
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>Short Key</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Short Key</label>
                     <Controller
                       name="SHORTKEY"
                       control={control}
@@ -790,7 +764,7 @@ export default function ClientVisitMasterPage() {
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="e.g. B"
                           max={3}
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
@@ -815,8 +789,8 @@ export default function ClientVisitMasterPage() {
                     />
                    </div> */}
 
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>Mobile *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Mobile *</label>
                     <Controller
                       name="MOBILE"
                       control={control}
@@ -829,19 +803,19 @@ export default function ClientVisitMasterPage() {
                           inputModeType="mobile"
                           max={9999999999}
                           type="number"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.MOBILE && (
-                      <span className={ui('cv-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.MOBILE.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>Email *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Email *</label>
                     <Controller
                       name="EMAIL"
                       control={control}
@@ -852,17 +826,17 @@ export default function ClientVisitMasterPage() {
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="email@example.com"
                           inputModeType="email"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.EMAIL && (
-                      <span className={ui('cv-field-error')}>{errors.EMAIL.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">{errors.EMAIL.message}</span>
                     )}
                   </div>
 
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>Active *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Active *</label>
                     <Controller
                       name="ACTIVE"
                       control={control}
@@ -881,14 +855,14 @@ export default function ClientVisitMasterPage() {
                       )}
                     />
                     {errors.ACTIVE && (
-                      <span className={ui('cv-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ACTIVE.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cv-field-row cv-field-row-full')}>
-                    <label className={ui('cv-field-label')}>Remarks</label>
+                  <div className="flex min-w-0 flex-col gap-2 col-span-full">
+                    <label className="text-sm text-muted">Remarks</label>
                     <Controller
                       name="REMARKS"
                       control={control}
@@ -898,17 +872,17 @@ export default function ClientVisitMasterPage() {
                           field="REMARKS"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Visit notes / remarks"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                   </div>
                 </div>
 
-                <div className={ui('cv-section-label')}>Address</div>
-                <div className={ui('cv-grid-2 workspace-form-grid')}>
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>Address 1</label>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Address</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Address 1</label>
                     <Controller
                       name="ADDRESS1"
                       control={control}
@@ -918,14 +892,14 @@ export default function ClientVisitMasterPage() {
                           field="ADDRESS1"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Street"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                   </div>
 
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>AREA</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">AREA</label>
                     <Controller
                       name="ADDRESS2"
                       control={control}
@@ -935,14 +909,14 @@ export default function ClientVisitMasterPage() {
                           field="ADDRESS2"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Enter area"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                   </div>
 
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>CITY</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">CITY</label>
                     <Controller
                       name="ADDRESS3"
                       control={control}
@@ -952,14 +926,14 @@ export default function ClientVisitMasterPage() {
                           field="ADDRESS3"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Enter city"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                   </div>
 
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>Area code</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Area code</label>
                     <Controller
                       name="AREACODE"
                       control={control}
@@ -969,17 +943,17 @@ export default function ClientVisitMasterPage() {
                           field="AREACODE"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Enter area code"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                   </div>
                 </div>
 
-                <div className={ui('cv-section-label')}>Tax Information</div>
-                <div className={ui('cv-grid-2 workspace-form-grid')}>
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>GST No</label>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Tax Information</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">GST No</label>
                     <Controller
                       name="GSTNO"
                       control={control}
@@ -991,14 +965,14 @@ export default function ClientVisitMasterPage() {
                           placeholder="GST number"
                           isCapitalized
                           inputModeType="gst"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                   </div>
 
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>PAN No</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">PAN No</label>
                     <Controller
                       name="PANNO"
                       control={control}
@@ -1010,14 +984,14 @@ export default function ClientVisitMasterPage() {
                           placeholder="PAN number"
                           isCapitalized
                           inputModeType="pan"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                   </div>
 
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>STATUS</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">STATUS</label>
                     <Controller
                       name="status"
                       control={control}
@@ -1032,8 +1006,8 @@ export default function ClientVisitMasterPage() {
                       )}
                     />
                   </div>
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>EXISTING SOFTWARE</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">EXISTING SOFTWARE</label>
                     <Controller
                       name="existingSoftware"
                       control={control}
@@ -1043,13 +1017,13 @@ export default function ClientVisitMasterPage() {
                           field="existingSoftware"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="existingSoftware"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                   </div>
-                  <div className={ui('cv-field-row')}>
-                    <label className={ui('cv-field-label')}>REMAINDER</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">REMAINDER</label>
                     <Controller
                       name="remainder"
                       control={control}
@@ -1059,7 +1033,7 @@ export default function ClientVisitMasterPage() {
                           value={field.value ? String(field.value) : undefined}
                           onChange={(val) => field.onChange(val ? String(val) : '')}
                           placeholder="remainder"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
@@ -1148,14 +1122,14 @@ export default function ClientVisitMasterPage() {
                    </div> */}
                 </div>
 
-                <div className={ui('cv-section-label')}>Visit Media</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Visit Media</div>
 
                 {editRow && !!editRow.media?.length && (
-                  <div className={ui('cv-existing-media')}>
+                  <div className="flex flex-wrap gap-3">
                     {editRow.media.map((m, i) => (
                       <div
                         key={m.id ?? i}
-                        className={ui('cv-existing-media-item')}
+                        className="size-20 overflow-hidden rounded-lg border border-line bg-slate-50 [&_img]:size-full [&_img]:object-cover [&_video]:size-full [&_video]:object-cover"
                       >
                         {m.mediaType === 'VIDEO' ? (
                           <video
@@ -1185,17 +1159,17 @@ export default function ClientVisitMasterPage() {
                 />
               </div>
 
-              <div className={ui('cv-modal-footer')}>
+              <div className="flex shrink-0 justify-end gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3">
                 <button
                   type="button"
-                  className={ui('cv-btn-secondary')}
+                  className={buttonClass}
                   onClick={() => setOpen(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className={ui('cv-btn-primary')}
+                  className={cn(buttonClass, buttonVariants.primary)}
                   disabled={isPending}
                 >
                   <Pencil size={12} />

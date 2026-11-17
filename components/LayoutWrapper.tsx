@@ -1,6 +1,5 @@
 'use client';
 
-import { ui } from '@/utils/ui';
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
@@ -22,7 +21,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   if (!loggedIn || !allowed)
     return (
       <div
-        className={ui('session-loading')}
+        className="grid min-h-dvh place-items-center bg-white text-sm text-muted"
         role="status"
       >
         Opening your workspace…

@@ -1,6 +1,7 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -86,9 +87,7 @@ const COLUMNS: TableColumn<ClientRecord_Table>[] = [
           background: row.ACTIVE === 'Y' ? COLORS.successBg : COLORS.errorBg,
           color: row.ACTIVE === 'Y' ? COLORS.success : COLORS.error,
         }}
-        className={ui(
-          '[padding:2px_10px] [border-radius:20px] [font-size:var(--font-xs)] [font-weight:600]',
-        )}
+        className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
       >
         {row.ACTIVE === 'Y' ? 'Active' : 'Inactive'}
       </span>
@@ -238,7 +237,7 @@ export default function ClientMasterPage() {
         emptyMessage="No clients found."
         toolbarRight={
           <button
-            className={ui('cm-btn-primary')}
+            className={cn(buttonClass, buttonVariants.primary)}
             onClick={openCreate}
           >
             <Plus size={13} /> Add Client
@@ -249,29 +248,29 @@ export default function ClientMasterPage() {
       {/* Modal */}
       {open && (
         <div
-          className={ui('cm-modal-overlay workspace-modal-overlay')}
+          className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
           <div
-            className={ui('cm-modal-box workspace-modal')}
+            className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
             data-workspace-dialog
             role="dialog"
             aria-modal="true"
             aria-label="Client details"
           >
-            <div className={ui('cm-modal-head')}>
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-line bg-slate-50/60 px-4 py-3 max-sm:px-3">
               <div>
-                <div className={ui('cm-modal-title')}>
+                <div className="text-lg tracking-tight text-ink">
                   {editRow ? 'Edit Client' : 'Add Client'}
                 </div>
-                <div className={ui('cm-modal-sub')}>
+                <div className="mt-1 text-xs text-muted">
                   {editRow
                     ? `Editing: ${editRow.CLIENTNAME}`
                     : 'Fill in the details below'}
                 </div>
               </div>
               <button
-                className={ui('cm-close-btn')}
+                className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
                 data-dialog-close
                 aria-label="Close form"
                 onClick={() => setOpen(false)}
@@ -287,11 +286,11 @@ export default function ClientMasterPage() {
                 toast.error('Validation Error', msg);
               })}
             >
-              <div className={ui('cm-modal-body')}>
-                <div className={ui('cm-section-label')}>Basic Information</div>
-                <div className={ui('cm-grid-2 workspace-form-grid')}>
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Client Name *</label>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Basic Information</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Client Name *</label>
                     <Controller
                       name="CLIENTNAME"
                       control={control}
@@ -302,19 +301,19 @@ export default function ClientMasterPage() {
                           isCapitalized
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Full client name"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.CLIENTNAME && (
-                      <span className={ui('cm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.CLIENTNAME.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Cost ID</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Cost ID</label>
                     <Controller
                       name="COSTID"
                       control={control}
@@ -324,19 +323,19 @@ export default function ClientMasterPage() {
                           field="COSTID"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="e.g. BT"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.COSTID && (
-                      <span className={ui('cm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.COSTID.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Short Key</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Short Key</label>
                     <Controller
                       name="SHORTKEY"
                       control={control}
@@ -346,19 +345,19 @@ export default function ClientMasterPage() {
                           field="SHORTKEY"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="e.g. A"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.SHORTKEY && (
-                      <span className={ui('cm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.SHORTKEY.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Phone</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Phone</label>
                     <Controller
                       name="PHONE"
                       control={control}
@@ -368,17 +367,17 @@ export default function ClientMasterPage() {
                           field="PHONE"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="e.g. 04412345678"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.PHONE && (
-                      <span className={ui('cm-field-error')}>{errors.PHONE.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">{errors.PHONE.message}</span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Mobile *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Mobile *</label>
                     <Controller
                       name="MOBILE"
                       control={control}
@@ -389,19 +388,19 @@ export default function ClientMasterPage() {
                           inputModeType="mobile"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="10-digit mobile"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.MOBILE && (
-                      <span className={ui('cm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.MOBILE.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Email *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Email *</label>
                     <Controller
                       name="EMAIL"
                       control={control}
@@ -412,17 +411,17 @@ export default function ClientMasterPage() {
                           inputModeType="email"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="email@example.com"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.EMAIL && (
-                      <span className={ui('cm-field-error')}>{errors.EMAIL.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">{errors.EMAIL.message}</span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Status *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Status *</label>
                     <Controller
                       name="ACTIVE"
                       control={control}
@@ -441,17 +440,17 @@ export default function ClientMasterPage() {
                       )}
                     />
                     {errors.ACTIVE && (
-                      <span className={ui('cm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ACTIVE.message}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className={ui('cm-section-label')}>Address</div>
-                <div className={ui('cm-grid-2 workspace-form-grid')}>
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Address 1</label>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Address</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Address 1</label>
                     <Controller
                       name="ADDRESS1"
                       control={control}
@@ -461,19 +460,19 @@ export default function ClientMasterPage() {
                           field="ADDRESS1"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Street"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.ADDRESS1 && (
-                      <span className={ui('cm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ADDRESS1.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Address 2</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Address 2</label>
                     <Controller
                       name="ADDRESS2"
                       control={control}
@@ -483,19 +482,19 @@ export default function ClientMasterPage() {
                           field="ADDRESS2"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Area"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.ADDRESS2 && (
-                      <span className={ui('cm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ADDRESS2.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Address 3</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Address 3</label>
                     <Controller
                       name="ADDRESS3"
                       control={control}
@@ -505,19 +504,19 @@ export default function ClientMasterPage() {
                           field="ADDRESS3"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="City"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.ADDRESS3 && (
-                      <span className={ui('cm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ADDRESS3.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Area Code</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Area Code</label>
                     <Controller
                       name="AREACODE"
                       control={control}
@@ -527,19 +526,19 @@ export default function ClientMasterPage() {
                           field="AREACODE"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="PIN code"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.AREACODE && (
-                      <span className={ui('cm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.AREACODE.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Remarks</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Remarks</label>
                     <Controller
                       name="REMARKS"
                       control={control}
@@ -556,17 +555,17 @@ export default function ClientMasterPage() {
                       )}
                     />
                     {errors.REMARKS && (
-                      <span className={ui('cm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.REMARKS.message}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className={ui('cm-section-label')}>Tax Information</div>
-                <div className={ui('cm-grid-2 workspace-form-grid')}>
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>GST No</label>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Tax Information</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">GST No</label>
                     <Controller
                       name="GSTNO"
                       control={control}
@@ -577,17 +576,17 @@ export default function ClientMasterPage() {
                           isCapitalized
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="GST number"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.GSTNO && (
-                      <span className={ui('cm-field-error')}>{errors.GSTNO.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">{errors.GSTNO.message}</span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>PAN No</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">PAN No</label>
                     <Controller
                       name="PANNO"
                       control={control}
@@ -598,17 +597,17 @@ export default function ClientMasterPage() {
                           isCapitalized
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="PAN number"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.PANNO && (
-                      <span className={ui('cm-field-error')}>{errors.PANNO.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">{errors.PANNO.message}</span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>TAN No</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">TAN No</label>
                     <Controller
                       name="TANNO"
                       control={control}
@@ -619,17 +618,17 @@ export default function ClientMasterPage() {
                           isCapitalized
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="TAN number"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.TANNO && (
-                      <span className={ui('cm-field-error')}>{errors.TANNO.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">{errors.TANNO.message}</span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>TDS No</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">TDS No</label>
                     <Controller
                       name="TDSNO"
                       control={control}
@@ -639,17 +638,17 @@ export default function ClientMasterPage() {
                           field="TDSNO"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="TDS number"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.TDSNO && (
-                      <span className={ui('cm-field-error')}>{errors.TDSNO.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">{errors.TDSNO.message}</span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>TIN No</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">TIN No</label>
                     <Controller
                       name="TINNO"
                       control={control}
@@ -659,17 +658,17 @@ export default function ClientMasterPage() {
                           field="TINNO"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="TIN number"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.TINNO && (
-                      <span className={ui('cm-field-error')}>{errors.TINNO.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">{errors.TINNO.message}</span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>CST No</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">CST No</label>
                     <Controller
                       name="CSTNO"
                       control={control}
@@ -679,17 +678,17 @@ export default function ClientMasterPage() {
                           field="CSTNO"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="CST number"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.CSTNO && (
-                      <span className={ui('cm-field-error')}>{errors.CSTNO.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">{errors.CSTNO.message}</span>
                     )}
                   </div>
 
-                  <div className={ui('cm-field-row')}>
-                    <label className={ui('cm-field-label')}>Local Tax No</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Local Tax No</label>
                     <Controller
                       name="LOCALTAXNO"
                       control={control}
@@ -699,12 +698,12 @@ export default function ClientMasterPage() {
                           field="LOCALTAXNO"
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Local tax number"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.LOCALTAXNO && (
-                      <span className={ui('cm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.LOCALTAXNO.message}
                       </span>
                     )}
@@ -712,17 +711,17 @@ export default function ClientMasterPage() {
                 </div>
               </div>
 
-              <div className={ui('cm-modal-footer')}>
+              <div className="flex shrink-0 justify-end gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3">
                 <button
                   type="button"
-                  className={ui('cm-btn-secondary')}
+                  className={buttonClass}
                   onClick={() => setOpen(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className={ui('cm-btn-primary')}
+                  className={cn(buttonClass, buttonVariants.primary)}
                   disabled={isPending}
                 >
                   <Pencil size={12} />

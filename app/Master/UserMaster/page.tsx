@@ -1,7 +1,8 @@
 'use client';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/format/date';
 
-import { ui } from '@/utils/ui';
 import { useState, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -131,9 +132,7 @@ const COLUMNS: TableColumn<UserRecord & Record<string, unknown>>[] = [
           background: row.ACTIVE === 'Y' ? '#dcfce7' : '#fee2e2',
           color: row.ACTIVE === 'Y' ? '#16a34a' : '#ef4444',
         }}
-        className={ui(
-          '[padding:2px_10px] [border-radius:20px] [font-size:11px] [font-weight:600]',
-        )}
+        className="py-0.5 px-2.5 rounded-full text-[11px] font-semibold"
       >
         {row.ACTIVE === 'Y' ? 'Active' : 'Inactive'}
       </span>
@@ -352,28 +351,26 @@ export default function UserMasterPage() {
   };
   return (
     <>
-      <div className={ui('um-page')}>
-        <Grid className={ui('um-layout')}>
+      <div className="min-w-0">
+        <Grid className="grid min-w-0 grid-cols-[minmax(300px,350px)_minmax(0,1fr)] items-start gap-3 max-xl:grid-cols-1">
           {/* ── Left: Register Form ── */}
-          <div className={ui('um-card')}>
-            <div className={ui('um-card-head')}>
-              <Text className={ui('[font-size:13.5px]! font-normal! [color:#111827]!')}>
+          <div className="rounded-lg border border-line bg-white min-w-0 overflow-hidden">
+            <div className="border-b border-line bg-white px-3 py-3 [&>p:first-child]:text-lg [&>p:last-child]:mt-1 [&>p:last-child]:text-xs [&>p:last-child]:text-muted">
+              <Text className="text-sm font-normal text-ink">
                 {isEditMode ? 'Edit User' : 'Register User'}
               </Text>
               <Text
-                className={ui(
-                  '[font-size:11px]! [color:var(--text-muted)]! [margin-top:2px]!',
-                )}
+                className="text-[11px] text-muted mt-0.5"
               >
                 {isEditMode ? `Editing user ID: ${editId}` : 'Create a new user account'}
               </Text>
             </div>
 
-            <div className={ui('um-card-body')}>
+            <div className="p-3">
               <form onSubmit={handleSubmit(onSubmit)}>
-                <VStack className={ui('um-fields')}>
-                  <div className={ui('um-field-row')}>
-                    <label className={ui('um-field-label')}>Username *</label>
+                <VStack className="flex w-full flex-col items-stretch gap-4">
+                  <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
+                    <label className="block text-sm leading-5 text-muted">Username *</label>
                     <Controller
                       name="username"
                       control={control}
@@ -384,12 +381,12 @@ export default function UserMasterPage() {
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Enter username"
                           isCapitalized
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.username && (
-                      <span className={ui('um-field-error')}>
+                      <span className="col-start-2 text-xs text-rose-600">
                         {errors.username.message}
                       </span>
                     )}
@@ -397,8 +394,8 @@ export default function UserMasterPage() {
 
                   {!isEditMode && (
                     <>
-                      <div className={ui('um-field-row')}>
-                        <label className={ui('um-field-label')}>Password *</label>
+                      <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
+                        <label className="block text-sm leading-5 text-muted">Password *</label>
                         <Controller
                           name="password"
                           control={control}
@@ -411,14 +408,14 @@ export default function UserMasterPage() {
                           )}
                         />
                         {errors.password && (
-                          <span className={ui('um-field-error')}>
+                          <span className="col-start-2 text-xs text-rose-600">
                             {errors.password.message}
                           </span>
                         )}
                       </div>
 
-                      <div className={ui('um-field-row')}>
-                        <label className={ui('um-field-label')}>Confirm Password *</label>
+                      <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
+                        <label className="block text-sm leading-5 text-muted">Confirm Password *</label>
                         <Controller
                           name="confirmPassword"
                           control={control}
@@ -431,7 +428,7 @@ export default function UserMasterPage() {
                           )}
                         />
                         {errors.confirmPassword && (
-                          <span className={ui('um-field-error')}>
+                          <span className="col-start-2 text-xs text-rose-600">
                             {errors.confirmPassword.message}
                           </span>
                         )}
@@ -442,15 +439,13 @@ export default function UserMasterPage() {
                   {isEditMode && (
                     <>
                       <Text
-                        className={ui(
-                          '[font-size:11px]! font-normal! [color:#34445d]! [letter-spacing:0.05em]! [text-transform:uppercase]! [margin-top:2px]!',
-                        )}
+                        className="text-[11px] font-normal text-ink tracking-wide uppercase mt-0.5"
                       >
                         Change Password (optional)
                       </Text>
 
-                      <div className={ui('um-field-row')}>
-                        <label className={ui('um-field-label')}>Old Password</label>
+                      <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
+                        <label className="block text-sm leading-5 text-muted">Old Password</label>
                         <Controller
                           name="oldPassword"
                           control={control}
@@ -463,14 +458,14 @@ export default function UserMasterPage() {
                           )}
                         />
                         {errors.oldPassword && (
-                          <span className={ui('um-field-error')}>
+                          <span className="col-start-2 text-xs text-rose-600">
                             {errors.oldPassword.message}
                           </span>
                         )}
                       </div>
 
-                      <div className={ui('um-field-row')}>
-                        <label className={ui('um-field-label')}>New Password</label>
+                      <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
+                        <label className="block text-sm leading-5 text-muted">New Password</label>
                         <Controller
                           name="newPassword"
                           control={control}
@@ -483,14 +478,14 @@ export default function UserMasterPage() {
                           )}
                         />
                         {errors.newPassword && (
-                          <span className={ui('um-field-error')}>
+                          <span className="col-start-2 text-xs text-rose-600">
                             {errors.newPassword.message}
                           </span>
                         )}
                       </div>
 
-                      <div className={ui('um-field-row')}>
-                        <label className={ui('um-field-label')}>
+                      <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
+                        <label className="block text-sm leading-5 text-muted">
                           Confirm New Password
                         </label>
                         <Controller
@@ -505,7 +500,7 @@ export default function UserMasterPage() {
                           )}
                         />
                         {errors.confirmNewPassword && (
-                          <span className={ui('um-field-error')}>
+                          <span className="col-start-2 text-xs text-rose-600">
                             {errors.confirmNewPassword.message}
                           </span>
                         )}
@@ -513,8 +508,8 @@ export default function UserMasterPage() {
                     </>
                   )}
 
-                  <div className={ui('um-field-row')}>
-                    <label className={ui('um-field-label')}>Role *</label>
+                  <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
+                    <label className="block text-sm leading-5 text-muted">Role *</label>
                     <Controller
                       name="roleId"
                       control={control}
@@ -531,8 +526,8 @@ export default function UserMasterPage() {
                     />
                   </div>
 
-                  <div className={ui('um-field-row')}>
-                    <label className={ui('um-field-label')}>Active *</label>
+                  <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
+                    <label className="block text-sm leading-5 text-muted">Active *</label>
                     <Controller
                       name="active"
                       control={control}
@@ -547,14 +542,14 @@ export default function UserMasterPage() {
                       )}
                     />
                     {errors.active && (
-                      <span className={ui('um-field-error')}>
+                      <span className="col-start-2 text-xs text-rose-600">
                         {errors.active.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('um-field-row')}>
-                    <label className={ui('um-field-label')}>Client *</label>
+                  <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
+                    <label className="block text-sm leading-5 text-muted">Client *</label>
                     <Controller
                       name="isClient"
                       control={control}
@@ -569,15 +564,15 @@ export default function UserMasterPage() {
                       )}
                     />
                     {errors.isClient && (
-                      <span className={ui('um-field-error')}>
+                      <span className="col-start-2 text-xs text-rose-600">
                         {errors.isClient.message}
                       </span>
                     )}
                   </div>
 
                   {isClientSelected && (
-                    <div className={ui('um-field-row')}>
-                      <label className={ui('um-field-label')}>
+                    <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
+                      <label className="block text-sm leading-5 text-muted">
                         Client (Client Master) *
                       </label>
                       <Controller
@@ -595,17 +590,17 @@ export default function UserMasterPage() {
                         )}
                       />
                       {errors.clientId && (
-                        <span className={ui('um-field-error')}>
+                        <span className="col-start-2 text-xs text-rose-600">
                           {errors.clientId.message}
                         </span>
                       )}
                     </div>
                   )}
 
-                  <HStack className={ui('[width:100%]! [gap:8px]!')}>
+                  <HStack className="w-full gap-2">
                     <button
                       type="submit"
-                      className={ui('btn-primary' + ' ' + '[flex:1]')}
+                      className={cn(buttonClass, buttonVariants.primary, 'flex-1')}
                       disabled={isPending}
                     >
                       <Pencil size={14} />
@@ -620,7 +615,7 @@ export default function UserMasterPage() {
                     {isEditMode && (
                       <button
                         type="button"
-                        className={ui('btn-secondary' + ' ' + '[flex:1]')}
+                        className={cn(buttonClass, 'flex-1')}
                         onClick={handleCancel}
                       >
                         Cancel
@@ -633,7 +628,7 @@ export default function UserMasterPage() {
           </div>
 
           {/* ── Right: Table ── */}
-          <div className={ui('um-table-wrap')}>
+          <div className="min-w-0">
             <CustomTable
               title="Registered Users"
               columns={COLUMNS}

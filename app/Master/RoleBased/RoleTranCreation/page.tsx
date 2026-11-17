@@ -1,6 +1,5 @@
 'use client';
 
-import { ui } from '@/utils/ui';
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import {
   Box,
@@ -126,7 +125,7 @@ const TriCheckbox = memo(
       style={{
         accentColor: T.accent,
       }}
-      className={ui('[cursor:pointer] [width:13px] [height:13px] [flex-shrink:0]')}
+      className="cursor-pointer w-3.25 h-3.25 shrink-0"
     />
   ),
 );
@@ -148,9 +147,7 @@ const ContentRow = memo(
       style={{
         background: selected ? T.accentLight : 'transparent',
       }}
-      className={ui(
-        '[display:flex] [align-items:center] [gap:8px] [padding:4px_10px_4px_42px] [cursor:pointer] [border-radius:6px] [font-size:12.5px] [user-select:none] [transition:background_0.12s]',
-      )}
+      className="flex items-center gap-2 pt-1 pr-2.5 pb-1 pl-10.5 cursor-pointer rounded-md text-xs select-none transition-colors duration-120"
     >
       <input
         type="checkbox"
@@ -159,13 +156,13 @@ const ContentRow = memo(
         style={{
           accentColor: T.accent,
         }}
-        className={ui('[cursor:pointer] [width:13px] [height:13px] [flex-shrink:0]')}
+        className="cursor-pointer w-3.25 h-3.25 shrink-0"
       />
       <span
         style={{
           color: selected ? '#1D4ED8' : T.textMID,
         }}
-        className={ui('[transition:color_0.12s] [font-size:var(--font-sm)]!')}
+        className="transition-colors duration-120 text-sm"
       >
         {content.name}
       </span>
@@ -203,9 +200,7 @@ const SubModuleRow = memo(
           _hover={{
             bg: T.bgHover,
           }}
-          className={ui(
-            '[align-items:center]! [gap:6px]! [padding-left:8px]! [padding-right:8px]! [padding-top:5px]! [padding-bottom:5px]! [cursor:pointer]! [border-radius:6px]! [padding-left:20px] [transition:background_0.12s]!',
-          )}
+          className="items-center gap-1.5 pr-2 pt-1.25 pb-1.25 cursor-pointer rounded-md pl-5 transition-colors duration-120"
         >
           <Box
             as="span"
@@ -213,7 +208,7 @@ const SubModuleRow = memo(
             style={{
               color: T.textSub,
             }}
-            className={ui('[display:flex] [align-items:center] [flex-shrink:0]')}
+            className="flex items-center shrink-0"
           >
             {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
           </Box>
@@ -224,9 +219,7 @@ const SubModuleRow = memo(
           <Text
             color={state !== 'none' ? T.accent : T.textSub}
             onClick={() => setOpen((o) => !o)}
-            className={ui(
-              '[font-size:var(--font-xs)]! font-normal! [margin-left:4px]! [cursor:pointer] [user-select:none] [flex:1] [transition:color_0.12s]!',
-            )}
+            className="text-xs font-normal ml-1 cursor-pointer select-none flex-1 transition-colors duration-120"
           >
             📁 {sub.name}
           </Text>
@@ -234,9 +227,7 @@ const SubModuleRow = memo(
             <Box
               bg={T.accentLight}
               color={T.accent}
-              className={ui(
-                '[padding-left:6px]! [padding-right:6px]! [padding-top:1px]! [padding-bottom:1px]! [border-radius:10px]! [font-size:10px]! font-normal!',
-              )}
+              className="pl-1.5 pr-1.5 pt-0.25 pb-0.25 rounded-xl text-[11px] font-normal"
             >
               {checkedCount}/{IDs.length}
             </Box>
@@ -297,18 +288,14 @@ const ModuleRow = memo(
         border={`1px solid ${state !== 'none' ? T.accentMID : T.border}`}
         borderRadius={T.radiusMd}
         boxShadow={state !== 'none' ? '0 0 0 2px rgba(59,130,246,0.08)' : 'none'}
-        className={ui(
-          '[margin-bottom:6px]! [overflow:hidden]! [transition:border-color_0.15s]!',
-        )}
+        className="mb-1.5 overflow-hidden transition-colors duration-150"
       >
         <Flex
           bg={state !== 'none' ? T.accentLight : T.bg}
           _hover={{
             bg: state !== 'none' ? '#DBEAFE' : T.bgHover,
           }}
-          className={ui(
-            '[align-items:center]! [gap:8px]! [padding-left:12px]! [padding-right:12px]! [padding-top:7px]! [padding-bottom:7px]! [cursor:pointer]! [transition:background_0.12s]!',
-          )}
+          className="items-center gap-2 pl-3 pr-3 pt-1.75 pb-1.75 cursor-pointer transition-colors duration-120"
         >
           <Box
             as="span"
@@ -316,7 +303,7 @@ const ModuleRow = memo(
             style={{
               color: T.textSub,
             }}
-            className={ui('[display:flex] [align-items:center] [flex-shrink:0]')}
+            className="flex items-center shrink-0"
           >
             {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </Box>
@@ -327,17 +314,13 @@ const ModuleRow = memo(
           <Text
             color={state !== 'none' ? '#1E40AF' : T.textMID}
             onClick={() => setOpen((o) => !o)}
-            className={ui(
-              '[font-size:var(--font-xs)]! font-normal! [margin-left:4px]! [flex:1]! [cursor:pointer] [user-select:none] [transition:color_0.12s]!',
-            )}
+            className="text-xs font-normal ml-1 flex-1 cursor-pointer select-none transition-colors duration-120"
           >
             {mod.name}
           </Text>
           {state !== 'none' && (
             <Box
-              className={ui(
-                '[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:10px]! font-normal! [background:#DBEAFE]! [color:#1E40AF]!',
-              )}
+              className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal bg-[#DBEAFE] text-[#1E40AF]"
             >
               {checkedCount}/{allIDs.length}
             </Box>
@@ -346,7 +329,7 @@ const ModuleRow = memo(
         {open && (
           <Box
             bg={T.bgCard}
-            className={ui('[padding-top:4px]! [padding-bottom:4px]!')}
+            className="pt-1 pb-1"
           >
             {mod.moduleContent.map((c) => (
               <ContentRow
@@ -405,9 +388,7 @@ const ModuleTree = memo(
           bg={T.bg}
           borderRadius={T.radius}
           border={`1px solid ${T.border}`}
-          className={ui(
-            '[align-items:center]! [gap:8px]! [padding-left:12px]! [padding-right:12px]! [padding-top:6px]! [padding-bottom:6px]! [margin-bottom:8px]!',
-          )}
+          className="items-center gap-2 pl-3 pr-3 pt-1.5 pb-1.5 mb-2"
         >
           <TriCheckbox
             state={rootState}
@@ -415,7 +396,7 @@ const ModuleTree = memo(
           />
           <Text
             color={T.textMID}
-            className={ui('[font-size:14px]! font-normal! [flex:1]!')}
+            className="text-base font-normal flex-1"
           >
             Select All
           </Text>
@@ -423,9 +404,7 @@ const ModuleTree = memo(
             <Box
               bg={T.accentLight}
               color={T.accent}
-              className={ui(
-                '[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:10px]! font-normal!',
-              )}
+              className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal"
             >
               {totalSelected} / {allIDs.length}
             </Box>
@@ -513,8 +492,8 @@ const MergedViewTable = memo(
       verticalAlign: 'middle',
     };
     return (
-      <Box className={ui('[overflow-x:auto]!')}>
-        <table className={ui('[width:100%] [border-collapse:collapse] [font-size:13px]')}>
+      <Box className="overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
           <thead>
             <tr
               style={{
@@ -528,9 +507,7 @@ const MergedViewTable = memo(
                     textAlign: i >= 3 ? 'center' : 'left',
                     borderBottom: `2px solid ${T.navyLight}`,
                   }}
-                  className={ui(
-                    '[padding:11px_14px] [color:#E2E8F0] [font-weight:600] [font-size:11.5px] [letter-spacing:0.06em] [text-transform:uppercase] [white-space:nowrap]',
-                  )}
+                  className="py-2.75 px-3.5 text-[#E2E8F0] font-semibold text-[11px] tracking-wide uppercase whitespace-nowrap"
                 >
                   {h}
                 </th>
@@ -544,7 +521,7 @@ const MergedViewTable = memo(
                 style={{
                   background: i % 2 === 0 ? T.bgCard : T.bg,
                 }}
-                className={ui('[transition:background_0.1s]')}
+                className="transition-colors duration-100"
               >
                 {moduleSpans[i] !== null && (
                   <td
@@ -555,14 +532,10 @@ const MergedViewTable = memo(
                       borderRight: `2px solid ${T.accentMID}`,
                       borderBottom: `1px solid ${T.accentMID}`,
                     }}
-                    className={ui(
-                      '[text-align:center] [vertical-align:middle] [min-width:120px]',
-                    )}
+                    className="text-center align-middle min-w-30"
                   >
                     <Box
-                      className={ui(
-                        '[display:inline-block]! [background:#DBEAFE]! [color:#1E40AF]! [padding-left:12px]! [padding-right:12px]! [padding-top:4px]! [padding-bottom:4px]! [border-radius:6px]! [font-size:12px]! font-normal! [max-width:150px]! [word-break:break-word] [text-align:center]',
-                      )}
+                      className="inline-block bg-[#DBEAFE] text-[#1E40AF] pl-3 pr-3 pt-1 pb-1 rounded-md text-xs font-normal max-w-37.5 break-words text-center"
                     >
                       {row.moduleNAME}
                     </Box>
@@ -577,22 +550,18 @@ const MergedViewTable = memo(
                       borderRight: `1px solid ${T.border}`,
                       borderBottom: `1px solid ${T.border}`,
                     }}
-                    className={ui(
-                      '[background:#F7FAFF] [text-align:center] [vertical-align:middle] [min-width:110px]',
-                    )}
+                    className="bg-[#F7FAFF] text-center align-middle min-w-27.5"
                   >
                     {row.subModuleNAME === '—' ? (
                       <Text
                         color={T.textMuted}
-                        className={ui('[font-size:13px]!')}
+                        className="text-sm"
                       >
                         —
                       </Text>
                     ) : (
                       <Box
-                        className={ui(
-                          '[display:inline-block]! [background:#F5F3FF]! [color:#6D28D9]! [padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:5px]! [font-size:11.5px]! font-normal! [max-width:130px]! [word-break:break-word] [text-align:center]',
-                        )}
+                        className="inline-block bg-[#F5F3FF] text-[#6D28D9] pl-2 pr-2 pt-0.5 pb-0.5 rounded-md text-[11px] font-normal max-w-32.5 break-words text-center"
                       >
                         📁 {row.subModuleNAME}
                       </Box>
@@ -606,7 +575,7 @@ const MergedViewTable = memo(
                     ...cell,
                     color: T.text,
                   }}
-                  className={ui('[font-weight:400]')}
+                  className="font-normal"
                 >
                   {row.contentNAME}
                 </td>
@@ -616,20 +585,16 @@ const MergedViewTable = memo(
                   style={{
                     ...cell,
                   }}
-                  className={ui('[text-align:center]')}
+                  className="text-center"
                 >
                   <Box
                     bg={row.active ? T.greenLight : T.redLight}
                     color={row.active ? '#065F46' : '#991B1B'}
-                    className={ui(
-                      '[display:inline-flex]! [align-items:center]! [gap:4px]! [padding-left:10px]! [padding-right:10px]! [padding-top:3px]! [padding-bottom:3px]! [border-radius:20px]! [font-size:11px]! font-normal!',
-                    )}
+                    className="inline-flex items-center gap-1 pl-2.5 pr-2.5 pt-0.75 pb-0.75 rounded-full text-[11px] font-normal"
                   >
                     <Box
                       bg={row.active ? T.green : T.red}
-                      className={ui(
-                        '[width:6px]! [height:6px]! [border-radius:9999px]! [flex-shrink:0]!',
-                      )}
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
                     />
                     {row.active ? 'Active' : 'Inactive'}
                   </Box>
@@ -640,9 +605,9 @@ const MergedViewTable = memo(
                   style={{
                     ...cell,
                   }}
-                  className={ui('[text-align:center]')}
+                  className="text-center"
                 >
-                  <HStack className={ui('[gap:6px]! [justify-content:center]!')}>
+                  <HStack className="gap-1.5 justify-center">
                     <button
                       onClick={() => row.sno && onToggle(row.sno)}
                       disabled={isToggling || !row.sno}
@@ -653,9 +618,7 @@ const MergedViewTable = memo(
                         background: row.active ? '#FFFBEB' : '#F0FDF4',
                         opacity: isToggling || !row.sno ? 0.5 : 1,
                       }}
-                      className={ui(
-                        '[padding:3px_10px] [font-size:11.5px] [font-weight:600] [border-radius:6px] [cursor:pointer] [border:1px_solid] [transition:all_0.12s]',
-                      )}
+                      className="py-0.75 px-2.5 text-[11px] font-semibold rounded-md cursor-pointer border transition-all duration-120"
                     >
                       {row.active ? 'Deactivate' : 'Activate'}
                     </button>
@@ -669,9 +632,7 @@ const MergedViewTable = memo(
                         color: T.red,
                         opacity: isDeleting || !row.sno ? 0.5 : 1,
                       }}
-                      className={ui(
-                        '[padding:4px_8px] [border-radius:6px] [cursor:pointer] [display:flex] [align-items:center] [transition:all_0.12s]',
-                      )}
+                      className="py-1 px-2 rounded-md cursor-pointer flex items-center transition-all duration-120"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -716,49 +677,39 @@ const RoleCard = memo(
         _hover={{
           boxShadow: '0 3px 12px rgba(0,0,0,0.1)',
         }}
-        className={ui(
-          '[margin-bottom:16px]! [overflow:hidden]! [box-shadow:0_1px_4px_rgba(0,0,0,0.06)]! [transition:box-shadow_0.15s]!',
-        )}
+        className="mb-4 overflow-hidden shadow-md transition-shadow duration-150"
       >
         {/* Header */}
         <Flex
           bg={T.navyMID}
           onClick={() => setExpanded((e) => !e)}
-          className={ui(
-            '[justify-content:space-between]! [align-items:center]! [padding-left:16px]! [padding-right:16px]! [padding-top:12px]! [padding-bottom:12px]! [cursor:pointer]!',
-          )}
+          className="justify-between items-center pl-4 pr-4 pt-3 pb-3 cursor-pointer"
         >
-          <HStack className={ui('[gap:12px]!')}>
+          <HStack className="gap-3">
             <Box
-              className={ui(
-                '[width:32px]! [height:32px]! [border-radius:8px]! [background:rgba(255,255,255,0.12)]! [display:flex]! [align-items:center]! [justify-content:center]!',
-              )}
+              className="w-8 h-8 rounded-lg bg-[rgba(255,255,255,0.12)] flex items-center justify-center"
             >
               <ShieldCheck
                 size={15}
-                className={ui('[color:white]!')}
+                className="text-white"
               />
             </Box>
             <Box>
               <Text
-                className={ui('font-normal! [color:white]! [font-size:var(--font-sm)]!')}
+                className="font-normal text-white text-sm"
               >
                 {roleNAME}
               </Text>
-              <HStack className={ui('[gap:8px]! [margin-top:2px]!')}>
+              <HStack className="gap-2 mt-0.5">
                 <Box
-                  className={ui(
-                    '[padding-left:6px]! [padding-right:6px]! [padding-top:1px]! [padding-bottom:1px]! [border-radius:10px]! [font-size:10px]! font-normal! [background:rgba(255,255,255,0.15)]! [color:white]!',
-                  )}
+                  className="pl-1.5 pr-1.5 pt-0.25 pb-0.25 rounded-xl text-[11px] font-normal bg-[rgba(255,255,255,0.15)] text-white"
                 >
                   {txs.length} permission{txs.length !== 1 ? 's' : ''}
                 </Box>
                 <Box
                   bg={activeCount > 0 ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.2)'}
                   color={activeCount > 0 ? '#6EE7B7' : '#FCA5A5'}
-                  className={ui(
-                    '[padding-left:6px]! [padding-right:6px]! [padding-top:1px]! [padding-bottom:1px]! [border-radius:10px]! [font-size:10px]! font-normal!',
-                  )}
+                  className="pl-1.5 pr-1.5 pt-0.25 pb-0.25 rounded-xl text-[11px] font-normal"
                 >
                   {activeCount} active
                 </Box>
@@ -767,21 +718,17 @@ const RoleCard = memo(
           </HStack>
           <HStack
             onClick={(e) => e.stopPropagation()}
-            className={ui('[gap:8px]!')}
+            className="gap-2"
           >
             <button
               onClick={() => onEdit(roleNAME, txs)}
-              className={ui(
-                '[display:flex] [align-items:center] [gap:5px] [padding:5px_12px] [border-radius:6px] [font-size:12px] [font-weight:600] [background:rgba(255,255,255,0.12)] [color:white] [border:1px_solid_rgba(255,255,255,0.2)] [cursor:pointer] [transition:background_0.12s]',
-              )}
+              className="flex items-center gap-1.25 py-1.25 px-3 rounded-md text-xs font-semibold bg-[rgba(255,255,255,0.12)] text-white border border-[rgba(255,255,255,0.2)] cursor-pointer transition-colors duration-120"
             >
               <Edit2 size={12} /> Edit
             </button>
             <button
               onClick={() => setExpanded((e) => !e)}
-              className={ui(
-                '[display:flex] [align-items:center] [gap:5px] [padding:5px_12px] [border-radius:6px] [font-size:12px] [font-weight:600] [background:rgba(255,255,255,0.08)] [color:rgba(255,255,255,0.7)] [border:1px_solid_rgba(255,255,255,0.12)] [cursor:pointer] [transition:background_0.12s]',
-              )}
+              className="flex items-center gap-1.25 py-1.25 px-3 rounded-md text-xs font-semibold bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.7)] border border-[rgba(255,255,255,0.12)] cursor-pointer transition-colors duration-120"
             >
               {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
               {expanded ? 'Hide' : 'Show'}
@@ -1096,7 +1043,7 @@ export default function RoleTranCreationPage() {
 
   return (
     <Box
-      className={ui('role-workspace')}
+      className="font-normal [&_table]:w-full [&_table]:border-collapse [&_th]:bg-slate-50 [&_th]:px-3.5 [&_th]:py-row [&_th]:text-xs [&_th]:tracking-wide [&_th]:text-muted [&_th]:uppercase [&_td]:border-b [&_td]:border-slate-100 [&_td]:px-3.5 [&_td]:py-row [&_td]:text-sm [&_tbody_tr:hover]:bg-brand-soft [&_button]:min-h-9 [&_button]:rounded-lg [&_[role=tab]]:min-h-11 [&_[role=tab][data-selected]]:bg-brand-soft [&_[role=tab][data-selected]]:text-brand"
       bg={T.bgCard}
       rounded={T.radiusLg}
       shadow="sm"
@@ -1111,7 +1058,7 @@ export default function RoleTranCreationPage() {
           borderBottom={`2px solid ${T.border}`}
           bg={T.bg}
           borderRadius={`${T.radiusMd} ${T.radiusMd} 0 0`}
-          className={ui('[padding:4px]! [gap:4px]!')}
+          className="p-1 gap-1"
         >
           {[
             {
@@ -1128,9 +1075,7 @@ export default function RoleTranCreationPage() {
             <Tabs.Trigger
               key={tab.value}
               value={tab.value}
-              className={ui(
-                '[display:flex] [align-items:center] [gap:6px] [padding:7px_16px] [border-radius:8px] [font-size:13px] [font-weight:500] [transition:all_0.15s]',
-              )}
+              className="flex items-center gap-1.5 py-1.75 px-4 rounded-lg text-sm font-semibold transition-all duration-150"
             >
               {tab.icon} {tab.label}
             </Tabs.Trigger>
@@ -1140,9 +1085,7 @@ export default function RoleTranCreationPage() {
         {/* ── CREATE TAB ──────────────────────────────────────────────────── */}
         <Tabs.Content value="create">
           <Grid
-            className={ui(
-              '[grid-template-columns:1fr]! md:[grid-template-columns:1fr_1.6fr]! [gap:20px]! [padding:16px]!',
-            )}
+            className="grid-cols-1 md:grid-cols-[1fr_1.6fr] gap-3 p-4"
           >
             {/* LEFT: form + tree */}
             <GridItem>
@@ -1150,25 +1093,23 @@ export default function RoleTranCreationPage() {
                 bg={T.bg}
                 rounded={T.radiusLg}
                 border={`1px solid ${T.border}`}
-                className={ui('[padding:16px]! [box-shadow:0_1px_3px_rgba(0,0,0,0.05)]!')}
+                className="p-4 shadow-sm"
               >
                 {/* Section header */}
-                <HStack className={ui('[gap:8px]! [margin-bottom:16px]!')}>
+                <HStack className="gap-2 mb-4">
                   <Box
                     bg={T.navyMID}
-                    className={ui(
-                      '[width:28px]! [height:28px]! [border-radius:7px]! [display:flex]! [align-items:center]! [justify-content:center]! [flex-shrink:0]!',
-                    )}
+                    className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
                   >
                     <ShieldCheck
                       size={14}
-                      className={ui('[color:white]!')}
+                      className="text-white"
                     />
                   </Box>
                   <Box>
                     <Text
                       color={T.text}
-                      className={ui('[font-size:var(--font-sm)]! font-normal!')}
+                      className="text-sm font-normal"
                     >
                       {editingRole
                         ? `Editing: ${editingRole.roleNAME}`
@@ -1179,7 +1120,7 @@ export default function RoleTranCreationPage() {
                     {editingRole && (
                       <Text
                         color={T.orange}
-                        className={ui('[font-size:var(--font-xs)]!')}
+                        className="text-xs"
                       >
                         ⚠ Editing existing role permissions
                       </Text>
@@ -1187,23 +1128,21 @@ export default function RoleTranCreationPage() {
                   </Box>
                 </HStack>
 
-                <VStack className={ui('[gap:16px]! [align-items:stretch]!')}>
+                <VStack className="gap-4 items-stretch">
                   {/* Role selector */}
                   <Box>
                     <Text
                       color={T.textSub}
-                      className={ui(
-                        '[font-size:var(--font-xs)]! font-normal! [margin-bottom:6px]! [text-transform:uppercase]! [letter-spacing:0.05em]!',
-                      )}
+                      className="text-xs font-normal mb-1.5 uppercase tracking-wide"
                     >
                       Role *
                     </Text>
                     {loadingRoles ? (
-                      <Flex className={ui('[align-items:center]! [gap:8px]!')}>
+                      <Flex className="items-center gap-2">
                         <Spinner size="sm" />
                         <Text
                           color={T.textMuted}
-                          className={ui('[font-size:var(--font-xs)]!')}
+                          className="text-xs"
                         >
                           Loading roles…
                         </Text>
@@ -1228,9 +1167,7 @@ export default function RoleTranCreationPage() {
                             setSelectedRoleNAME('');
                           }
                         }}
-                        className={ui(
-                          '[width:100%] [padding:8px_12px] [font-size:13px] [outline:none] [cursor:pointer]',
-                        )}
+                        className="w-full py-2 px-3 text-sm outline-none cursor-pointer"
                       >
                         <option value="">Select role…</option>
                         {roles.map((r) => (
@@ -1253,9 +1190,7 @@ export default function RoleTranCreationPage() {
                       border: `1px solid ${active ? '#A7F3D0' : T.border}`,
                       color: active ? '#065F46' : T.textMID,
                     }}
-                    className={ui(
-                      '[display:flex] [align-items:center] [padding:12px] [gap:8px] [cursor:pointer] [user-select:none] [padding:7px_10px] [transition:all_0.15s] [font-size:13px] [font-weight:500]',
-                    )}
+                    className="flex items-center p-3 gap-2 cursor-pointer select-none py-1.75 px-2.5 transition-all duration-150 text-sm font-semibold"
                   >
                     <input
                       type="checkbox"
@@ -1264,7 +1199,7 @@ export default function RoleTranCreationPage() {
                       style={{
                         accentColor: T.green,
                       }}
-                      className={ui('[width:14px] [padding:12px] [height:14px]')}
+                      className="w-3.5 p-3 h-3.5"
                     />
                     Active Permission
                   </label>
@@ -1274,15 +1209,11 @@ export default function RoleTranCreationPage() {
                   {/* Permission tree */}
                   <Box>
                     <HStack
-                      className={ui(
-                        '[justify-content:space-between]! [margin-bottom:8px]!',
-                      )}
+                      className="justify-between mb-2"
                     >
                       <Text
                         color={T.textSub}
-                        className={ui(
-                          '[font-size:var(--font-xs)]! font-normal! [text-transform:uppercase]! [letter-spacing:0.05em]!',
-                        )}
+                        className="text-xs font-normal uppercase tracking-wide"
                       >
                         Permissions
                       </Text>
@@ -1290,9 +1221,7 @@ export default function RoleTranCreationPage() {
                         <Box
                           bg={T.accentLight}
                           color={T.accent}
-                          className={ui(
-                            '[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:10px]! font-normal!',
-                          )}
+                          className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal"
                         >
                           {selectedContentIDs.size} selected
                         </Box>
@@ -1314,20 +1243,16 @@ export default function RoleTranCreationPage() {
                           borderRadius: '4px',
                         },
                       }}
-                      className={ui(
-                        '[max-height:340px]! [overflow-y:auto]! [padding:8px]!',
-                      )}
+                      className="max-h-85 overflow-y-auto p-2"
                     >
                       {!menu.length ? (
                         <Flex
-                          className={ui(
-                            '[justify-content:center]! [align-items:center]! [height:80px]! [gap:8px]!',
-                          )}
+                          className="justify-center items-center h-20 gap-2"
                         >
                           <Spinner size="sm" />
                           <Text
                             color={T.textMuted}
-                            className={ui('[font-size:var(--font-xs)]!')}
+                            className="text-xs"
                           >
                             Loading permissions…
                           </Text>
@@ -1355,9 +1280,7 @@ export default function RoleTranCreationPage() {
                       background: isFormValID ? T.navyMID : T.border,
                       color: isFormValID ? 'white' : T.textMuted,
                     }}
-                    className={ui(
-                      '[display:flex] [align-items:center] [justify-content:center] [gap:7px] [width:100%] [padding:8px_16px] [font-size:13px] [font-weight:600] [border:none] [transition:all_0.15s]',
-                    )}
+                    className="flex items-center justify-center gap-1.75 w-full py-2 px-4 text-sm font-semibold border-0 transition-all duration-150"
                   >
                     <Plus size={15} />
                     {editingIndex !== null ? 'Update Row' : 'Add Row(s)'}
@@ -1371,9 +1294,7 @@ export default function RoleTranCreationPage() {
                         color: T.textMID,
                         border: `1px solid ${T.border}`,
                       }}
-                      className={ui(
-                        '[width:100%] [padding:7px_16px] [font-size:13px] [font-weight:500] [cursor:pointer] [background:transparent] [transition:all_0.15s]',
-                      )}
+                      className="w-full py-1.75 px-4 text-sm font-semibold cursor-pointer bg-transparent transition-all duration-150"
                     >
                       Cancel Edit
                     </button>
@@ -1388,35 +1309,29 @@ export default function RoleTranCreationPage() {
                 border={`1px solid ${T.border}`}
                 rounded={T.radiusLg}
                 bg={T.bgCard}
-                className={ui(
-                  '[padding:12px]! [height:100%]! [box-shadow:0_1px_3px_rgba(0,0,0,0.05)]!',
-                )}
+                className="p-3 h-full shadow-sm"
               >
                 <HStack
-                  className={ui('[justify-content:space-between]! [margin-bottom:12px]!')}
+                  className="justify-between mb-3"
                 >
-                  <HStack className={ui('[gap:8px]!')}>
+                  <HStack className="gap-2">
                     <Text
                       color={T.text}
-                      className={ui('[font-size:var(--font-sm)]! font-normal!')}
+                      className="text-sm font-normal"
                     >
                       Staged Transactions
                     </Text>
                     <Box
                       bg={rows.length ? T.accentLight : T.bg}
                       color={rows.length ? T.accent : T.textMuted}
-                      className={ui(
-                        '[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:11px]! font-normal!',
-                      )}
+                      className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal"
                     >
                       {rows.length}
                     </Box>
                     {editingRole && (
                       <Box
                         color={T.orange}
-                        className={ui(
-                          '[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:10px]! font-normal! [background:#FFFBEB]!',
-                        )}
+                        className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal bg-[#FFFBEB]"
                       >
                         Editing Role
                       </Box>
@@ -1428,9 +1343,7 @@ export default function RoleTranCreationPage() {
                       style={{
                         color: T.textMuted,
                       }}
-                      className={ui(
-                        '[font-size:11.5px] [cursor:pointer] [background:none] [border:none] [padding:2px_6px]',
-                      )}
+                      className="text-[11px] cursor-pointer bg-transparent border-0 py-0.5 px-1.5"
                     >
                       Clear all
                     </button>
@@ -1441,36 +1354,30 @@ export default function RoleTranCreationPage() {
                   <Flex
                     direction="column"
                     color={T.textMuted}
-                    className={ui(
-                      '[justify-content:center]! [align-items:center]! [height:200px]! [gap:12px]!',
-                    )}
+                    className="justify-center items-center h-50 gap-3"
                   >
                     <Box
                       bg={T.bg}
-                      className={ui(
-                        '[width:44px]! [height:44px]! [border-radius:12px]! [display:flex]! [align-items:center]! [justify-content:center]!',
-                      )}
+                      className="w-11 h-11 rounded-xl flex items-center justify-center"
                     >
                       <AlertCircle
                         size={20}
                         color={T.textMuted}
                       />
                     </Box>
-                    <Text className={ui('[font-size:var(--font-sm)]!')}>
+                    <Text className="text-sm">
                       No rows added yet
                     </Text>
                     <Text
                       color={T.textMuted}
-                      className={ui(
-                        '[font-size:var(--font-xs)]! [text-align:center]! [max-width:200px]!',
-                      )}
+                      className="text-xs text-center max-w-50"
                     >
                       Select a role and permissions, then click "Add Row(s)"
                     </Text>
                   </Flex>
                 ) : (
-                  <VStack className={ui('[align-items:stretch]! [gap:16px]!')}>
-                    <Box className={ui('[overflow-x:auto]!')}>
+                  <VStack className="items-stretch gap-4">
+                    <Box className="overflow-x-auto">
                       <CustomTable
                         columns={[
                           {
@@ -1495,9 +1402,7 @@ export default function RoleTranCreationPage() {
                               <Box
                                 bg={row.ACTIVE ? T.greenLight : T.redLight}
                                 color={row.ACTIVE ? '#065F46' : '#991B1B'}
-                                className={ui(
-                                  '[display:inline-block]! [padding-left:8px]! [padding-right:8px]! [padding-top:1px]! [padding-bottom:1px]! [border-radius:10px]! [font-size:11px]! font-normal!',
-                                )}
+                                className="inline-block pl-2 pr-2 pt-0.25 pb-0.25 rounded-xl text-[11px] font-normal"
                               >
                                 {row.ACTIVE ? 'Yes' : 'No'}
                               </Box>
@@ -1508,7 +1413,7 @@ export default function RoleTranCreationPage() {
                             header: 'Actions',
                             render: (_row, IDx) => (
                               <HStack
-                                className={ui('[gap:4px]! [justify-content:center]!')}
+                                className="gap-1 justify-center"
                               >
                                 <button
                                   onClick={() => handleEditRow(IDx)}
@@ -1517,9 +1422,7 @@ export default function RoleTranCreationPage() {
                                     color: T.accent,
                                     border: `1px solid ${T.accentMID}`,
                                   }}
-                                  className={ui(
-                                    '[padding:3px_8px] [font-size:11.5px] [border-radius:5px] [cursor:pointer] [font-weight:600]',
-                                  )}
+                                  className="py-0.75 px-2 text-[11px] rounded-md cursor-pointer font-semibold"
                                 >
                                   Edit
                                 </button>
@@ -1530,9 +1433,7 @@ export default function RoleTranCreationPage() {
                                     color: T.red,
                                     border: `1px solid #FECACA`,
                                   }}
-                                  className={ui(
-                                    '[padding:4px_7px] [border-radius:5px] [cursor:pointer] [display:flex] [align-items:center]',
-                                  )}
+                                  className="py-1 px-1.75 rounded-md cursor-pointer flex items-center"
                                 >
                                   <Trash2 size={13} />
                                 </button>
@@ -1548,9 +1449,7 @@ export default function RoleTranCreationPage() {
                     </Box>
                     <HStack
                       borderTop={`1px solid ${T.border}`}
-                      className={ui(
-                        '[justify-content:flex-end]! [gap:8px]! [padding-top:4px]!',
-                      )}
+                      className="justify-end gap-2 pt-1"
                     >
                       <button
                         onClick={handleSubmit}
@@ -1561,9 +1460,7 @@ export default function RoleTranCreationPage() {
                           color: isInserting ? T.textMuted : 'white',
                           cursor: isInserting ? 'not-allowed' : 'pointer',
                         }}
-                        className={ui(
-                          '[display:flex] [align-items:center] [gap:6px] [padding:7px_18px] [font-size:13px] [font-weight:700] [border:none] [transition:all_0.15s]',
-                        )}
+                        className="flex items-center gap-1.5 py-1.75 px-4.5 text-sm font-bold border-0 transition-all duration-150"
                       >
                         <CheckSquare size={14} />
                         {isInserting ? 'Submitting…' : 'Submit All'}
@@ -1578,12 +1475,10 @@ export default function RoleTranCreationPage() {
 
         {/* ── VIEW TAB ────────────────────────────────────────────────────── */}
         <Tabs.Content value="view">
-          <VStack className={ui('[align-items:stretch]! [gap:16px]! [padding:16px]!')}>
+          <VStack className="items-stretch gap-4 p-4">
             {isLoadingTransactions ? (
               <Flex
-                className={ui(
-                  '[justify-content:center]! [align-items:center]! [min-height:300px]! [gap:12px]!',
-                )}
+                className="justify-center items-center min-h-75 gap-3"
               >
                 <Spinner
                   size="lg"
@@ -1591,27 +1486,25 @@ export default function RoleTranCreationPage() {
                 />
                 <Text
                   color={T.textMuted}
-                  className={ui('[font-size:var(--font-sm)]!')}
+                  className="text-sm"
                 >
                   Loading permissions…
                 </Text>
               </Flex>
             ) : roleTransactions && roleTransactions.length > 0 ? (
               <>
-                <HStack className={ui('[justify-content:space-between]!')}>
-                  <HStack className={ui('[gap:8px]!')}>
+                <HStack className="justify-between">
+                  <HStack className="gap-2">
                     <Text
                       color={T.text}
-                      className={ui('[font-size:var(--font-sm)]! font-normal!')}
+                      className="text-sm font-normal"
                     >
                       Role Permissions
                     </Text>
                     <Box
                       bg={T.accentLight}
                       color={T.accent}
-                      className={ui(
-                        '[padding-left:8px]! [padding-right:8px]! [padding-top:2px]! [padding-bottom:2px]! [border-radius:10px]! [font-size:11px]! font-normal!',
-                      )}
+                      className="pl-2 pr-2 pt-0.5 pb-0.5 rounded-xl text-[11px] font-normal"
                     >
                       {Object.keys(groupedByRole).length} roles ·{' '}
                       {roleTransactions.length} total
@@ -1634,15 +1527,11 @@ export default function RoleTranCreationPage() {
             ) : (
               <Flex
                 direction="column"
-                className={ui(
-                  '[justify-content:center]! [align-items:center]! [min-height:300px]! [gap:12px]!',
-                )}
+                className="justify-center items-center min-h-75 gap-3"
               >
                 <Box
                   bg={T.bg}
-                  className={ui(
-                    '[width:52px]! [height:52px]! [border-radius:14px]! [display:flex]! [align-items:center]! [justify-content:center]!',
-                  )}
+                  className="w-13 h-13 rounded-lg flex items-center justify-center"
                 >
                   <ShieldCheck
                     size={24}
@@ -1651,13 +1540,13 @@ export default function RoleTranCreationPage() {
                 </Box>
                 <Text
                   color={T.textMID}
-                  className={ui('[font-size:var(--font-sm)]! font-normal!')}
+                  className="text-sm font-normal"
                 >
                   No permissions found
                 </Text>
                 <Text
                   color={T.textMuted}
-                  className={ui('[font-size:var(--font-xs)]!')}
+                  className="text-xs"
                 >
                   Create role transactions in the Create tab
                 </Text>

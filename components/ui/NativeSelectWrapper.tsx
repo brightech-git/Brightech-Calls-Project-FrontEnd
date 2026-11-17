@@ -1,6 +1,7 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { cn } from '@/lib/utils';
+import { controlClass } from '@/lib/styles';
 import React, { forwardRef } from 'react';
 import { NativeSelect } from '@chakra-ui/react';
 import { For } from '@chakra-ui/react';
@@ -90,23 +91,8 @@ export const NativeSelectWrapper = forwardRef<
             handleOpenOptions(e);
             onFocus?.();
           }}
-          className={ui(
-            'form-control ' +
-              ui(
-                className +
-                  ' ' +
-                  '[min-height:var(--control-height)]! [border-radius:10px]!',
-              ),
-          )}
-          css={{
-            backgroundColor: 'var(--surface)',
-            color: 'var(--text-main)',
-            border: '1px solid #cbd5e1',
-            borderRadius: '10px',
-            height: 'var(--control-height)',
-            fontSize: fontSize,
-            ...css,
-          }}
+          className={cn(controlClass, className)}
+          css={css}
         >
           <For each={items}>
             {(item) => (

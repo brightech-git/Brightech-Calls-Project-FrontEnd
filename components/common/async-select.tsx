@@ -1,4 +1,5 @@
 'use client';
+import { buttonClass } from '@/lib/styles';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { SelectField, type FieldMeta, type SelectOption } from './fields';
@@ -37,7 +38,7 @@ export function AsyncSelectField({
       ? [selected, ...options]
       : options;
   return (
-    <div className="async-select">
+    <div className="grid gap-1.5">
       <TextField
         label={`Search ${meta.label.toLowerCase()}`}
         value={search}
@@ -59,7 +60,7 @@ export function AsyncSelectField({
       />
       {query.isFetching && (
         <span
-          className="field-hint"
+          className="text-[11px] text-muted"
           role="status"
         >
           Loading options…
@@ -67,13 +68,13 @@ export function AsyncSelectField({
       )}
       {query.isError && (
         <div
-          className="field-error"
+          className="text-[11px] text-red-600"
           role="alert"
         >
           {getApiErrorMessage(query.error)}{' '}
           <button
             type="button"
-            className="button"
+            className={buttonClass}
             onClick={() => query.refetch()}
           >
             Retry

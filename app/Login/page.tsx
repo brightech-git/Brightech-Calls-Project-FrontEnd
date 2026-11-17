@@ -1,6 +1,7 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getApiErrorMessage } from '@/lib/api/errors';
@@ -36,12 +37,12 @@ export default function LoginPage() {
     );
   };
   return (
-    <main className={ui('login-page')}>
+    <main className="grid min-h-dvh grid-cols-2 bg-white max-md:block">
       <section
-        className={ui('login-story')}
+        className="relative flex min-h-dvh flex-col overflow-hidden bg-[radial-gradient(ellipse_at_0%_100%,#244784,transparent_65%)] bg-sidebar p-[clamp(32px,5vw,76px)] text-white max-md:hidden"
         aria-label="Brightech Calls"
       >
-        <div className={ui('login-brand')}>
+        <div className="flex items-center gap-3 [&>span]:grid [&>span]:size-11 [&>span]:place-items-center [&>span]:rounded-xl [&>span]:bg-brand [&>strong]:text-xl [&>strong]:tracking-tight [&_em]:text-blue-200 [&_em]:not-italic">
           <span>
             <Headphones size={24} />
           </span>
@@ -49,8 +50,8 @@ export default function LoginPage() {
             Brightech <em>Calls</em>
           </strong>
         </div>
-        <div className={ui('login-story-content')}>
-          <div className={ui('login-story-tag')}>A BETTER DAY AT WORK</div>
+        <div className="relative z-1 my-auto py-20 [&>h1]:mb-6 [&>h1]:text-[clamp(34px,3.8vw,56px)] [&>h1]:leading-[1.12] [&>h1]:tracking-tight [&>p]:max-w-sm [&>p]:text-sm [&>p]:leading-8 [&>p]:text-blue-100/80">
+          <div className="mb-6 text-[10px] tracking-widest text-blue-200">A BETTER DAY AT WORK</div>
           <h1>
             Great service.
             <br />
@@ -60,7 +61,7 @@ export default function LoginPage() {
             A focused workspace for your clients, projects, and the people who keep things
             moving.
           </p>
-          <div className={ui('login-features')}>
+          <div className="mt-9 grid gap-4 text-sm text-blue-100 [&>span]:flex [&>span]:items-center [&>span]:gap-3 [&_svg]:text-blue-300">
             <span>
               <Workflow size={18} />
               Keep every task on track
@@ -75,23 +76,23 @@ export default function LoginPage() {
             </span>
           </div>
         </div>
-        <div className={ui('login-story-footer')}>
+        <div className="text-xs text-blue-200/70">
           Brightech Software · Calls Management
         </div>
       </section>
-      <section className={ui('login-form-side')}>
-        <div className={ui('login-card')}>
-          <div className={ui('login-mobile-brand')}>
+      <section className="relative flex min-h-dvh flex-col items-center justify-center px-10 py-12 max-md:px-7">
+        <div className="w-full max-w-[370px] [&>h2]:mt-3 [&>h2]:mb-2 [&>h2]:text-3xl [&>h2]:tracking-tight">
+          <div className="mb-11 hidden items-center gap-2.5 text-lg text-brand max-md:flex">
             <Headphones size={23} />
             Brightech Calls
           </div>
-          <div className={ui('ui-eyebrow')}>YOUR WORKSPACE AWAITS</div>
+          <div className="text-[10px] tracking-widest text-muted uppercase">YOUR WORKSPACE AWAITS</div>
           <h2>Welcome back</h2>
-          <p className={ui('login-intro')}>
+          <p className="mb-8 text-sm leading-7 text-muted">
             Sign in to manage your calls and assignments.
           </p>
           <form onSubmit={handleLogin}>
-            <div className={ui('login-field')}>
+            <div className="mb-5 [&>label]:mb-2 [&>label]:block [&>label]:text-xs [&>label]:text-muted [&_input]:h-12 [&_input]:w-full [&_input]:rounded-lg [&_input]:border [&_input]:border-line [&_input]:bg-white [&_input]:px-3.5 [&_input]:text-sm [&_input]:outline-none [&_input:focus]:border-brand [&_input:focus]:ring-3 [&_input:focus]:ring-brand-soft">
               <label htmlFor="login-username">Username</label>
               <input
                 id="login-username"
@@ -103,9 +104,9 @@ export default function LoginPage() {
                 disabled={isPending}
               />
             </div>
-            <div className={ui('login-field')}>
+            <div className="mb-5 [&>label]:mb-2 [&>label]:block [&>label]:text-xs [&>label]:text-muted [&_input]:h-12 [&_input]:w-full [&_input]:rounded-lg [&_input]:border [&_input]:border-line [&_input]:bg-white [&_input]:px-3.5 [&_input]:text-sm [&_input]:outline-none [&_input:focus]:border-brand [&_input:focus]:ring-3 [&_input:focus]:ring-brand-soft">
               <label htmlFor="login-password">Password</label>
-              <div className={ui('login-password-wrap')}>
+              <div className="relative [&>input]:pr-12 [&>button]:absolute [&>button]:top-1.5 [&>button]:right-1.5 [&>button]:grid [&>button]:size-9 [&>button]:place-items-center [&>button]:rounded-md [&>button]:border-0 [&>button]:bg-transparent [&>button]:text-muted">
                 <input
                   id="login-password"
                   autoComplete="current-password"
@@ -130,14 +131,14 @@ export default function LoginPage() {
             {error && (
               <p
                 id="login-error"
-                className={ui('login-error')}
+                className="rounded-lg bg-rose-50 px-3 py-2.5 text-sm text-rose-700"
                 role="alert"
               >
                 {error}
               </p>
             )}
             <button
-              className={ui('login-submit')}
+              className={cn(buttonClass, buttonVariants.primary, 'mt-7 h-12 w-full')}
               type="submit"
               disabled={isPending}
             >
@@ -145,11 +146,11 @@ export default function LoginPage() {
               <ArrowRight size={18} />
             </button>
           </form>
-          <p className={ui('login-help')}>
+          <p className="mt-6 text-center text-xs leading-7 text-muted">
             Need access? Contact your workspace administrator.
           </p>
         </div>
-        <p className={ui('login-copyright')}>
+        <p className="absolute bottom-7 text-[10px] text-muted">
           Brightech Calls · Built for better service
         </p>
       </section>

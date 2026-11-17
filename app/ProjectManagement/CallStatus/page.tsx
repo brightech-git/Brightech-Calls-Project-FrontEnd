@@ -1,7 +1,8 @@
 'use client';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import { formatDateTime } from '@/utils/format/date';
 
-import { ui } from '@/utils/ui';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
@@ -73,9 +74,7 @@ const statusBadge = (label?: string | null) => {
         background: bg,
         color,
       }}
-      className={ui(
-        '[padding:2px_10px] [border-radius:20px] [font-size:var(--font-xs)] [font-weight:600]',
-      )}
+      className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
     >
       {s}
     </span>
@@ -119,7 +118,7 @@ const COLUMNS: TableColumn<CallStatusListItem_Table>[] = [
       row.lastStatus ? (
         statusBadge(row.lastStatus as string)
       ) : (
-        <span className={ui('[color:var(--text-muted)] [font-size:var(--font-sm)]')}>
+        <span className="text-muted text-sm">
           No status yet
         </span>
       ),
@@ -133,7 +132,7 @@ export default function CallStatusPage() {
   return (
     <Suspense
       fallback={
-        <div className={ui('[padding:48px] [text-align:center]')}>Loading...</div>
+        <div className="p-12 text-center">Loading...</div>
       }
     >
       <CallStatusPageInner />
@@ -236,23 +235,23 @@ function CallStatusPageInner() {
     const bookingMedia = booking?.media ?? [];
     return (
       <>
-        <div className={ui('cs-wrap')}>
-          <div className={ui('cs-head')}>
+        <div className="rounded-lg border border-line bg-white overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-white px-4 py-3">
             <div>
-              <div className={ui('cs-title')}>Call Status</div>
-              <div className={ui('cs-sub')}>Ticket ID: {booking?.tktId ?? viewTktId}</div>
+              <div className="text-xl tracking-tight">Call Status</div>
+              <div className="mt-1 text-sm text-muted">Ticket ID: {booking?.tktId ?? viewTktId}</div>
             </div>
 
-            <div className={ui('cs-head-actions')}>
+            <div className="flex flex-wrap items-center gap-2">
               <button
-                className={ui('cs-btn-primary')}
+                className={cn(buttonClass, buttonVariants.primary)}
                 onClick={openAdd}
               >
                 <Plus size={13} />
                 Add Status
               </button>
               <button
-                className={ui('cs-back-btn')}
+                className={buttonClass}
                 onClick={() => {
                   setViewTktId(null);
                   router.replace('/ProjectManagement/CallStatus');
@@ -263,18 +262,16 @@ function CallStatusPageInner() {
             </div>
           </div>
 
-          <div className={ui('cs-body')}>
+          <div className="p-4">
             {detailLoading ? (
               <div
-                className={ui(
-                  '[padding:48px] [text-align:center] [color:var(--text-muted)]',
-                )}
+                className="p-12 text-center text-muted"
               >
                 Loading...
               </div>
             ) : (
               <>
-                <div className={ui('cs-summary-grid')}>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
                   {(
                     [
                       ['Client', booking?.clientName],
@@ -288,10 +285,10 @@ function CallStatusPageInner() {
                   ).map(([label, val]) => (
                     <div
                       key={label}
-                      className={ui('cs-row')}
+                      className="flex flex-col items-start gap-2"
                     >
-                      <span className={ui('cs-label')}>{label}</span>
-                      <span className={ui('cs-val')}>
+                      <span className="text-xs text-muted">{label}</span>
+                      <span className="text-sm break-words text-ink">
                         {label === 'Task Status' || label === 'Last Status'
                           ? statusBadge(val as string | null)
                           : String(val ?? '—')}
@@ -302,8 +299,8 @@ function CallStatusPageInner() {
 
                 {bookingMedia.length > 0 && (
                   <>
-                    <div className={ui('cs-section-label')}>Booking attachments</div>
-                    <div className={ui('cs-media-grid')}>
+                    <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Booking attachments</div>
+                    <div className="flex flex-wrap gap-3">
                       {bookingMedia.map((item, index) => (
                         <AttachmentTile
                           key={item.id ?? index}
@@ -317,8 +314,8 @@ function CallStatusPageInner() {
 
                 {latestStatus?.media && latestStatus.media.length > 0 && (
                   <>
-                    <div className={ui('cs-section-label')}>Media (latest status)</div>
-                    <div className={ui('cs-media-grid')}>
+                    <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Media (latest status)</div>
+                    <div className="flex flex-wrap gap-3">
                       {latestStatus.media.map((m, idx) => (
                         <AttachmentTile
                           key={m.id ?? idx}
@@ -336,56 +333,46 @@ function CallStatusPageInner() {
                   </>
                 )}
 
-                <div className={ui('cs-section-label')}>Status History</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Status History</div>
 
                 {sortedStatuses.length === 0 ? (
                   <div
-                    className={ui(
-                      '[padding:16px] [color:var(--text-muted)] [font-size:var(--font-sm)]',
-                    )}
+                    className="p-4 text-muted text-sm"
                   >
                     No status updates yet.
                   </div>
                 ) : (
                   <div
-                    className={ui('[display:flex] [flex-direction:column] [gap:10px]')}
+                    className="flex flex-col gap-2.5"
                   >
                     {sortedStatuses.map((s) => (
                       <div
                         key={s.sno}
-                        className={ui('cs-history-card')}
+                        className="rounded-xl border border-line border-l-3 border-l-brand bg-white p-3"
                       >
                         <div
-                          className={ui(
-                            '[display:flex] [align-items:center] [justify-content:space-between] [margin-bottom:6px]',
-                          )}
+                          className="flex items-center justify-between mb-1.5"
                         >
                           {statusBadge(s.STATUS)}
                           <span
-                            className={ui(
-                              '[font-size:var(--font-xs)] [color:var(--text-muted)]',
-                            )}
+                            className="text-xs text-muted"
                           >
                             {s.UPDATED ? formatDateTime(s.UPDATED) : '—'}
                           </span>
                         </div>
 
                         <div
-                          className={ui(
-                            '[font-size:var(--font-sm)] [color:#34445d] [margin-bottom:4px]',
-                          )}
+                          className="text-sm text-ink mb-1"
                         >
                           By{' '}
-                          <b className={ui('[color:var(--text-main)]')}>
+                          <b className="text-ink">
                             {s.userName ?? s.userId ?? '—'}
                           </b>
                         </div>
 
                         {s.remark && (
                           <div
-                            className={ui(
-                              '[font-size:var(--font-sm)] [color:var(--text-main)] [margin-bottom:6px]',
-                            )}
+                            className="text-sm text-ink mb-1.5"
                           >
                             {s.remark}
                           </div>
@@ -403,7 +390,7 @@ function CallStatusPageInner() {
                                     },
                                   ];
                             return (
-                              <div className={ui('cs-media-grid')}>
+                              <div className="flex flex-wrap gap-3">
                                 {historyMedia.map((m, idx) => (
                                   <AttachmentTile
                                     key={idx}
@@ -432,25 +419,25 @@ function CallStatusPageInner() {
         {/* Add Status Modal */}
         {addOpen && (
           <div
-            className={ui('cs-overlay workspace-modal-overlay')}
+            className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
             onClick={(e) => e.target === e.currentTarget && setAddOpen(false)}
           >
             <div
-              className={ui('cs-modal-box workspace-modal')}
+              className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
               data-workspace-dialog
               role="dialog"
               aria-modal="true"
               aria-label="Call update details"
             >
-              <div className={ui('cs-head')}>
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-white px-4 py-3">
                 <div>
-                  <div className={ui('cs-title')}>Add Status</div>
-                  <div className={ui('cs-sub')}>
+                  <div className="text-xl tracking-tight">Add Status</div>
+                  <div className="mt-1 text-sm text-muted">
                     Ticket: {booking?.tktId ?? viewTktId}
                   </div>
                 </div>
                 <button
-                  className={ui('cs-close-btn')}
+                  className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
                   data-dialog-close
                   aria-label="Close form"
                   onClick={() => setAddOpen(false)}
@@ -460,9 +447,9 @@ function CallStatusPageInner() {
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)}>
-                <div className={ui('cs-modal-body')}>
-                  <div className={ui('cs-field-row')}>
-                    <label className={ui('cs-field-label')}>Status *</label>
+                <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Status *</label>
                     <Controller
                       name="STATUS"
                       control={control}
@@ -477,20 +464,20 @@ function CallStatusPageInner() {
                               background: '#ddd',
                               color: '#222',
                             }}
-                            className={ui('[min-width:150px]!')}
+                            className="min-w-37.5"
                           />
                         </>
                       )}
                     />
                     {errors.STATUS && (
-                      <span className={ui('cs-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.STATUS.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cs-field-row')}>
-                    <label className={ui('cs-field-label')}>Remark</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Remark</label>
                     <Controller
                       name="remark"
                       control={control}
@@ -506,14 +493,14 @@ function CallStatusPageInner() {
                       )}
                     />
                     {errors.remark && (
-                      <span className={ui('cs-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.remark.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cs-field-row')}>
-                    <label className={ui('cs-field-label')}>Attachments</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Attachments</label>
                     <MediaManager
                       value={media}
                       onChange={setMedia}
@@ -524,17 +511,17 @@ function CallStatusPageInner() {
                   </div>
                 </div>
 
-                <div className={ui('cs-modal-footer')}>
+                <div className="flex shrink-0 justify-end gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3">
                   <button
                     type="button"
-                    className={ui('cs-btn-secondary')}
+                    className={buttonClass}
                     onClick={() => setAddOpen(false)}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className={ui('cs-btn-primary')}
+                    className={cn(buttonClass, buttonVariants.primary)}
                     disabled={createMutation.isPending}
                   >
                     <Pencil size={12} />

@@ -1,6 +1,5 @@
 'use client';
 
-import { ui } from '@/utils/ui';
 import React, { useState, useEffect } from 'react';
 
 /* ------------------ CHAKRA UI ------------------ */
@@ -245,9 +244,7 @@ export default function UserRoleMaster() {
   if (loading) {
     return (
       <Box
-        className={ui(
-          '[display:flex]! [justify-content:center]! [align-items:center]! [min-height:100vh]!',
-        )}
+        className="flex justify-center items-center min-h-screen"
       >
         <Spinner
           size="xl"
@@ -257,32 +254,26 @@ export default function UserRoleMaster() {
     );
   }
   return (
-    <Box className={ui('role-workspace' + ' ' + 'font-normal!')}>
+    <Box className="[&_table]:w-full [&_table]:border-collapse [&_th]:bg-slate-50 [&_th]:px-3.5 [&_th]:py-row [&_th]:text-xs [&_th]:tracking-wide [&_th]:text-muted [&_th]:uppercase [&_td]:border-b [&_td]:border-slate-100 [&_td]:px-3.5 [&_td]:py-row [&_td]:text-sm [&_tbody_tr:hover]:bg-brand-soft [&_button]:min-h-9 [&_button]:rounded-lg [&_[role=tab]]:min-h-11 [&_[role=tab][data-selected]]:bg-brand-soft [&_[role=tab][data-selected]]:text-brand font-normal">
       <Toaster />
       <Grid
-        className={ui(
-          '[grid-template-columns:1fr]! lg:[grid-template-columns:1fr_2.5fr]! [gap:24px]!',
-        )}
+        className="grid-cols-1 lg:grid-cols-[1fr_2.5fr] gap-3"
       >
         <GridItem>
           <VStack
             // bg={theme.colors.formColor}
-            className={ui(
-              'role-panel' +
-                ' ' +
-                '[padding:24px]! [border-radius:20px]! [border:1px_solid_var(--border)]!',
-            )}
+            className="bg-white items-stretch max-sm:p-4 p-4 rounded-lg border border-line"
           >
-            <div className={ui('role-panel-heading')}>
+            <div className="mb-4 w-full text-lg tracking-tight text-ink">
               {editId ? 'Edit assignment' : 'Create assignment'}
             </div>
-            <p className={ui('role-panel-caption')}>
+            <p className="-mt-2 mb-4 text-xs text-muted">
               Choose the details below, then save your changes.
             </p>
 
             <Fieldset.Root
               size="sm"
-              className={ui('[width:100%]!')}
+              className="w-full"
             >
               <Fieldset.Content>
                 <DynamicForm
@@ -303,7 +294,7 @@ export default function UserRoleMaster() {
                 size="sm"
                 disabled={isSubmitting}
                 onClick={handleSave}
-                className={ui('[background:var(--primary)]! [color:white]!')}
+                className="bg-brand text-white"
               >
                 <AiOutlineSave /> {editId ? 'Update' : 'Save'}
               </Button>
@@ -326,14 +317,10 @@ export default function UserRoleMaster() {
         </GridItem>
 
         {/* TABLE */}
-        <GridItem className={ui('[min-width:0]!')}>
+        <GridItem className="min-w-0">
           <Box
             // bg={theme.colors.formColor}
-            className={ui(
-              'role-panel' +
-                ' ' +
-                '[padding:12px]! [border-radius:20px]! [background:white]! [border:1px_solid_var(--border)]!',
-            )}
+            className="items-stretch max-sm:p-4 p-3 rounded-lg bg-white border border-line"
           >
             {/* <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "start", sm: "center" }} mb={3} gap={2}>
                             <HStack gap={2}>
@@ -374,14 +361,14 @@ export default function UserRoleMaster() {
                   key: 'actions',
                   header: 'Actions',
                   render: (ur) => (
-                    <Box className={ui('[display:flex]! [gap:8px]!')}>
+                    <Box className="flex gap-2">
                       <FaTrash
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDelete(ur.USERID);
                         }}
                         size={14}
-                        className={ui('[cursor:pointer]! [color:red]!')}
+                        className="cursor-pointer text-red-600"
                       />
                     </Box>
                   ),

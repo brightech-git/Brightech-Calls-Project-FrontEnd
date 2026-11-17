@@ -1,7 +1,7 @@
 'use client';
+import { buttonClass } from '@/lib/styles';
 import { formatDate } from '@/utils/format/date';
 
-import { ui } from '@/utils/ui';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -106,9 +106,7 @@ const COLUMNS: TableColumn<ClientServerRecord_Table>[] = [
           background: row.active === 'Y' ? COLORS.successBg : COLORS.errorBg,
           color: row.active === 'Y' ? COLORS.success : COLORS.error,
         }}
-        className={ui(
-          '[padding:2px_10px] [border-radius:20px] [font-size:11px] [font-weight:600]',
-        )}
+        className="py-0.5 px-2.5 rounded-full text-[11px] font-semibold"
       >
         {row.active === 'Y' ? 'Active' : 'Inactive'}
       </span>
@@ -267,7 +265,7 @@ export default function ClientServerMasterPage() {
         searchPlaceholder="Search server..."
         emptyMessage="No client servers found."
         toolbarRight={
-          <div className={ui('csm-filters')}>
+          <div className="flex flex-col sm:flex-row min-w-lg items-center gap-2">
             <SelectCombobox
               value={filterClientId || undefined}
               onChange={(val) => setFilterClientId(val ?? '')}
@@ -279,7 +277,7 @@ export default function ClientServerMasterPage() {
                 ...clientItems,
               ]}
               placeholder="Filter by client"
-              className={ui('[min-width:180px]!')}
+              className="min-w-45"
             />
 
             <NativeSelectWrapper
@@ -287,11 +285,11 @@ export default function ClientServerMasterPage() {
               onChange={(e) => setFilterActive(e.target.value)}
               items={ACTIVE_FILTER_OPTIONS}
               placeholder="Filter by status"
-              className={ui('[max-width:100px]!')}
+              className="max-w-25"
             />
 
             <button
-              className={ui('csm-btn-primary')}
+              className="flex flex-row bg-brand text-xs items-center gap-1 h-9 p-1 min-w-[100px] rounded-sm text-white"
               onClick={openCreate}
             >
               <Plus size={13} />
@@ -305,23 +303,23 @@ export default function ClientServerMasterPage() {
 
       {open && (
         <div
-          className={ui('csm-modal-overlay workspace-modal-overlay')}
+          className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
           <div
-            className={ui('csm-modal-box workspace-modal')}
+            className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
             data-workspace-dialog
             role="dialog"
             aria-modal="true"
             aria-label="Client server details"
           >
-            <div className={ui('csm-modal-head')}>
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-line bg-slate-50/60 px-4 py-3 max-sm:px-3">
               <div>
-                <div className={ui('csm-modal-title')}>
+                <div className="text-lg tracking-tight text-ink">
                   {editRow ? 'Edit Client Server' : 'Add Client Server'}
                 </div>
 
-                <div className={ui('csm-modal-sub')}>
+                <div className="mt-1 text-xs text-muted">
                   {editRow
                     ? `Editing: ${editRow.serverName}`
                     : 'Fill client server details'}
@@ -329,7 +327,7 @@ export default function ClientServerMasterPage() {
               </div>
 
               <button
-                className={ui('csm-close-btn')}
+                className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
                 data-dialog-close
                 aria-label="Close form"
                 onClick={() => setOpen(false)}
@@ -339,10 +337,10 @@ export default function ClientServerMasterPage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className={ui('csm-modal-body')}>
-                <div className={ui('csm-grid workspace-form-grid')}>
-                  <div className={ui('csm-field-row')}>
-                    <label className={ui('csm-field-label')}>Client *</label>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Client *</label>
                     <Controller
                       name="CLIENTID"
                       control={control}
@@ -355,19 +353,19 @@ export default function ClientServerMasterPage() {
                           editId={editRow?.sno ?? null}
                           items={clientItems}
                           placeholder="Select client"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.CLIENTID && (
-                      <span className={ui('csm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.CLIENTID.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('csm-field-row')}>
-                    <label className={ui('csm-field-label')}>Server Name *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Server Name *</label>
                     <Controller
                       name="SERVERNAME"
                       control={control}
@@ -380,19 +378,19 @@ export default function ClientServerMasterPage() {
                           onChange={(_, value) => field.onChange(value)}
                           onEnter={() => focusNext('SERVERNAME')}
                           placeholder="Enter server name"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.SERVERNAME && (
-                      <span className={ui('csm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.SERVERNAME.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('csm-field-row')}>
-                    <label className={ui('csm-field-label')}>IP Address *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">IP Address *</label>
                     <Controller
                       name="IPADDRESS"
                       control={control}
@@ -405,19 +403,19 @@ export default function ClientServerMasterPage() {
                           onChange={(_, value) => field.onChange(value)}
                           onEnter={() => focusNext('IPADDRESS')}
                           placeholder="Enter IP address"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.IPADDRESS && (
-                      <span className={ui('csm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.IPADDRESS.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('csm-field-row')}>
-                    <label className={ui('csm-field-label')}>Password</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Password</label>
                     <Controller
                       name="PASSWORD"
                       control={control}
@@ -430,19 +428,19 @@ export default function ClientServerMasterPage() {
                           onChange={(_, value) => field.onChange(value)}
                           onEnter={() => focusNext('PASSWORD')}
                           placeholder="Enter password"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.PASSWORD && (
-                      <span className={ui('csm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.PASSWORD.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('csm-field-row')}>
-                    <label className={ui('csm-field-label')}>Status *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Status *</label>
                     <Controller
                       name="ACTIVE"
                       control={control}
@@ -459,12 +457,12 @@ export default function ClientServerMasterPage() {
                             bg: '#EEE',
                             color: '#222',
                           }}
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.ACTIVE && (
-                      <span className={ui('csm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ACTIVE.message}
                       </span>
                     )}
@@ -472,10 +470,10 @@ export default function ClientServerMasterPage() {
                 </div>
               </div>
 
-              <div className={ui('csm-modal-footer')}>
+              <div className="flex shrink-0 justify-end gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3">
                 <button
                   type="button"
-                  className={ui('csm-btn-secondary')}
+                  className={buttonClass}
                   onClick={() => setOpen(false)}
                 >
                   Cancel
@@ -483,7 +481,7 @@ export default function ClientServerMasterPage() {
 
                 <button
                   type="submit"
-                  className={ui('csm-btn-primary')}
+                  className="flex flex-row bg-brand text-xs items-center gap-1 h-9 p-1 min-w-[100px] rounded-sm text-white"
                   disabled={isPending}
                 >
                   <Pencil size={12} />

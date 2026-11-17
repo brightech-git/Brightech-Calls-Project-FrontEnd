@@ -1,4 +1,6 @@
 'use client';
+import { cn } from '@/lib/utils';
+import { buttonClass, buttonVariants } from '@/lib/styles';
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { LoaderCircle } from 'lucide-react';
 export const Button = forwardRef<
@@ -28,13 +30,13 @@ export const Button = forwardRef<
       type={type}
       disabled={disabled || loading}
       aria-busy={!!loading}
-      className={`button ${className}`}
+      className={cn(buttonClass, buttonVariants[variant], className)}
       data-variant={variant}
     >
       {loading && (
         <LoaderCircle
-          size={16}
-          className="loading-spin"
+          size={14}
+          className="animate-spin motion-reduce:animate-none"
           aria-hidden="true"
         />
       )}

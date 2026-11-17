@@ -1,11 +1,12 @@
 'use client';
+import { cn } from '@/lib/utils';
+import { buttonClass, buttonVariants, statusTones, type StatusTone } from '@/lib/styles';
 import { formatDate } from '@/utils/format/date';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, Headphones, CheckCircle2, Clock3, CircleDot } from 'lucide-react';
-import { ui } from '@/utils/ui';
 import { usePageHeader } from '@/context/PageHeaderContext';
 import { useSession } from '@/hooks/Auth/useSession';
 import { useAccessibleMenu } from '@/hooks/ApiHooks/Menu/useAccessibleMenu';
@@ -24,7 +25,7 @@ const columns: TableColumn<DashboardCall>[] = [
     key: 'tktId',
     header: 'Ticket',
     sortable: true,
-    render: (row) => <span className={ui('ticket-number')}>#{row.tktId ?? row.sno}</span>,
+    render: (row) => <span className="text-brand">#{row.tktId ?? row.sno}</span>,
   },
   {
     key: 'tktDate',
@@ -185,9 +186,9 @@ export default function DashboardPage() {
   ];
   return (
     <>
-      <section className={ui('dashboard-welcome')}>
+      <section className="mb-2 flex items-center justify-between gap-3 overflow-hidden rounded-lg border border-line bg-linear-to-r from-white to-brand-soft p-2 [&_h1]:my-2 [&_h1]:text-xl [&_h1]:leading-tight [&_h1]:tracking-tight [&_p]:text-sm [&_p]:text-muted max-lg:flex-col max-lg:items-start max-sm:p-2 [&_h1]:max-sm:text-xl">
         <div>
-          <div className={ui('ui-eyebrow')}>
+          <div className="text-[10px] tracking-widest text-muted uppercase">
             {isAdmin
               ? 'ADMINISTRATOR OVERVIEW'
               : isClient
@@ -203,9 +204,9 @@ export default function DashboardPage() {
                 : 'Track your assigned calls and resolutions.'}
           </p>
         </div>
-        <div className={ui('dashboard-welcome-actions')}>
+        <div className="flex shrink-0 flex-wrap gap-2.5">
           <button
-            className={ui('ui-button')}
+            className={buttonClass}
             onClick={refresh}
             disabled={query.isFetching || users.isFetching}
           >
@@ -214,7 +215,7 @@ export default function DashboardPage() {
           </button>
           {allowed('/ProjectManagement/TaskAssignment') && (
             <Link
-              className={ui('ui-button primary')}
+              className={cn(buttonClass, buttonVariants.primary)}
               href="/ProjectManagement/TaskAssignment"
             >
               Calls booking
@@ -224,14 +225,14 @@ export default function DashboardPage() {
       </section>
       {query.isError && (
         <div
-          className={ui('ui-error')}
+          className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-4 text-sm text-rose-800"
           role="alert"
         >
           {query.error instanceof Error
             ? query.error.message
             : 'Calls could not be loaded.'}
           <button
-            className={ui('ui-button')}
+            className={buttonClass}
             onClick={refresh}
           >
             Retry
@@ -239,8 +240,8 @@ export default function DashboardPage() {
         </div>
       )}
       {isAdmin && (
-        <section className="mb-7 space-y-4">
-          <div className={ui('dashboard-section-heading')}>
+        <section className="mb-4 space-y-4">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-4 [&_h2]:mb-1 [&_h2]:text-lg [&_h2]:tracking-tight [&_p]:text-xs [&_p]:text-muted">
             <div>
               <h2>Employee management</h2>
               <p>
@@ -255,7 +256,7 @@ export default function DashboardPage() {
             </div>
             {allowed('/Master/UserMaster') && (
               <Link
-                className={ui('ui-button')}
+                className={buttonClass}
                 href="/Master/UserMaster"
               >
                 Manage employees
@@ -264,12 +265,12 @@ export default function DashboardPage() {
           </div>
           {users.isError && (
             <div
-              className={ui('ui-error')}
+              className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-4 text-sm text-rose-800"
               role="alert"
             >
               Employee accounts could not be loaded.
               <button
-                className={ui('ui-button')}
+                className={buttonClass}
                 onClick={() => users.refetch()}
               >
                 Retry
@@ -296,15 +297,15 @@ export default function DashboardPage() {
           </p>
         </section>
       )}
-      <section className={ui('dashboard-stats')}>
+      <section className="mb-2 grid grid-cols-4 gap-2 max-lg:grid-cols-2 max-sm:gap-3">
         {stats.map(({ label, value, Icon, tone }) => (
           <article
-            className={ui('stat-card')}
+            className="rounded-lg border border-line bg-white p-2 max-sm:p-2 [&>strong]:block [&>strong]:text-xl [&>strong]:leading-none [&>p]:text-xs [&>p]:text-muted"
             key={label}
           >
-            <div className={ui('stat-top')}>
+            <div className="flex items-center justify-between gap-2 text-xs text-muted">
               <span>{label}</span>
-              <span className={ui(`stat-icon ${tone}`)}>
+              <span className={cn('grid size-8 shrink-0 place-items-center rounded-md', statusTones[tone as StatusTone])}>
                 <Icon size={19} />
               </span>
             </div>
@@ -314,9 +315,9 @@ export default function DashboardPage() {
           </article>
         ))}
       </section>
-      <div className={ui('dashboard-layout')}>
-        <section className={ui('dashboard-work')}>
-          <div className={ui('dashboard-section-heading')}>
+      <div className="grid grid-cols-[minmax(0,1fr)_260px] items-start gap-3 max-xl:grid-cols-1">
+        <section className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-4 [&_h2]:mb-1 [&_h2]:text-lg [&_h2]:tracking-tight [&_p]:text-xs [&_p]:text-muted">
             <div>
               <h2>
                 {isClient
@@ -347,7 +348,7 @@ export default function DashboardPage() {
                 </select>
               </label>
             )}
-            <div className={ui('task-filters')}>
+            <div className="flex max-w-full gap-1 overflow-x-auto rounded-lg border border-line bg-white p-1 [&>button]:whitespace-nowrap [&>button]:rounded-md [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-3 [&>button]:py-2 [&>button]:text-xs [&>button]:text-muted [&>button[aria-pressed=true]]:bg-brand-soft [&>button[aria-pressed=true]]:text-brand">
               {[
                 ['all', 'All'],
                 ['open', 'Open'],
@@ -400,11 +401,11 @@ export default function DashboardPage() {
             }}
           />
         </section>
-        <aside className={ui('dashboard-aside')}>
-          <section className={ui('workload-card')}>
+        <aside className="grid gap-3 max-xl:grid-cols-2 max-md:grid-cols-1">
+          <section className="rounded-lg border border-line bg-white p-4 [&>h2]:text-lg [&>p]:mt-1 [&>p]:text-xs [&>p]:text-muted [&>progress]:block [&>progress]:h-2 [&>progress]:w-full [&>progress]:overflow-hidden [&>progress]:rounded [&>progress]:accent-brand [&>progress::-webkit-progress-bar]:bg-slate-100 [&>progress::-webkit-progress-value]:rounded [&>progress::-webkit-progress-value]:bg-brand">
             <h2>Resolution overview</h2>
             <p>Across the selected calls.</p>
-            <div className={ui('workload-value')}>
+            <div className="mt-3 mb-2 flex items-baseline gap-1 text-brand [&>strong]:text-4xl [&>strong]:tracking-tight [&>span]:text-lg [&>span]:text-muted">
               <strong>
                 {query.isPending || query.isError
                   ? '—'
@@ -419,7 +420,7 @@ export default function DashboardPage() {
               value={completed.length}
               max={scoped.length || 1}
             />
-            <div className={ui('workload-breakdown')}>
+            <div className="mt-5 grid gap-3 border-t border-line pt-5 [&>div]:flex [&>div]:items-center [&>div]:gap-2 [&>div]:text-xs [&>div]:text-muted [&_strong]:ml-auto [&_strong]:text-slate-600 [&_i]:size-1.5 [&_i]:rounded-full [&_i]:bg-amber-400 [&>div:nth-child(2)_i]:bg-blue-400 [&>div:nth-child(3)_i]:bg-emerald-400">
               <div>
                 Average resolution
                 <strong>
@@ -432,7 +433,7 @@ export default function DashboardPage() {
               timestamps. Cancelled and other statuses remain in the total.
             </p>
           </section>
-          <section className={ui('shortcut-card')}>
+          <section className="rounded-lg border border-line bg-white p-4 [&>h2]:text-lg [&>p]:mt-1 [&>p]:text-xs [&>p]:text-muted [&>a]:flex [&>a]:items-center [&>a]:justify-between [&>a]:border-b [&>a]:border-slate-100 [&>a]:py-3 [&>a]:text-sm [&>a]:text-muted [&>a:last-child]:border-0 [&>a:hover]:text-brand">
             <h2>Quick access</h2>
             {[
               { href: '/ProjectManagement/TaskAssignment', label: 'Calls booking' },
@@ -459,7 +460,7 @@ export default function DashboardPage() {
           completion details may be missing. Refresh to retry.
         </p>
       )}
-      <div className={ui('dashboard-footer')}>
+      <div className="mt-3 flex justify-between gap-3 text-xs text-muted max-sm:flex-col [&>span:first-child]:flex [&>span:first-child]:items-center [&>span:first-child]:gap-2">
         <span>
           Live data ·{' '}
           {isAdmin

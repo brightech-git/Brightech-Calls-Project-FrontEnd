@@ -1,7 +1,8 @@
 'use client';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/format/date';
 
-import { ui } from '@/utils/ui';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -73,9 +74,7 @@ const COLUMNS: TableColumn<ProjectRecord_Table>[] = [
           background: row.active === 'Y' ? COLORS.successBg : COLORS.errorBg,
           color: row.active === 'Y' ? COLORS.success : COLORS.error,
         }}
-        className={ui(
-          '[padding:2px_10px] [border-radius:20px] [font-size:var(--font-xs)] [font-weight:600]',
-        )}
+        className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
       >
         {row.active === 'Y' ? 'Active' : 'Inactive'}
       </span>
@@ -205,7 +204,7 @@ export default function ProjectMasterPage() {
         emptyMessage="No projects found."
         toolbarRight={
           <button
-            className={ui('pm-btn-primary')}
+            className={cn(buttonClass, buttonVariants.primary)}
             onClick={openCreate}
           >
             <Plus size={13} />
@@ -218,29 +217,29 @@ export default function ProjectMasterPage() {
 
       {open && (
         <div
-          className={ui('pm-modal-overlay workspace-modal-overlay')}
+          className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
           <div
-            className={ui('pm-modal-box workspace-modal')}
+            className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
             data-workspace-dialog
             role="dialog"
             aria-modal="true"
             aria-label="Project details"
           >
-            <div className={ui('pm-modal-head')}>
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-line bg-slate-50/60 px-4 py-3 max-sm:px-3">
               <div>
-                <div className={ui('pm-modal-title')}>
+                <div className="text-lg tracking-tight text-ink">
                   {editRow ? 'Edit Project' : 'Add Project'}
                 </div>
 
-                <div className={ui('pm-modal-sub')}>
+                <div className="mt-1 text-xs text-muted">
                   {editRow ? `Editing: ${editRow.projectName}` : 'Fill project details'}
                 </div>
               </div>
 
               <button
-                className={ui('pm-close-btn')}
+                className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
                 data-dialog-close
                 aria-label="Close form"
                 onClick={() => setOpen(false)}
@@ -250,10 +249,10 @@ export default function ProjectMasterPage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className={ui('pm-modal-body')}>
-                <div className={ui('pm-grid workspace-form-grid')}>
-                  <div className={ui('pm-field-row')}>
-                    <label className={ui('pm-field-label')}>Client *</label>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Client *</label>
                     <Controller
                       name="CLIENTID"
                       control={control}
@@ -264,19 +263,19 @@ export default function ProjectMasterPage() {
                           editId={editRow?.sno ?? null}
                           items={clientItems}
                           placeholder="Select client"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.CLIENTID && (
-                      <span className={ui('pm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.CLIENTID.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('pm-field-row')}>
-                    <label className={ui('pm-field-label')}>Project Name *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Project Name *</label>
                     <Controller
                       name="PROJECTNAME"
                       control={control}
@@ -287,19 +286,19 @@ export default function ProjectMasterPage() {
                           isCapitalized
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Enter project name"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.PROJECTNAME && (
-                      <span className={ui('pm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.PROJECTNAME.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('pm-field-row')}>
-                    <label className={ui('pm-field-label')}>Status *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Status *</label>
                     <Controller
                       name="ACTIVE"
                       control={control}
@@ -318,7 +317,7 @@ export default function ProjectMasterPage() {
                       )}
                     />
                     {errors.ACTIVE && (
-                      <span className={ui('pm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ACTIVE.message}
                       </span>
                     )}
@@ -326,10 +325,10 @@ export default function ProjectMasterPage() {
                 </div>
               </div>
 
-              <div className={ui('pm-modal-footer')}>
+              <div className="flex shrink-0 justify-end gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3">
                 <button
                   type="button"
-                  className={ui('pm-btn-secondary')}
+                  className={buttonClass}
                   onClick={() => setOpen(false)}
                 >
                   Cancel
@@ -337,7 +336,7 @@ export default function ProjectMasterPage() {
 
                 <button
                   type="submit"
-                  className={ui('pm-btn-primary')}
+                  className={cn(buttonClass, buttonVariants.primary)}
                   disabled={isPending}
                 >
                   <Pencil size={12} />

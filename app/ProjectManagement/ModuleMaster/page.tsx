@@ -1,7 +1,8 @@
 'use client';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/format/date';
 
-import { ui } from '@/utils/ui';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -75,9 +76,7 @@ const COLUMNS: TableColumn<ModuleRecord_Table>[] = [
           background: row.active === 'Y' ? COLORS.successBg : COLORS.errorBg,
           color: row.active === 'Y' ? COLORS.success : COLORS.error,
         }}
-        className={ui(
-          '[padding:2px_10px] [border-radius:20px] [font-size:var(--font-xs)] [font-weight:600]',
-        )}
+        className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
       >
         {row.active === 'Y' ? 'Active' : 'Inactive'}
       </span>
@@ -236,7 +235,7 @@ export default function ModuleMasterPage() {
         searchPlaceholder="Search module..."
         emptyMessage="No modules found."
         toolbarRight={
-          <div className={ui('[display:flex] [align-items:center] [gap:8px]')}>
+          <div className="flex items-center gap-2">
             <DataExport
               data={modules as ModuleRecord_Table[]}
               columns={EXPORT_COLUMNS}
@@ -246,7 +245,7 @@ export default function ModuleMasterPage() {
               buttonSize="sm"
             />
             <button
-              className={ui('mm-btn-primary')}
+              className={cn(buttonClass, buttonVariants.primary)}
               onClick={openCreate}
             >
               <Plus size={13} />
@@ -260,29 +259,29 @@ export default function ModuleMasterPage() {
 
       {open && (
         <div
-          className={ui('mm-modal-overlay workspace-modal-overlay')}
+          className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
           <div
-            className={ui('mm-modal-box workspace-modal')}
+            className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
             data-workspace-dialog
             role="dialog"
             aria-modal="true"
             aria-label="Project module details"
           >
-            <div className={ui('mm-modal-head')}>
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-line bg-slate-50/60 px-4 py-3 max-sm:px-3">
               <div>
-                <div className={ui('mm-modal-title')}>
+                <div className="text-lg tracking-tight text-ink">
                   {editRow ? 'Edit Module' : 'Add Module'}
                 </div>
 
-                <div className={ui('mm-modal-sub')}>
+                <div className="mt-1 text-xs text-muted">
                   {editRow ? `Editing: ${editRow.moduleName}` : 'Fill module details'}
                 </div>
               </div>
 
               <button
-                className={ui('mm-close-btn')}
+                className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
                 data-dialog-close
                 aria-label="Close form"
                 onClick={() => setOpen(false)}
@@ -292,10 +291,10 @@ export default function ModuleMasterPage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className={ui('mm-modal-body')}>
-                <div className={ui('mm-grid workspace-form-grid')}>
-                  <div className={ui('mm-field-row')}>
-                    <label className={ui('mm-field-label')}>Project *</label>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Project *</label>
                     <Controller
                       name="PROJECTID"
                       control={control}
@@ -306,19 +305,19 @@ export default function ModuleMasterPage() {
                           editId={editRow?.moduleId ?? null}
                           items={projectItems}
                           placeholder="Select project"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.PROJECTID && (
-                      <span className={ui('mm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.PROJECTID.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('mm-field-row')}>
-                    <label className={ui('mm-field-label')}>Module Name *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Module Name *</label>
                     <Controller
                       name="MODULENAME"
                       control={control}
@@ -329,19 +328,19 @@ export default function ModuleMasterPage() {
                           isCapitalized
                           onChange={(_, value) => field.onChange(value)}
                           placeholder="Enter module name"
-                          className={ui('[max-width:100%]!')}
+                          className="max-w-full"
                         />
                       )}
                     />
                     {errors.MODULENAME && (
-                      <span className={ui('mm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.MODULENAME.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('mm-field-row')}>
-                    <label className={ui('mm-field-label')}>Status *</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Status *</label>
                     <Controller
                       name="ACTIVE"
                       control={control}
@@ -360,7 +359,7 @@ export default function ModuleMasterPage() {
                       )}
                     />
                     {errors.ACTIVE && (
-                      <span className={ui('mm-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.ACTIVE.message}
                       </span>
                     )}
@@ -368,10 +367,10 @@ export default function ModuleMasterPage() {
                 </div>
               </div>
 
-              <div className={ui('mm-modal-footer')}>
+              <div className="flex shrink-0 justify-end gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3">
                 <button
                   type="button"
-                  className={ui('mm-btn-secondary')}
+                  className={buttonClass}
                   onClick={() => setOpen(false)}
                 >
                   Cancel
@@ -379,7 +378,7 @@ export default function ModuleMasterPage() {
 
                 <button
                   type="submit"
-                  className={ui('mm-btn-primary')}
+                  className={cn(buttonClass, buttonVariants.primary)}
                   disabled={isPending}
                 >
                   <Pencil size={12} />

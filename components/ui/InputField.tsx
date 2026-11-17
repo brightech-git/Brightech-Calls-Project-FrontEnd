@@ -1,5 +1,6 @@
-import { ui } from '@/utils/ui';
 import React from 'react';
+import { cn } from '@/lib/utils';
+import { controlClass, fieldErrorClass, labelClass } from '@/lib/styles';
 interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
@@ -15,13 +16,13 @@ const InputField: React.FC<InputFieldProps> = ({
 }) => {
   const inputId = id ?? label.toLowerCase().replace(/\s+/g, '-');
   return (
-    <div className={ui('cv-input-field')}>
+    <div className="flex w-full flex-col gap-1">
       <label
         htmlFor={inputId}
-        className={ui('cv-input-label')}
+        className={labelClass}
       >
         {label}
-        {required && <span className={ui('cv-required')}>*</span>}
+        {required && <span className="ml-1 text-rose-600">*</span>}
       </label>
 
       <input
@@ -29,14 +30,14 @@ const InputField: React.FC<InputFieldProps> = ({
         required={required}
         aria-invalid={!!error}
         aria-describedby={error ? `${inputId}-error` : undefined}
-        className={ui(`cv-filter-input ${className}`)}
+        className={cn(controlClass, className)}
         {...props}
       />
 
       {error && (
         <span
           id={`${inputId}-error`}
-          className={ui('cv-input-error')}
+          className={fieldErrorClass}
         >
           {error}
         </span>

@@ -1,6 +1,5 @@
 'use client';
 
-import { ui } from '@/utils/ui';
 import { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { COLORS, FONT, RADIUS } from '@/utils/theme';
@@ -123,7 +122,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
       {/* ── Toast Container ── */}
       <div
-        className="toast-stack"
+        className="fixed right-4 bottom-4 z-[9999] grid max-w-[min(360px,calc(100vw-24px))] gap-2 max-sm:right-3 max-sm:bottom-3"
         aria-live="polite"
         aria-relevant="additions"
       >
@@ -137,34 +136,28 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 background: cfg.bg,
                 border: `1px solid ${cfg.border}`,
               }}
-              className={ui(
-                '[display:flex] [align-items:flex-start] [gap:10px] [border-radius:14px] [padding:10px_14px] [min-width:280px] [max-width:380px] [box-shadow:0_4px_16px_rgba(0,0,0,0.08)] [animation:toast-in_0.2s_ease]',
-              )}
+              className="flex max-w-90 min-w-64 animate-toast-in items-start gap-2 rounded-lg px-3 py-2 shadow-md"
             >
               {/* Icon */}
               <span
                 style={{
                   color: cfg.color,
                 }}
-                className={ui('[flex-shrink:0] [margin-top:1px]')}
+                className="mt-px shrink-0"
               >
                 {cfg.icon}
               </span>
 
               {/* Text */}
-              <div className={ui('[flex:1] [min-width:0]')}>
+              <div className="flex-1 min-w-0">
                 <div
-                  className={ui(
-                    '[font-size:13px] [font-weight:600] [color:var(--text-main)] [line-height:1.3]',
-                  )}
+                  className="text-[13px] leading-snug font-semibold text-ink"
                 >
                   {toast.title}
                 </div>
                 {toast.message && (
                   <div
-                    className={ui(
-                      '[font-size:12px] [color:#34445d] [margin-top:2px] [line-height:1.4]',
-                    )}
+                    className="mt-0.5 text-xs leading-snug text-ink"
                   >
                     {toast.message}
                   </div>
@@ -174,9 +167,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               {/* Close */}
               <button
                 onClick={() => remove(toast.id)}
-                className={ui(
-                  '[background:none] [border:none] [cursor:pointer] [color:var(--text-muted)] [padding:0] [flex-shrink:0] [display:flex] [align-items:center]',
-                )}
+                className="flex shrink-0 cursor-pointer items-center text-muted hover:text-ink"
+                aria-label="Dismiss notification"
               >
                 <X size={14} />
               </button>

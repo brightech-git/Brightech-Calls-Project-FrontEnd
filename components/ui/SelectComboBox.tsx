@@ -1,6 +1,7 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { cn } from '@/lib/utils';
+import { controlClass } from '@/lib/styles';
 import React, { useEffect, useState, forwardRef } from 'react';
 import { Field, Combobox, Portal, useListCollection, useFilter } from '@chakra-ui/react';
 export type SelectItem = {
@@ -199,7 +200,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
           disabled={disable}
           fontSize={fontSize}
         >
-          <Combobox.Control className={ui('[border-radius:9999px]!')}>
+          <Combobox.Control className="rounded-full">
             <Combobox.Input
               ref={ref}
               placeholder={placeholder}
@@ -210,12 +211,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                   setIsOpen(true);
                 }
               }}
-              className={ui(
-                'form-control ' +
-                  ui(
-                    '[font-size:var(--font-sm)]! [min-height:var(--control-height)]! [border-radius:10px]! [text-transform:uppercase]!',
-                  ),
-              )}
+              className={cn(controlClass, 'uppercase')}
             />
             <Combobox.IndicatorGroup>
               <Combobox.ClearTrigger
@@ -231,13 +227,11 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
             <Portal>
               <Combobox.Positioner
                 mt={-1.5}
-                className={ui('[z-1001]!')}
+                className="[z-1001]"
               >
                 <Combobox.Content
                   maxHeight="260px"
-                  className={ui(
-                    '[overflow-y:auto]! [border-radius:10px]! border! border-solid! [border-color:var(--border)]!',
-                  )}
+                  className="overflow-y-auto rounded-xl border border-solid border-line"
                 >
                   <Combobox.Empty fontSize={fontSize}>No items found</Combobox.Empty>
                   {collection.items.map((item) => (
@@ -245,7 +239,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                       key={item.value}
                       item={item}
                       fontSize={listFontSize}
-                      className={ui('[text-transform:uppercase]!')}
+                      className="uppercase"
                     >
                       {String(item.label).toUpperCase()}
                       <Combobox.ItemIndicator />

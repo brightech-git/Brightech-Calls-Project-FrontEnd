@@ -1,7 +1,8 @@
 'use client';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import { formatDate, formatDateTime } from '@/utils/format/date';
 
-import { ui } from '@/utils/ui';
 import { useState, useEffect } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -109,9 +110,7 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
     width: '100px',
     render: (row) => (
       <div
-        className={ui(
-          '[width:400px] [white-space:normal] [overflow-wrap:anywhere] [word-break:break-word] [line-height:18px]',
-        )}
+        className="w-100 whitespace-normal wrap-anywhere break-words leading-[18px]"
       >
         {row.remark}
       </div>
@@ -197,9 +196,7 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
           background: row.active === 'Y' ? COLORS.successBg : COLORS.errorBg,
           color: row.active === 'Y' ? COLORS.success : COLORS.error,
         }}
-        className={ui(
-          '[padding:2px_10px] [border-radius:20px] [font-size:var(--font-xs)] [font-weight:600]',
-        )}
+        className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
       >
         {row.active === 'Y' ? 'Active' : 'Inactive'}
       </span>
@@ -210,9 +207,7 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
     header: 'Status Remark',
     render: (row) => (
       <div
-        className={ui(
-          '[width:300px] [white-space:normal] [overflow-wrap:anywhere] [word-break:break-word] [line-height:18px]',
-        )}
+        className="w-75 whitespace-normal wrap-anywhere break-words leading-[18px]"
       >
         {row.statusRemark}
       </div>
@@ -581,32 +576,30 @@ export default function CallsBookingPage() {
     const v = viewData;
     return (
       <>
-        <div className={ui('cb-detail-wrap')}>
-          <div className={ui('cb-detail-head')}>
+        <div className="rounded-lg border border-line bg-white overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-white px-4 py-3">
             <div>
-              <div className={ui('cb-detail-title')}>Booking Details</div>
-              <div className={ui('cb-detail-sub')}>Ticket ID: {v?.tktId ?? viewId}</div>
+              <div className="text-xl tracking-tight">Booking Details</div>
+              <div className="mt-1 text-sm text-muted">Ticket ID: {v?.tktId ?? viewId}</div>
             </div>
             <button
-              className={ui('cb-back-btn')}
+              className={buttonClass}
               onClick={() => setViewId(null)}
             >
               ← Back to List
             </button>
           </div>
 
-          <div className={ui('cb-detail-body')}>
+          <div className="p-4">
             {viewLoading ? (
               <div
-                className={ui(
-                  '[padding:48px] [text-align:center] [color:var(--text-muted)]',
-                )}
+                className="p-12 text-center text-muted"
               >
                 Loading...
               </div>
             ) : v ? (
               <>
-                <div className={ui('cb-detail-grid')}>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
                   {(
                     [
                       ['Ticket ID', v.tktId],
@@ -631,25 +624,25 @@ export default function CallsBookingPage() {
                   ).map(([label, val]) => (
                     <div
                       key={label}
-                      className={ui('cb-detail-row')}
+                      className="flex flex-col items-start gap-2"
                     >
-                      <span className={ui('cb-detail-label')}>{label}</span>
-                      <span className={ui('cb-detail-val')}>{String(val ?? '—')}</span>
+                      <span className="text-xs text-muted">{label}</span>
+                      <span className="text-sm break-words text-ink">{String(val ?? '—')}</span>
                     </div>
                   ))}
                 </div>
 
                 {v.media && v.media.length > 0 && (
                   <>
-                    <div className={ui('cb-detail-section-label')}>Media</div>
-                    <div className={ui('cb-media-grid')}>
+                    <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Media</div>
+                    <div className="flex flex-wrap gap-3">
                       {v.media.map((m, idx) => {
                         return (
                           // NOTE: m.mediaId is a shared group id (same across every
                           // file in this booking), not unique per item — key on idx.
                           <div
                             key={idx}
-                            className={ui('cb-media-tile')}
+                            className="size-20 overflow-hidden rounded-lg border border-line bg-slate-50 [&_img]:size-full [&_img]:object-cover [&_video]:size-full [&_video]:object-cover"
                           >
                             <AttachmentTile
                               item={m}
@@ -667,9 +660,7 @@ export default function CallsBookingPage() {
                                     ? COLORS.textMuted
                                     : COLORS.textSecondary,
                               }}
-                              className={ui(
-                                '[font-size:var(--font-xs)] [padding:4px] [text-align:center]',
-                              )}
+                              className="text-xs p-1 text-center"
                             >
                               {m.active === false ? 'Inactive' : 'Active'}
                             </div>
@@ -680,27 +671,23 @@ export default function CallsBookingPage() {
                   </>
                 )}
 
-                <div className={ui('cb-detail-section-label')}>Call Status History</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Call Status History</div>
 
                 {statusHistoryLoading ? (
                   <div
-                    className={ui(
-                      '[padding:16px] [color:var(--text-muted)] [font-size:var(--font-sm)]',
-                    )}
+                    className="p-4 text-muted text-sm"
                   >
                     Loading...
                   </div>
                 ) : statusHistory.length === 0 ? (
                   <div
-                    className={ui(
-                      '[padding:16px] [color:var(--text-muted)] [font-size:var(--font-sm)]',
-                    )}
+                    className="p-4 text-muted text-sm"
                   >
                     No status updates yet.
                   </div>
                 ) : (
                   <div
-                    className={ui('[display:flex] [flex-direction:column] [gap:10px]')}
+                    className="flex flex-col gap-2.5"
                   >
                     {statusHistory.map((s) => {
                       const label = s.STATUS ?? '—';
@@ -722,51 +709,39 @@ export default function CallsBookingPage() {
                           style={{
                             border: `1px solid ${COLORS.cardBorder}`,
                           }}
-                          className={ui(
-                            '[border-radius:10px] [padding:10px] [background:var(--surface)]',
-                          )}
+                          className="rounded-xl p-2.5 bg-white"
                         >
                           <div
-                            className={ui(
-                              '[display:flex] [align-items:center] [justify-content:space-between] [margin-bottom:6px]',
-                            )}
+                            className="flex items-center justify-between mb-1.5"
                           >
                             <span
                               style={{
                                 background: bg,
                                 color,
                               }}
-                              className={ui(
-                                '[padding:2px_10px] [border-radius:20px] [font-size:var(--font-xs)] [font-weight:600]',
-                              )}
+                              className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
                             >
                               {label}
                             </span>
                             <span
-                              className={ui(
-                                '[font-size:var(--font-xs)] [color:var(--text-muted)]',
-                              )}
+                              className="text-xs text-muted"
                             >
                               {s.UPDATED ? formatDateTime(s.UPDATED) : '—'}
                             </span>
                           </div>
 
                           <div
-                            className={ui(
-                              '[font-size:var(--font-sm)] [color:#34445d] [margin-bottom:4px]',
-                            )}
+                            className="text-sm text-ink mb-1"
                           >
                             By{' '}
-                            <b className={ui('[color:var(--text-main)]')}>
+                            <b className="text-ink">
                               {s.userName ?? s.userId ?? '—'}
                             </b>
                           </div>
 
                           {s.remark && (
                             <div
-                              className={ui(
-                                '[font-size:var(--font-sm)] [color:var(--text-main)] [margin-bottom:6px]',
-                              )}
+                              className="text-sm text-ink mb-1.5"
                             >
                               {s.remark}
                             </div>
@@ -785,12 +760,12 @@ export default function CallsBookingPage() {
                                       },
                                     ];
                               return (
-                                <div className={ui('cb-media-grid')}>
+                                <div className="flex flex-wrap gap-3">
                                   {historyMedia.map((m, idx) => {
                                     return (
                                       <div
                                         key={idx}
-                                        className={ui('cb-media-tile')}
+                                        className="size-20 overflow-hidden rounded-lg border border-line bg-slate-50 [&_img]:size-full [&_img]:object-cover [&_video]:size-full [&_video]:object-cover"
                                       >
                                         <AttachmentTile
                                           item={m}
@@ -815,9 +790,7 @@ export default function CallsBookingPage() {
               </>
             ) : (
               <div
-                className={ui(
-                  '[padding:48px] [text-align:center] [color:var(--text-muted)]',
-                )}
+                className="p-12 text-center text-muted"
               >
                 Booking not found.
               </div>
@@ -852,7 +825,7 @@ export default function CallsBookingPage() {
     <>
       <Box>
         {/* Summary Tiles */}
-        <Flex className={ui('[gap:12px]! [margin-bottom:12px]! [flex-wrap:wrap]!')}>
+        <Flex className="gap-3 mb-3 flex-wrap">
           {[
             {
               label: 'Calls Total Listed',
@@ -876,21 +849,17 @@ export default function CallsBookingPage() {
             <Box
               key={tile.label}
               bg={tile.bg}
-              className={ui(
-                '[flex:1_1_160px]! [min-width:160px]! border! border-solid! [border-color:var(--border)]! [border-radius:14px]! [padding-left:16px]! [padding-right:16px]! [padding-top:10px]! [padding-bottom:10px]!',
-              )}
+              className="flex-[1_1_160px] min-w-40 border border-solid border-line rounded-lg pl-4 pr-4 pt-2.5 pb-2.5"
             >
               <Text
-                className={ui(
-                  '[font-size:var(--font-xs)]! [color:var(--text-muted)]! font-normal! [text-transform:uppercase]! [letter-spacing:0.05em]!',
-                )}
+                className="text-xs text-muted font-normal uppercase tracking-wide"
               >
                 {tile.label}
               </Text>
 
               <Text
                 color={tile.color}
-                className={ui('[font-size:22px]! font-normal! [margin-top:2px]!')}
+                className="text-xl font-normal mt-0.5"
               >
                 {tile.value}
               </Text>
@@ -900,22 +869,16 @@ export default function CallsBookingPage() {
       </Box>
       {/* Filter */}
       <Box
-        className={ui(
-          'workspace-filterbar' +
-            ' ' +
-            '[background:white]! border! border-solid! [border-color:#E5E7EB]! [border-radius:12px]! [padding:12px]! md:[padding:14px]! [margin-bottom:12px]! shadow-sm!',
-        )}
+        className="flex flex-wrap items-end justify-between gap-4 [&_label]:text-xs [&_label]:text-muted [&>div]:max-w-full bg-white border border-solid border-[#E5E7EB] rounded-xl p-3 md:p-3.5 mb-3 shadow-sm"
       >
-        <Flex className={ui('[gap:12px]! [align-items:flex-end]! [flex-wrap:wrap]!')}>
+        <Flex className="gap-3 items-end flex-wrap">
           {/* As On */}
           <VStack
             spaceX="4px"
-            className={ui('[align-items:stretch]! [min-width:100px]!')}
+            className="items-stretch min-w-25"
           >
             <Text
-              className={ui(
-                '[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!',
-              )}
+              className="text-sm font-normal text-gray-700"
             >
               As On
             </Text>
@@ -943,12 +906,10 @@ export default function CallsBookingPage() {
           {appliedFilters.asOn ? (
             <VStack
               spaceX="4px"
-              className={ui('[align-items:stretch]!')}
+              className="items-stretch"
             >
               <Text
-                className={ui(
-                  '[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!',
-                )}
+                className="text-sm font-normal text-gray-700"
               >
                 Date
               </Text>
@@ -957,19 +918,17 @@ export default function CallsBookingPage() {
                 value={appliedFilters.asOnDate || null}
                 onChange={(val) => handleChange('asOnDate', val)}
                 placeholder="Select date"
-                className={ui('[max-width:150px]!')}
+                className="max-w-37.5"
               />
             </VStack>
           ) : (
             <>
               <VStack
                 spaceX="4px"
-                className={ui('[align-items:stretch]!')}
+                className="items-stretch"
               >
                 <Text
-                  className={ui(
-                    '[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!',
-                  )}
+                  className="text-sm font-normal text-gray-700"
                 >
                   From Date
                 </Text>
@@ -979,18 +938,16 @@ export default function CallsBookingPage() {
                   onChange={(val) => handleChange('fromDate', val)}
                   placeholder="From date"
                   maxDate={appliedFilters.toDate || today}
-                  className={ui('[max-width:150px]!')}
+                  className="max-w-37.5"
                 />
               </VStack>
 
               <VStack
                 spaceX="4px"
-                className={ui('[align-items:stretch]!')}
+                className="items-stretch"
               >
                 <Text
-                  className={ui(
-                    '[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!',
-                  )}
+                  className="text-sm font-normal text-gray-700"
                 >
                   To Date
                 </Text>
@@ -1001,7 +958,7 @@ export default function CallsBookingPage() {
                   placeholder="To date"
                   minDate={appliedFilters.fromDate || undefined}
                   maxDate={today}
-                  className={ui('[max-width:150px]!')}
+                  className="max-w-37.5"
                 />
               </VStack>
             </>
@@ -1011,12 +968,10 @@ export default function CallsBookingPage() {
           {isAdmin && (
             <VStack
               spaceX="4px"
-              className={ui('[align-items:stretch]! [min-width:150px]!')}
+              className="items-stretch min-w-37.5"
             >
               <Text
-                className={ui(
-                  '[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!',
-                )}
+                className="text-sm font-normal text-gray-700"
               >
                 Assigned user
               </Text>
@@ -1028,7 +983,7 @@ export default function CallsBookingPage() {
                 placeholder="All assigned users"
                 size="sm"
                 label=""
-                className={ui('[max-width:180px]! [font-size:var(--font-sm)]!')}
+                className="max-w-45 text-sm"
               />
             </VStack>
           )}
@@ -1036,12 +991,10 @@ export default function CallsBookingPage() {
           {!isClientUser && (
             <VStack
               spaceX="4px"
-              className={ui('[align-items:stretch]! [min-width:200px]!')}
+              className="items-stretch min-w-50"
             >
               <Text
-                className={ui(
-                  '[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!',
-                )}
+                className="text-sm font-normal text-gray-700"
               >
                 Client
               </Text>
@@ -1053,20 +1006,16 @@ export default function CallsBookingPage() {
                 placeholder="Select client"
                 size="sm"
                 label=""
-                className={ui(
-                  '[max-width:250px]! [min-width:200px]! [font-size:var(--font-sm)]!',
-                )}
+                className="max-w-62.5 min-w-50 text-sm"
               />
             </VStack>
           )}
           <VStack
             spaceX="4px"
-            className={ui('[align-items:stretch]! [min-width:200px]!')}
+            className="items-stretch min-w-50"
           >
             <Text
-              className={ui(
-                '[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!',
-              )}
+              className="text-sm font-normal text-gray-700"
             >
               Project
             </Text>
@@ -1076,17 +1025,15 @@ export default function CallsBookingPage() {
               items={projectItems}
               placeholder="Select project"
               size="md"
-              className={ui('[max-width:100%]! [font-size:var(--font-sm)]!')}
+              className="max-w-full text-sm"
             />
           </VStack>
           <VStack
             spaceX="4px"
-            className={ui('[align-items:stretch]! [min-width:200px]!')}
+            className="items-stretch min-w-50"
           >
             <Text
-              className={ui(
-                '[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!',
-              )}
+              className="text-sm font-normal text-gray-700"
             >
               Module
             </Text>
@@ -1096,19 +1043,17 @@ export default function CallsBookingPage() {
               items={moduleItems}
               placeholder="Select module"
               size="md"
-              className={ui('[max-width:100%]! [font-size:var(--font-sm)]!')}
+              className="max-w-full text-sm"
             />
           </VStack>
 
           {/* Status */}
           <VStack
             spaceX="4px"
-            className={ui('[align-items:stretch]!')}
+            className="items-stretch"
           >
             <Text
-              className={ui(
-                '[font-size:var(--font-sm)]! font-normal! [color:var(--color-gray-700)]!',
-              )}
+              className="text-sm font-normal text-gray-700"
             >
               Status
             </Text>
@@ -1123,14 +1068,14 @@ export default function CallsBookingPage() {
                 borderColor: '#D1D5DB',
                 borderRadius: '6px',
               }}
-              className={ui('[max-width:140px]!')}
+              className="max-w-35"
             />
           </VStack>
 
           {/* Actions */}
           <HStack
             spaceX="8px"
-            className={ui('ml-auto! max-sm:ml-0! max-sm:w-full! max-sm:flex-wrap!')}
+            className="ml-auto max-sm:ml-0 max-sm:w-full max-sm:flex-wrap"
           >
             {/* Reset */}
             <Button
@@ -1140,7 +1085,7 @@ export default function CallsBookingPage() {
               _hover={{
                 bg: 'gray.50',
               }}
-              className={ui('[border-color:#D1D5DB]! [color:var(--color-gray-700)]!')}
+              className="border-[#D1D5DB] text-gray-700"
             >
               <RotateCcw size={14} /> Reset
             </Button>
@@ -1152,7 +1097,7 @@ export default function CallsBookingPage() {
                 bg: COLORS.primaryHover,
               }}
               onClick={handleApplyFilters}
-              className={ui('[background:var(--primary)]! [color:white]!')}
+              className="bg-brand text-white"
             >
               <Search size={14} />
               Apply
@@ -1165,7 +1110,7 @@ export default function CallsBookingPage() {
                 bg: COLORS.primaryHover,
               }}
               onClick={openCreate}
-              className={ui('[background:var(--primary)]! [color:white]!')}
+              className="bg-brand text-white"
             >
               <Plus size={14} /> Add Booking
             </Button>
@@ -1212,29 +1157,29 @@ export default function CallsBookingPage() {
 
       {open && (
         <div
-          className={ui('cb-modal-overlay workspace-modal-overlay')}
+          className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
           <div
-            className={ui('cb-modal-box workspace-modal')}
+            className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
             data-workspace-dialog
             role="dialog"
             aria-modal="true"
             aria-label="Booking and call details"
           >
-            <div className={ui('cb-modal-head')}>
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-line bg-slate-50/60 px-4 py-3 max-sm:px-3">
               <div>
-                <div className={ui('cb-modal-title')}>
+                <div className="text-lg tracking-tight text-ink">
                   {editRow ? 'Edit Booking' : 'Add Booking'}
                 </div>
 
-                <div className={ui('cb-modal-sub')}>
+                <div className="mt-1 text-xs text-muted">
                   {editRow ? `Editing Ticket: ${editRow.tktId}` : 'Fill booking details'}
                 </div>
               </div>
 
               <button
-                className={ui('cb-close-btn')}
+                className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
                 data-dialog-close
                 aria-label="Close form"
                 onClick={() => setOpen(false)}
@@ -1244,13 +1189,13 @@ export default function CallsBookingPage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className={ui('cb-modal-body')}>
-                <div className={ui('cb-section-label')}>Basic Information</div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Basic Information</div>
 
-                <div className={ui('cb-grid-2 workspace-form-grid')}>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
                   {!isClientUser && (
-                    <div className={ui('cb-field-row')}>
-                      <label className={ui('cb-field-label')}>Client *</label>
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <label className="text-sm text-muted">Client *</label>
                       <Controller
                         name="clientId"
                         control={control}
@@ -1265,22 +1210,20 @@ export default function CallsBookingPage() {
                             placeholder="Select client"
                             size="md"
                             disable={isClientUser}
-                            className={ui(
-                              '[max-width:100%]! [font-size:var(--font-sm)]!',
-                            )}
+                            className="max-w-full text-sm"
                           />
                         )}
                       />
                       {errors.clientId && (
-                        <span className={ui('cb-field-error')}>
+                        <span className="mt-1 text-xs text-rose-600">
                           {errors.clientId.message}
                         </span>
                       )}
                     </div>
                   )}
 
-                  <div className={ui('cb-field-row')}>
-                    <label className={ui('cb-field-label')}>Project</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Project</label>
                     <Controller
                       name="projectId"
                       control={control}
@@ -1294,19 +1237,19 @@ export default function CallsBookingPage() {
                           items={projectItems}
                           placeholder="Select project"
                           size="md"
-                          className={ui('[max-width:100%]! [font-size:var(--font-sm)]!')}
+                          className="max-w-full text-sm"
                         />
                       )}
                     />
                     {errors.projectId && (
-                      <span className={ui('cb-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.projectId.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cb-field-row')}>
-                    <label className={ui('cb-field-label')}>Module</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Module</label>
                     <Controller
                       name="moduleId"
                       control={control}
@@ -1320,23 +1263,23 @@ export default function CallsBookingPage() {
                           items={moduleItems}
                           placeholder="Select module"
                           size="md"
-                          className={ui('[max-width:100%]! [font-size:var(--font-sm)]!')}
+                          className="max-w-full text-sm"
                         />
                       )}
                     />
                     {errors.moduleId && (
-                      <span className={ui('cb-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.moduleId.message}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className={ui('cb-section-label')}>Assignment</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Assignment</div>
 
-                <div className={ui('cb-grid-2 workspace-form-grid')}>
-                  <div className={ui('cb-field-row')}>
-                    <label className={ui('cb-field-label')}>Staff *</label>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Staff *</label>
                     <Controller
                       name="assignedUsers"
                       control={control}
@@ -1352,19 +1295,19 @@ export default function CallsBookingPage() {
                           items={staffItems}
                           placeholder="Select staff"
                           size="md"
-                          className={ui('[max-width:100%]! [font-size:var(--font-sm)]!')}
+                          className="max-w-full text-sm"
                         />
                       )}
                     />
                     {errors.assignedUsers && (
-                      <span className={ui('cb-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.assignedUsers.message}
                       </span>
                     )}
                   </div>
 
-                  <div className={ui('cb-field-row')}>
-                    <label className={ui('cb-field-label')}>Status</label>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Status</label>
                     <Controller
                       name="status"
                       control={control}
@@ -1389,7 +1332,7 @@ export default function CallsBookingPage() {
                       )}
                     />
                     {errors.status && (
-                      <span className={ui('cb-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.status.message}
                       </span>
                     )}
@@ -1398,8 +1341,8 @@ export default function CallsBookingPage() {
                   {/* Active is only editable during Update — on create it
                       defaults to "Y" automatically and isn't shown. */}
                   {editRow && (
-                    <div className={ui('cb-field-row')}>
-                      <label className={ui('cb-field-label')}>Active</label>
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <label className="text-sm text-muted">Active</label>
                       <Controller
                         name="active"
                         control={control}
@@ -1418,7 +1361,7 @@ export default function CallsBookingPage() {
                         )}
                       />
                       {errors.active && (
-                        <span className={ui('cb-field-error')}>
+                        <span className="mt-1 text-xs text-rose-600">
                           {errors.active.message}
                         </span>
                       )}
@@ -1426,11 +1369,11 @@ export default function CallsBookingPage() {
                   )}
                 </div>
 
-                <div className={ui('cb-section-label')}>Details</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Details</div>
 
-                <div className={ui('cb-grid-2 workspace-form-grid')}>
-                  <div className={ui('cb-field-row')}>
-                    <label className={ui('cb-field-label')}>Remark</label>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Remark</label>
                     <Controller
                       name="remark"
                       control={control}
@@ -1447,17 +1390,17 @@ export default function CallsBookingPage() {
                       )}
                     />
                     {errors.remark && (
-                      <span className={ui('cb-field-error')}>
+                      <span className="mt-1 text-xs text-rose-600">
                         {errors.remark.message}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className={ui('cb-section-label')}>Media</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Media</div>
 
-                <div className={ui('cb-field-row')}>
-                  <label className={ui('cb-field-label')}>Attachments</label>
+                <div className="flex min-w-0 flex-col gap-2">
+                  <label className="text-sm text-muted">Attachments</label>
                   <MediaManager
                     value={media}
                     onChange={setMedia}
@@ -1468,10 +1411,10 @@ export default function CallsBookingPage() {
                 </div>
               </div>
 
-              <div className={ui('cb-modal-footer')}>
+              <div className="flex shrink-0 justify-end gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3">
                 <button
                   type="button"
-                  className={ui('cb-btn-secondary')}
+                  className={buttonClass}
                   onClick={() => setOpen(false)}
                 >
                   Cancel
@@ -1479,7 +1422,7 @@ export default function CallsBookingPage() {
 
                 <button
                   type="submit"
-                  className={ui('cb-btn-primary')}
+                  className={cn(buttonClass, buttonVariants.primary)}
                   disabled={isPending}
                 >
                   <Pencil size={12} />
@@ -1499,29 +1442,25 @@ export default function CallsBookingPage() {
       {/* Add Status Modal */}
       {addOpen && (
         <div
-          className={ui('cs-overlay workspace-modal-overlay')}
+          className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
           onClick={(e) => e.target === e.currentTarget && setAddOpen(false)}
         >
           <div
-            className={ui('cs-modal-box workspace-modal')}
+            className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
             data-workspace-dialog
             role="dialog"
             aria-modal="true"
             aria-label="Booking and call details"
           >
             <div
-              className={ui(
-                'callstatus-head' +
-                  ' ' +
-                  '[display:flex] [padding:10px] [justify-content:space-between] [align-items:center]',
-              )}
+              className="shrink-0 gap-4 border-b border-line bg-slate-50/60 max-sm:px-3 flex p-2.5 justify-between items-center"
             >
               <div>
-                <div className={ui('cs-title')}>Add Status</div>
-                <div className={ui('cs-sub')}>Ticket:</div>
+                <div className="text-xl tracking-tight">Add Status</div>
+                <div className="mt-1 text-sm text-muted">Ticket:</div>
               </div>
               <button
-                className={ui('cs-close-btn')}
+                className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
                 data-dialog-close
                 aria-label="Close form"
                 onClick={() => setAddOpen(false)}
@@ -1531,9 +1470,9 @@ export default function CallsBookingPage() {
             </div>
 
             <form onSubmit={statusSubmit(onStatusSubmit)}>
-              <div className={ui('cs-modal-body')}>
-                <div className={ui('cs-field-row')}>
-                  <label className={ui('cs-field-label')}>Status *</label>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
+                <div className="flex min-w-0 flex-col gap-2">
+                  <label className="text-sm text-muted">Status *</label>
                   <Controller
                     name="STATUS"
                     control={statusControl}
@@ -1548,20 +1487,20 @@ export default function CallsBookingPage() {
                             background: '#ddd',
                             color: '#222',
                           }}
-                          className={ui('[min-width:150px]!')}
+                          className="min-w-37.5"
                         />
                       </>
                     )}
                   />
                   {statusError.STATUS && (
-                    <span className={ui('cs-field-error')}>
+                    <span className="mt-1 text-xs text-rose-600">
                       {statusError.STATUS.message}
                     </span>
                   )}
                 </div>
 
-                <div className={ui('cs-field-row')}>
-                  <label className={ui('cs-field-label')}>Remark</label>
+                <div className="flex min-w-0 flex-col gap-2">
+                  <label className="text-sm text-muted">Remark</label>
                   <Controller
                     name="remark"
                     control={statusControl}
@@ -1577,12 +1516,12 @@ export default function CallsBookingPage() {
                     )}
                   />
                   {errors.remark && (
-                    <span className={ui('cs-field-error')}>{errors.remark.message}</span>
+                    <span className="mt-1 text-xs text-rose-600">{errors.remark.message}</span>
                   )}
                 </div>
 
-                <div className={ui('cs-field-row')}>
-                  <label className={ui('cs-field-label')}>Attachments</label>
+                <div className="flex min-w-0 flex-col gap-2">
+                  <label className="text-sm text-muted">Attachments</label>
                   <MediaManager
                     value={statusMedia}
                     onChange={setStatusMedia}
@@ -1594,22 +1533,18 @@ export default function CallsBookingPage() {
               </div>
 
               <div
-                className={ui(
-                  'callstatus-modal-footer' +
-                    ' ' +
-                    '[display:flex] [align-items:center] [justify-content:end]',
-                )}
+                className="shrink-0 gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3 flex items-center justify-end"
               >
                 <button
                   type="button"
-                  className={ui('cs-btn-secondary')}
+                  className={buttonClass}
                   onClick={() => setAddOpen(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className={ui('cb-btn-primary')}
+                  className={cn(buttonClass, buttonVariants.primary)}
                   disabled={createStatusMutation.isPending}
                 >
                   <Pencil size={12} />
