@@ -29,9 +29,9 @@ export const statusTones = {
   amber: 'bg-amber-50 text-amber-700',
   violet: 'bg-violet-50 text-violet-700',
   green: 'bg-emerald-50 text-emerald-700',
-  open: 'bg-amber-50 text-amber-700',
-  progress: 'bg-blue-50 text-blue-700',
-  complete: 'bg-emerald-50 text-emerald-700',
+  open: 'bg-red-50 text-red-700',
+  progress: 'bg-yellow-50 text-yellow-800',
+  complete: 'bg-green-50 text-green-700',
   cancelled: 'bg-rose-50 text-rose-700',
   neutral: 'bg-gray-100 text-ink',
 } as const;

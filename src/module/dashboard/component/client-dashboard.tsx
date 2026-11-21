@@ -8,7 +8,10 @@ import {
   recentlyCompleted,
   totals,
 } from '@/src/module/dashboard/hook/dashboard-metrics';
-import type { DashboardCall, DateRangeKey } from '@/src/module/dashboard/type/dashboard.types';
+import type {
+  DashboardCall,
+  DateRangeKey,
+} from '@/src/module/dashboard/type/dashboard.types';
 import {
   CallList,
   Empty,
@@ -39,7 +42,8 @@ export default function ClientDashboard({
   const t = useMemo(() => totals(scoped), [scoped]);
   const byProject = useMemo(() => groupBy(scoped, (c) => c.projectName), [scoped]);
   const byModule = useMemo(
-    () => groupBy(scoped, (c) => [c.projectName, c.moduleName].filter(Boolean).join(' / ')),
+    () =>
+      groupBy(scoped, (c) => [c.projectName, c.moduleName].filter(Boolean).join(' / ')),
     [scoped],
   );
   const v = (x: React.ReactNode) => (loading ? '—' : x);
@@ -63,16 +67,19 @@ export default function ClientDashboard({
           value={v(t.total)}
         />
         <StatTile
-          label="Waiting"
+          label="Pending"
+          status="open"
           value={v(t.open)}
           hint="Not started yet"
         />
         <StatTile
-          label="Being worked on"
+          label="In processing"
+          status="progress"
           value={v(t.progress)}
         />
         <StatTile
-          label="Resolved"
+          label="Completed"
+          status="complete"
           value={v(t.complete)}
           hint={loading ? undefined : `${percent(t.completionRate)} of your calls`}
           tone="good"
@@ -80,7 +87,11 @@ export default function ClientDashboard({
         <StatTile
           label="Typical resolution"
           value={v(hours(t.medianResolutionHours))}
-          hint={loading ? undefined : `First response ${hours(t.avgFirstResponseHours)} on average`}
+          hint={
+            loading
+              ? undefined
+              : `First response ${hours(t.avgFirstResponseHours)} on average`
+          }
         />
       </div>
 

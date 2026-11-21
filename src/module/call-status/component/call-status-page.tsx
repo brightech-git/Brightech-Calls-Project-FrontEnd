@@ -18,11 +18,16 @@ import {
 } from '@/src/components/ui/MediaManager';
 import { AttachmentList } from '@/src/components/ui/attachments';
 import { statusFiles, type CallFile } from './call-files';
-import { describeCallStatus } from '@/src/utils/callStatus';
+import {
+  CALL_STATUS_OPTIONS,
+  callStatusStyle,
+  describeCallStatus,
+} from '@/src/utils/callStatus';
+import CallStatusBadge from '@/src/components/CallStatusBadge';
+import { useUpdateCallsBookingStatus } from '@/src/module/task-assignment/hook/use-task-assignment';
 import { MediaLightbox, LightboxItem } from '@/src/components/ui/MediaLightbox';
 import { usePageHeader } from '@/src/context/PageHeaderContext';
 import { useToast } from '@/src/components/Toast';
-import { COLORS, RADIUS, FONT } from '@/src/theme';
 import {
   useActiveBookingsWithLastStatus,
   useCallStatusTicketDetail,
@@ -43,45 +48,12 @@ const statusSchema = z.object({
 });
 type StatusForm = z.infer<typeof statusSchema>;
 const DEFAULTS: StatusForm = {
-  STATUS: 'OPEN',
+  STATUS: 'I',
   remark: '',
 };
-const STATUS_ITEMS = [
-  {
-    label: 'Open',
-    value: 'OPEN',
-  },
-  {
-    label: 'Process',
-    value: 'PROCESS',
-  },
-  {
-    label: 'Closed',
-    value: 'CLOSED',
-  },
-];
-const statusBadge = (label?: string | null) => {
-  const s = label ?? '—';
-  const bg =
-    s === 'CLOSED'
-      ? COLORS.errorBg
-      : s === 'PROCESS'
-        ? COLORS.warningBg
-        : COLORS.successBg;
-  const color =
-    s === 'CLOSED' ? COLORS.error : s === 'PROCESS' ? COLORS.warning : COLORS.success;
-  return (
-    <span
-      style={{
-        background: bg,
-        color,
-      }}
-      className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
-    >
-      {label ? describeCallStatus(label).label : '—'}
-    </span>
-  );
-};
+const STATUS_ITEMS = CALL_STATUS_OPTIONS;
+const statusBadge = (label?: string | null) =>
+  label ? <CallStatusBadge value={label} /> : '—';
 
 // ─────────────────────────────────────────────
 // Columns — list view (active bookings only)
@@ -166,6 +138,7 @@ function CallStatusPageInner() {
 
   const { data: detail, isLoading: detailLoading } = useCallStatusTicketDetail(viewTktId);
   const createMutation = useCreateCallStatus();
+  const bookingStatusMutation = useUpdateCallsBookingStatus();
   const {
     control,
     handleSubmit,
@@ -192,7 +165,8 @@ function CallStatusPageInner() {
     router.replace(`/ProjectManagement/CallStatus?tktId=${row.tktId}`);
   };
   const openAdd = () => {
-    reset(DEFAULTS);
+    const current = describeCallStatus(detail?.callBooking?.status).code;
+    reset({ ...DEFAULTS, STATUS: current && current !== 'P' ? current : 'I' });
     setMedia((prev) => {
       revokeMediaItems(prev);
       return [];
@@ -210,6 +184,15 @@ function CallStatusPageInner() {
         },
         media: media.flatMap((item) => (item.active && item.file ? [item.file] : [])),
       });
+      // Keep the booking's own status in step with this update (remark sent back unchanged).
+      const booking = detail?.callBooking;
+      if (booking?.sno) {
+        await bookingStatusMutation.mutateAsync({
+          id: String(booking.sno),
+          status: values.STATUS,
+          remark: booking.remark ?? '',
+        });
+      }
       toast.success('Status Added', 'Call status entry created successfully.');
       setAddOpen(false);
       reset(DEFAULTS);
@@ -328,8 +311,15 @@ function CallStatusPageInner() {
                     {sortedStatuses.map((s) => (
                       <div
                         key={s.sno}
-                        className="rounded-xl border border-line border-l-3 border-l-brand bg-white p-3"
+                        className="relative overflow-hidden rounded-xl border border-line bg-white p-3 pl-4"
                       >
+                        <span
+                          aria-hidden
+                          className={cn(
+                            'absolute inset-y-0 left-0 w-1',
+                            callStatusStyle(s.STATUS).solid,
+                          )}
+                        />
                         <div className="flex items-center justify-between mb-1.5">
                           {statusBadge(s.STATUS)}
                           <span className="text-xs text-muted">

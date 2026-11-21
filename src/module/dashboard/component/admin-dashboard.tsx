@@ -48,12 +48,20 @@ type SortKey = keyof Pick<
   | 'overdue'
 >;
 
-const STAFF_COLUMNS: { key: SortKey; label: string; render: (r: StaffPerformance) => string }[] = [
+const STAFF_COLUMNS: {
+  key: SortKey;
+  label: string;
+  render: (r: StaffPerformance) => string;
+}[] = [
   { key: 'assigned', label: 'Assigned', render: (r) => String(r.assigned) },
-  { key: 'open', label: 'Open', render: (r) => String(r.open) },
-  { key: 'progress', label: 'In progress', render: (r) => String(r.progress) },
+  { key: 'open', label: 'Pending', render: (r) => String(r.open) },
+  { key: 'progress', label: 'In processing', render: (r) => String(r.progress) },
   { key: 'complete', label: 'Completed', render: (r) => String(r.complete) },
-  { key: 'completionRate', label: 'Completion', render: (r) => percent(r.completionRate) },
+  {
+    key: 'completionRate',
+    label: 'Completion',
+    render: (r) => percent(r.completionRate),
+  },
   {
     key: 'avgResolutionHours',
     label: 'Avg time to complete',
@@ -64,16 +72,24 @@ const STAFF_COLUMNS: { key: SortKey; label: string; render: (r: StaffPerformance
     label: 'Avg first response',
     render: (r) => hours(r.avgFirstResponseHours),
   },
-  { key: 'updatesLogged', label: 'Calls updated', render: (r) => String(r.updatesLogged) },
+  {
+    key: 'updatesLogged',
+    label: 'Calls updated',
+    render: (r) => String(r.updatesLogged),
+  },
   { key: 'overdue', label: 'Overdue', render: (r) => String(r.overdue) },
 ];
 
 const th =
   'border-b border-line bg-gray-50 px-3 py-2 text-[11px] font-semibold tracking-wide whitespace-nowrap text-ink uppercase';
-const td = 'border-t border-line px-3 py-row align-middle text-[13px] text-ink tabular-nums';
+const td =
+  'border-t border-line px-3 py-row align-middle text-[13px] text-ink tabular-nums';
 
 function StaffTable({ rows }: { rows: StaffPerformance[] }) {
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'assigned', dir: -1 });
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({
+    key: 'assigned',
+    dir: -1,
+  });
   const sorted = useMemo(
     () =>
       [...rows].sort((a, b) => {
@@ -90,15 +106,20 @@ function StaffTable({ rows }: { rows: StaffPerformance[] }) {
   const header = (key: SortKey, label: string, right = true) => (
     <th
       className={cn(th, right ? 'text-right' : 'text-left')}
-      aria-sort={sort.key === key ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}
+      aria-sort={
+        sort.key === key ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'
+      }
     >
       <button
         type="button"
-        onClick={() => setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }))}
+        onClick={() =>
+          setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : -1 }))
+        }
         className="inline-flex items-center gap-1 uppercase hover:text-brand"
       >
         {label}
-        {sort.key === key && (sort.dir === 1 ? <ArrowUp size={11} /> : <ArrowDown size={11} />)}
+        {sort.key === key &&
+          (sort.dir === 1 ? <ArrowUp size={11} /> : <ArrowDown size={11} />)}
       </button>
     </th>
   );
@@ -179,7 +200,10 @@ export default function AdminDashboard({
   }, [calls, range, company]);
 
   const t = useMemo(() => totals(scoped), [scoped]);
-  const staff = useMemo(() => staffPerformance(scoped, users.data ?? []), [scoped, users.data]);
+  const staff = useMemo(
+    () => staffPerformance(scoped, users.data ?? []),
+    [scoped, users.data],
+  );
   const byCompany = useMemo(() => groupBy(scoped, (c) => c.companyName), [scoped]);
   const byClient = useMemo(() => groupBy(scoped, (c) => c.clientName), [scoped]);
   const byProject = useMemo(() => groupBy(scoped, (c) => c.projectName), [scoped]);
@@ -203,7 +227,7 @@ export default function AdminDashboard({
             value={range}
             onChange={setRange}
           />
-          <select
+          {/* <select
             aria-label="Company"
             value={company}
             onChange={(e) => setCompany(e.target.value)}
@@ -218,10 +242,12 @@ export default function AdminDashboard({
                 {c.name}
               </option>
             ))}
-          </select>
+          </select> */}
         </div>
         <p className="text-xs text-muted">
-          {loading ? 'Loading calls…' : `${scoped.length} calls · ${unassigned} unassigned`}
+          {loading
+            ? 'Loading calls…'
+            : `${scoped.length} calls · ${unassigned} unassigned`}
         </p>
       </div>
 
@@ -283,7 +309,7 @@ export default function AdminDashboard({
 
       <Panel
         title="Oldest unfinished calls"
-        subtitle="Open or in progress, longest waiting first"
+        subtitle="Pending or in processing, longest waiting first"
       >
         <CallList
           calls={oldestOpen(scoped, 10)}

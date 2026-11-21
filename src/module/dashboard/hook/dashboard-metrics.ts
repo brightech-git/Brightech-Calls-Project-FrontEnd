@@ -19,7 +19,7 @@ export const RANGE_OPTIONS: { key: DateRangeKey; label: string; days: number | n
   { key: '7d', label: '7 days', days: 7 },
   { key: '30d', label: '30 days', days: 30 },
   { key: '90d', label: '90 days', days: 90 },
-  { key: 'all', label: 'All time', days: null },
+  // { key: 'all', label: 'All time', days: null },
 ];
 
 export const groupOf = (call: DashboardCall): StatusGroup => describeCallStatus(call.status).group;

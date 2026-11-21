@@ -8,7 +8,10 @@ import {
   recentlyCompleted,
   totals,
 } from '@/src/module/dashboard/hook/dashboard-metrics';
-import type { DashboardCall, DateRangeKey } from '@/src/module/dashboard/type/dashboard.types';
+import type {
+  DashboardCall,
+  DateRangeKey,
+} from '@/src/module/dashboard/type/dashboard.types';
 import {
   CallList,
   Empty,
@@ -51,7 +54,8 @@ export default function StaffDashboard({
             scoped
               .filter((c) => c.resolutionHours !== null)
               .reduce<number | null>(
-                (m, c) => (m === null ? c.resolutionHours : Math.min(m, c.resolutionHours!)),
+                (m, c) =>
+                  m === null ? c.resolutionHours : Math.min(m, c.resolutionHours!),
                 null,
               ),
           )}
@@ -72,7 +76,7 @@ export default function StaffDashboard({
       <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3 max-lg:grid-cols-1">
         <Panel
           title="Your queue"
-          subtitle="Open and in progress, longest waiting first"
+          subtitle="Pending and in processing, longest waiting first"
         >
           {loading ? (
             <Empty>Loading…</Empty>

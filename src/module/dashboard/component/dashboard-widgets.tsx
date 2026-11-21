@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { cardClass } from '@/lib/styles';
 import CallStatusBadge from '@/src/components/CallStatusBadge';
+import { CALL_STATUS_STYLE } from '@/src/utils/callStatus';
 import { formatDate } from '@/src/utils/format/date';
 import { durationLabel } from '@/src/module/dashboard/api/dashboard.api';
 import {
@@ -63,20 +64,40 @@ export function StatTile({
   value,
   hint,
   tone,
+  status,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: React.ReactNode;
   tone?: 'warn' | 'good';
+  /** Colours the tile like the call status: open = red, progress = yellow, complete = green. */
+  status?: 'open' | 'progress' | 'complete';
 }) {
   return (
-    <article className={cn(cardClass, 'grid gap-0.5 px-3 py-2.5')}>
-      <span className="text-[11px] font-semibold tracking-wide text-muted uppercase">{label}</span>
+    <article
+      className={cn(cardClass, 'relative grid gap-0.5 overflow-hidden px-3 py-2.5')}
+    >
+      {status && (
+        <span
+          aria-hidden
+          className={cn('absolute inset-y-0 left-0 w-1', CALL_STATUS_STYLE[status].solid)}
+        />
+      )}
+      <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-muted uppercase">
+        {status && (
+          <span
+            aria-hidden
+            className={cn('size-2 rounded-full', CALL_STATUS_STYLE[status].solid)}
+          />
+        )}
+        {label}
+      </span>
       <strong
         className={cn(
           'text-xl leading-tight font-bold tabular-nums text-ink',
           tone === 'warn' && 'text-rose-700',
           tone === 'good' && 'text-emerald-700',
+          status && CALL_STATUS_STYLE[status].text,
         )}
       >
         {value}
@@ -103,16 +124,19 @@ export function TotalsRow({
         value={v(t.total)}
       />
       <StatTile
-        label="Open"
+        label="Pending"
+        status="open"
         value={v(t.open)}
         hint="Waiting for a first step"
       />
       <StatTile
-        label="In progress"
+        label="In processing"
+        status="progress"
         value={v(t.progress)}
       />
       <StatTile
         label="Completed"
+        status="complete"
         value={v(t.complete)}
         hint={loading ? undefined : `${percent(t.completionRate)} of non-cancelled`}
         tone="good"
@@ -153,7 +177,7 @@ export function RangeFilter({
           onClick={() => onChange(r.key)}
           className={cn(
             'rounded px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-muted hover:text-ink',
-            value === r.key && 'bg-brand-soft text-brand hover:text-brand',
+            value === r.key && 'bg-brand text-brand-soft hover:text-brand',
           )}
         >
           {r.label}
@@ -166,16 +190,22 @@ export function RangeFilter({
 // ─── Charts ─────────────────────────────────────────────────────────────────
 
 const STATUS_SEGMENTS = [
-  { key: 'open', label: 'Open', className: 'bg-amber-400' },
-  { key: 'progress', label: 'In progress', className: 'bg-blue-500' },
-  { key: 'complete', label: 'Completed', className: 'bg-emerald-500' },
-  { key: 'cancelled', label: 'Cancelled', className: 'bg-rose-400' },
+  { key: 'open', label: 'Pending', className: CALL_STATUS_STYLE.open.solid },
+  {
+    key: 'progress',
+    label: 'In processing',
+    className: CALL_STATUS_STYLE.progress.solid,
+  },
+  { key: 'complete', label: 'Completed', className: CALL_STATUS_STYLE.complete.solid },
+  { key: 'cancelled', label: 'Cancelled', className: CALL_STATUS_STYLE.cancelled.solid },
   { key: 'other', label: 'Other', className: 'bg-gray-300' },
 ] as const;
 
 /** One segmented bar of status shares, with a labelled legend. */
 export function StatusBreakdown({ t }: { t: DashboardTotals }) {
-  const parts = STATUS_SEGMENTS.map((s) => ({ ...s, value: t[s.key] })).filter((s) => s.value > 0);
+  const parts = STATUS_SEGMENTS.map((s) => ({ ...s, value: t[s.key] })).filter(
+    (s) => s.value > 0,
+  );
   if (!t.total) return <Empty>No calls in this range.</Empty>;
   return (
     <div className="grid gap-3 p-3">
@@ -218,14 +248,20 @@ export function DailyChart({ days }: { days: DayCount[] }) {
   const max = Math.max(1, ...days.map((d) => d.booked));
   const active = hover !== null ? days[hover] : null;
   const label = (date: string) =>
-    new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+      day: 'numeric',
+      month: 'short',
+    });
   const total = days.reduce((s, d) => s + d.booked, 0);
   return (
     <div className="grid gap-2 p-3">
       <div className="flex h-5 items-center justify-between text-xs">
-        <span className="text-muted">{active ? label(active.date) : `${days.length} days`}</span>
+        <span className="text-muted">
+          {active ? label(active.date) : `${days.length} days`}
+        </span>
         <span className="text-ink">
-          <strong className="tabular-nums">{active ? active.booked : total}</strong> booked
+          <strong className="tabular-nums">{active ? active.booked : total}</strong>{' '}
+          booked
           {active && (
             <>
               {' · '}
@@ -340,7 +376,9 @@ export function CallList({
             <th className={th}>Project</th>
             {showAssignee && <th className={th}>Assigned to</th>}
             <th className={th}>Status</th>
-            <th className={cn(th, 'text-right')}>{mode === 'age' ? 'Waiting' : 'Took'}</th>
+            <th className={cn(th, 'text-right')}>
+              {mode === 'age' ? 'Waiting' : 'Took'}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -405,8 +443,8 @@ export function GroupTable({ rows, label }: { rows: GroupSummary[]; label: strin
           <tr>
             <th className={th}>{label}</th>
             <th className={cn(th, 'text-right')}>Calls</th>
-            <th className={cn(th, 'text-right')}>Open</th>
-            <th className={cn(th, 'text-right')}>In progress</th>
+            <th className={cn(th, 'text-right')}>Pending</th>
+            <th className={cn(th, 'text-right')}>In processing</th>
             <th className={cn(th, 'text-right')}>Completed</th>
             <th className={cn(th, 'text-right')}>Avg resolution</th>
           </tr>
@@ -422,7 +460,9 @@ export function GroupTable({ rows, label }: { rows: GroupSummary[]; label: strin
               <td className={cn(td, 'text-right tabular-nums')}>{r.open}</td>
               <td className={cn(td, 'text-right tabular-nums')}>{r.progress}</td>
               <td className={cn(td, 'text-right tabular-nums')}>{r.complete}</td>
-              <td className={cn(td, 'text-right tabular-nums')}>{hours(r.avgResolutionHours)}</td>
+              <td className={cn(td, 'text-right tabular-nums')}>
+                {hours(r.avgResolutionHours)}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -431,7 +471,13 @@ export function GroupTable({ rows, label }: { rows: GroupSummary[]; label: strin
   );
 }
 
-export function ErrorNotice({ message, onRetry }: { message: string; onRetry: () => void }) {
+export function ErrorNotice({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
   return (
     <div
       role="alert"

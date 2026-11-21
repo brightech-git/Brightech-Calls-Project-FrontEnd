@@ -3,7 +3,7 @@ import { buttonClass, buttonVariants, labelClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 import { formatDate, formatDateTime } from '@/src/utils/format/date';
 
-import { useState, useEffect } from 'react';
+import { isValidElement, useState, useEffect } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import {
   TextAreaInput,
@@ -30,7 +30,12 @@ import {
 } from 'lucide-react';
 import { CustomTable, TableColumn } from '@/src/components/CustomTable';
 import CallStatusBadge from '@/src/components/CallStatusBadge';
-import { describeCallStatus } from '@/src/utils/callStatus';
+import {
+  CALL_STATUS_OPTIONS,
+  CALL_STATUS_STYLE,
+  callStatusStyle,
+  describeCallStatus,
+} from '@/src/utils/callStatus';
 import ConfirmDialog from '@/src/components/ConfirmDialog';
 import {
   MediaManager,
@@ -48,6 +53,7 @@ import {
   useCallsBookingList,
   useCreateCallsBooking,
   useUpdateCallsBooking,
+  useUpdateCallsBookingStatus,
   useDeleteCallsBooking,
   useGetCallsBookingById,
 } from '@/src/module/task-assignment/hook/use-task-assignment';
@@ -81,20 +87,10 @@ const statusSchema = z.object({
 });
 type StatusForm = z.infer<typeof statusSchema>;
 const DEFAULTS_STATUS: StatusForm = {
-  STATUS: 'OPEN',
+  STATUS: 'I',
   remark: '',
 };
-const STATUS_ITEMS = [
-  // { label: "Open", value: "OPEN" },
-  {
-    label: 'Process',
-    value: 'PROCESS',
-  },
-  {
-    label: 'Closed',
-    value: 'CLOSED',
-  },
-];
+const STATUS_ITEMS = CALL_STATUS_OPTIONS;
 const callsBookingSchema = z.object({
   clientId: z.number().min(1, 'Client is required'),
   projectId: z.string().optional(),
@@ -262,6 +258,11 @@ export default function CallsBookingPage() {
   const [editLoading, setEditLoading] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
   const [tokenId, setTokenId] = useState<number | null>();
+  // The booking whose status is being updated, so its own status follows the update.
+  const [statusRow, setStatusRow] = useState<{
+    sno: number;
+    remark?: string | null;
+  } | null>(null);
   const [lightbox, setLightbox] = useState<{
     items: LightboxItem[];
     index: number;
@@ -306,6 +307,7 @@ export default function CallsBookingPage() {
   const createMutation = useCreateCallsBooking();
   const createStatusMutation = useCreateCallStatus();
   const updateMutation = useUpdateCallsBooking();
+  const bookingStatusMutation = useUpdateCallsBookingStatus();
   const deleteMutation = useDeleteCallsBooking();
   const isPending = createMutation.isPending || updateMutation.isPending;
   const handleChange = (field: string, value: any) => {
@@ -387,20 +389,7 @@ export default function CallsBookingPage() {
     label: s.USERNAME ?? '',
     value: String(s.USERID),
   }));
-  const statusItems = [
-    {
-      label: 'Pending',
-      value: 'P',
-    },
-    {
-      label: 'Completed',
-      value: 'C',
-    },
-    {
-      label: 'Both',
-      value: '',
-    },
-  ];
+  const statusItems = CALL_STATUS_OPTIONS;
 
   // ── List filters (toolbar) ──
 
@@ -498,6 +487,9 @@ export default function CallsBookingPage() {
       ...data,
       compId: editRow?.compId ?? defaultCompId,
       active: editRow ? (data.active ?? editRow.active ?? 'Y') : 'Y',
+      // Status is not picked on the booking form: a new booking always starts as
+      // Pending, and later changes come only from status updates.
+      status: editRow ? editRow.status || data.status || 'P' : 'P',
       // clientId: myClientId,
     };
     // console.log(payload,'payload')
@@ -545,6 +537,15 @@ export default function CallsBookingPage() {
         // Only the files picked in the status dialog, and only the ones left active.
         media: statusMedia.flatMap((m) => (m.active && m.file ? [m.file] : [])),
       });
+      // Keep the booking's own status in step, so every list shows the latest one.
+      // The booking remark is sent back unchanged (the backend would clear it otherwise).
+      if (statusRow) {
+        await bookingStatusMutation.mutateAsync({
+          id: String(statusRow.sno),
+          status: values.STATUS,
+          remark: statusRow.remark ?? '',
+        });
+      }
       toast.success('Status Added', 'Call status entry created successfully.');
       setAddOpen(false);
       statusReset(DEFAULTS_STATUS);
@@ -622,7 +623,13 @@ export default function CallsBookingPage() {
                         'Staff',
                         v.userMap ? Object.values(v.userMap).join(', ') : v.assignedUsers,
                       ],
-                      ['Status', describeCallStatus(v.status).label],
+                      [
+                        'Status',
+                        <CallStatusBadge
+                          key="s"
+                          value={v.status}
+                        />,
+                      ],
                       ['Active', v.active === 'Y' ? 'Active' : 'Inactive'],
                       ['Remark', v.remark],
                       ['Cancelled', v.cancel],
@@ -636,7 +643,7 @@ export default function CallsBookingPage() {
                     >
                       <span className="text-xs text-muted">{label}</span>
                       <span className="text-sm break-words text-ink">
-                        {String(val ?? '—')}
+                        {isValidElement(val) ? val : String(val ?? '—')}
                       </span>
                     </div>
                   ))}
@@ -684,38 +691,22 @@ export default function CallsBookingPage() {
                 ) : (
                   <div className="flex flex-col gap-2.5">
                     {statusHistory.map((s) => {
-                      const label = s.STATUS ?? '—';
-                      const statusName = describeCallStatus(s.STATUS).label;
-                      const bg =
-                        label === 'CLOSED' || label === 'C'
-                          ? COLORS.errorBg
-                          : label === 'PROCESS' || label === 'I'
-                            ? COLORS.warningBg
-                            : COLORS.successBg;
-                      const color =
-                        label === 'CLOSED' || label === 'C'
-                          ? COLORS.error
-                          : label === 'PROCESS' || label === 'I'
-                            ? COLORS.warning
-                            : COLORS.success;
                       return (
                         <div
                           key={s.sno}
-                          style={{
-                            border: `1px solid ${COLORS.cardBorder}`,
-                          }}
-                          className="rounded-xl p-2.5 bg-white"
+                          className={cn(
+                            'relative overflow-hidden rounded-xl border border-line bg-white p-2.5 pl-3.5',
+                          )}
                         >
+                          <span
+                            aria-hidden
+                            className={cn(
+                              'absolute inset-y-0 left-0 w-1',
+                              callStatusStyle(s.STATUS).solid,
+                            )}
+                          />
                           <div className="flex items-center justify-between mb-1.5">
-                            <span
-                              style={{
-                                background: bg,
-                                color,
-                              }}
-                              className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
-                            >
-                              {statusName}
-                            </span>
+                            <CallStatusBadge value={s.STATUS} />
                             <span className="text-xs text-muted">
                               {s.UPDATED ? formatDateTime(s.UPDATED) : '—'}
                             </span>
@@ -807,19 +798,19 @@ export default function CallsBookingPage() {
           {
             label: 'Pending',
             value: summary.open,
-            tone: 'bg-amber-500',
+            tone: CALL_STATUS_STYLE.open.solid,
             icon: <Clock3 size={16} />,
           },
           {
-            label: 'In progress',
+            label: 'In processing',
             value: summary.progress,
-            tone: 'bg-blue-500',
+            tone: CALL_STATUS_STYLE.progress.solid,
             icon: <Loader size={16} />,
           },
           {
             label: 'Completed',
             value: summary.complete,
-            tone: 'bg-emerald-500',
+            tone: CALL_STATUS_STYLE.complete.solid,
             icon: <CheckCircle2 size={16} />,
           },
         ].map((tile) => (
@@ -867,7 +858,7 @@ export default function CallsBookingPage() {
             onChange={(val) =>
               setAppliedFilters((prev) => ({ ...prev, asOn: val, asOnDate: today }))
             }
-            labels={{ on: 'Single day (as on)', off: 'Date range' }}
+            labels={{ on: 'As On', off: 'As On' }}
           />
         </div>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] items-end gap-x-2 gap-y-1.5">
@@ -939,7 +930,7 @@ export default function CallsBookingPage() {
             label="Status"
             value={appliedFilters.status}
             onChange={(val) => handleChange('status', val)}
-            options={statusItems.filter((o) => o.value !== '')}
+            options={statusItems}
             placeholder="All statuses"
           />
           <div className="flex gap-2">
@@ -983,12 +974,20 @@ export default function CallsBookingPage() {
             label: 'Update status',
             icon: <MessageSquarePlus size={13} />,
             onClick: (row) => {
-              statusReset(DEFAULTS_STATUS);
+              const current = describeCallStatus(row.status).code;
+              statusReset({
+                ...DEFAULTS_STATUS,
+                STATUS: current && current !== 'P' ? current : 'I',
+              });
               setStatusMedia((prev) => {
                 revokeMediaItems(prev);
                 return [];
               });
               setTokenId(row.tktId);
+              setStatusRow({
+                sno: Number(row.sno),
+                remark: (row.remark as string | null | undefined) ?? '',
+              });
               setAddOpen(true);
             },
           },
@@ -1119,20 +1118,6 @@ export default function CallsBookingPage() {
                     )}
                   />
 
-                  <Controller
-                    name="status"
-                    control={control}
-                    render={({ field }) => (
-                      <SelectInput
-                        label="Status"
-                        value={field.value ?? ''}
-                        onChange={field.onChange}
-                        options={statusItems}
-                        error={errors.status?.message}
-                      />
-                    )}
-                  />
-
                   {/* Active is only editable during Update — on create it
                       defaults to "Y" automatically and isn't shown. */}
                   {editRow && (
@@ -1237,7 +1222,7 @@ export default function CallsBookingPage() {
             <div className="shrink-0 gap-4 border-b border-line bg-slate-50/60 max-sm:px-3 flex p-2.5 justify-between items-center">
               <div>
                 <div className="text-xl tracking-tight">Add Status</div>
-                <div className="mt-1 text-sm text-muted">Ticket:</div>
+                <div className="mt-1 text-sm text-muted">Ticket: {tokenId ?? '—'}</div>
               </div>
               <button
                 className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
