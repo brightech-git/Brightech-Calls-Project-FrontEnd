@@ -283,7 +283,7 @@ export default function CallsBookingPage() {
   const { data: clients = [] } = useClientList();
   const { data: projects = [] } = useProjectList();
   const { data: modules = [] } = useModuleList();
-  const { data: staffList = [] } = useGetAllUsers();
+  const { data: staffList = [] } = useGetAllUsers({active : "Y" });
   const { data: pagedBookings, isLoading } = useCallsBookingList(searchFilters);
   const bookings = pagedBookings?.content ?? [];
   const { data: viewData, isLoading: viewLoading } = useGetCallsBookingById(viewId ?? '');

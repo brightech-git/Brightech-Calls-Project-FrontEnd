@@ -10,6 +10,7 @@ import {
   UpdateUserPayload,
   AuthResponse,
   UserRecord,
+  UserFilter,
 } from '@/src/module/auth/type/auth.types';
 
 // LOGIN
@@ -49,8 +50,10 @@ export const registerUser = async (
 };
 
 // GET ALL USERS
-export const getAllUsers = async (): Promise<ApiResponse<UserRecord[]>> => {
-  const response = await axiosInstance.get<ApiResponse<UserRecord[]>>('/user');
+export const getAllUsers = async (filter: UserFilter): Promise<ApiResponse<UserRecord[]>> => {
+  // console.log(filter,'filter')
+ 
+  const response = await axiosInstance.get<ApiResponse<UserRecord[]>>('/user' ,{params : filter});
   return response.data;
 };
 

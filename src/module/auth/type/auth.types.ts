@@ -61,3 +61,16 @@ export interface UserRecord {
   UPDATED: string | null;
   UPTIME: string | null;
 }
+
+
+export interface UserFilter {
+
+  search ?: string,
+  active ?: string,
+  isClient ?: string,
+  fromDate ?: string,
+  toDate ?: string,
+  clientId ?: number,
+  roleId?: number,
+
+}

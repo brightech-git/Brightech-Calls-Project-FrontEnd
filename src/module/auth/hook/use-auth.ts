@@ -20,6 +20,7 @@ import {
   UpdateUserPayload,
   AuthResponse,
   UserRecord,
+  UserFilter,
 } from '@/src/module/auth/type/auth.types';
 import { ApiResponse } from '@/types/ApiResponse';
 
@@ -84,11 +85,21 @@ export const useRegister = () => {
 };
 
 // GET ALL USERS HOOK
-export const useGetAllUsers = () => {
-  return useQuery<ApiResponse<UserRecord[]>, Error, UserRecord[]>({
-    queryKey: ['all-users'],
-    queryFn: getAllUsers,
-    select: (res) => res?.data ?? [],
+
+export const userKeys = {
+  all: ['users'] as const,
+
+  lists: () => [...userKeys.all, 'list'] as const,
+
+  list: (filter: UserFilter) =>
+    [...userKeys.lists(), filter] as const,
+};
+
+export const useGetAllUsers = (filter: UserFilter) => {
+  return useQuery({
+    queryKey: userKeys.list(filter),
+    queryFn: () => getAllUsers(filter),
+    select: (res: ApiResponse<UserRecord[]>) => res?.data ?? [],
   });
 };
 
