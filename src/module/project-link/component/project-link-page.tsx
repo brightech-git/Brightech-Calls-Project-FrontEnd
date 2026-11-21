@@ -2,7 +2,9 @@
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import { usePageHeader } from '@/src/context/PageHeaderContext';
 import { useClientList } from '@/src/module/client-master/hook/use-client-master';
 import { useProjectTypeList } from '@/src/module/project-type-master/hook/use-project-type-master';
@@ -17,7 +19,13 @@ import {
   type TableColumn,
 } from '@/src/components/common';
 import { FormFields, type FormFieldConfig } from '@/src/components/form/FormFields';
-import { ComboBox, FormModal, FormModalBody, useAddNew } from '@/src/components/form';
+import {
+  ComboBox,
+  FormModal,
+  FormModalBody,
+  SelectInput,
+  useAddNew,
+} from '@/src/components/form';
 import { ClientFormModal } from '@/src/module/client-master/component/client-form';
 import { DataExport, type ExportColumn } from '@/src/components/DataExport';
 import { getApiErrorMessage, normalizeApiError } from '@/lib/api/errors';
@@ -106,18 +114,24 @@ const exportColumns: ExportColumn<ProjectLinkRecord_Table>[] = [
   { key: 'status', label: 'Status' },
   { key: 'type', label: 'Device' },
 ];
+const DEFAULT_FILTERS = {
+  clientId: '',
+  projectTypeId: '',
+  deviceType: '',
+  active: 'true',
+};
+
 export default function ProjectLinksPage() {
   usePageHeader({ title: 'Project Links', subtitle: 'Manage client project access' });
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ProjectLinkRecord_Table | null>(null);
   const [deleting, setDeleting] = useState<ProjectLinkRecord_Table | null>(null);
-  const [filters, setFilters] = useState({
-    clientId: '',
-    projectTypeId: '',
-    deviceType: '',
-    active: 'true',
-  });
+  // `draft` is what the filter fields show; `filters` is what the list uses.
+  // Nothing reloads until Apply is pressed (or Enter on the last field).
+  const [draft, setDraft] = useState(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const filtersChanged = JSON.stringify(draft) !== JSON.stringify(filters);
   const clients = useClientList();
   const types = useProjectTypeList();
   const links = useProjectLinkList({
@@ -227,55 +241,74 @@ export default function ProjectLinksPage() {
           </Button>
         </div>
       </div>
-      <div className="flex flex-wrap items-end gap-2 border-b border-line pb-3 [&>*]:min-w-36 [&>*]:flex-1">
-        <ComboBox
-          label="Client"
-          value={filters.clientId}
-          options={clientOptions}
-          placeholder="All clients"
-          advanceOnSelect={false}
-          onChange={(value) => setFilters({ ...filters, clientId: value })}
-        />
-        <ComboBox
-          label="Project type"
-          value={filters.projectTypeId}
-          options={typeOptions}
-          placeholder="All types"
-          advanceOnSelect={false}
-          onChange={(value) => setFilters({ ...filters, projectTypeId: value })}
-        />
-        <ComboBox
-          label="Device"
-          value={filters.deviceType}
-          options={devices}
-          placeholder="All devices"
-          advanceOnSelect={false}
-          onChange={(value) => setFilters({ ...filters, deviceType: value })}
-        />
-        <ComboBox
-          label="Activity"
-          value={filters.active}
-          options={[
-            { value: 'true', label: 'Active' },
-            { value: 'false', label: 'Inactive' },
-          ]}
-          placeholder="All records"
-          advanceOnSelect={false}
-          onChange={(value) => setFilters({ ...filters, active: value })}
-        />
-        <Button
-          onClick={() =>
-            setFilters({
-              clientId: '',
-              projectTypeId: '',
-              deviceType: '',
-              active: 'true',
-            })
-          }
-        >
-          Reset filters
-        </Button>
-      </div>
+      <section
+        data-enter-nav
+        aria-label="Filter project links"
+        className="rounded-lg border border-line bg-white px-2.5 py-2"
+      >
+        <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-ink uppercase">
+          <SlidersHorizontal size={13} /> Filters
+        </p>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] items-end gap-x-2 gap-y-1.5">
+          <ComboBox
+            label="Client"
+            value={draft.clientId}
+            options={clientOptions}
+            placeholder="All clients"
+            onChange={(value) => setDraft({ ...draft, clientId: value })}
+          />
+          <ComboBox
+            label="Project type"
+            value={draft.projectTypeId}
+            options={typeOptions}
+            placeholder="All types"
+            onChange={(value) => setDraft({ ...draft, projectTypeId: value })}
+          />
+          <ComboBox
+            label="Device"
+            value={draft.deviceType}
+            options={devices}
+            placeholder="All devices"
+            onChange={(value) => setDraft({ ...draft, deviceType: value })}
+          />
+          <SelectInput
+            label="Status"
+            value={draft.active}
+            options={[
+              { value: 'true', label: 'Active' },
+              { value: 'false', label: 'Inactive' },
+            ]}
+            placeholder="All records"
+            onChange={(value) => setDraft({ ...draft, active: value })}
+          />
+          <div className="flex items-end gap-2">
+            <button
+              type="button"
+              className={buttonClass}
+              onClick={() => {
+                setDraft(DEFAULT_FILTERS);
+                setFilters(DEFAULT_FILTERS);
+              }}
+            >
+              <RotateCcw size={13} /> Reset
+            </button>
+            <button
+              type="button"
+              data-enter-submit
+              className={cn(buttonClass, buttonVariants.primary)}
+              onClick={() => setFilters(draft)}
+            >
+              <Search size={13} /> Apply
+              {filtersChanged && (
+                <span
+                  aria-label="Filters changed"
+                  className="size-1.5 rounded-full bg-white"
+                />
+              )}
+            </button>
+          </div>
+        </div>
+      </section>
       {(clients.isError || types.isError) && (
         <Notification tone="warning">
           Some lookup data could not be loaded.{' '}

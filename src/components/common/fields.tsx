@@ -29,9 +29,20 @@ export function Field({
 }: FieldMeta & { id: string; children: ReactNode }) {
   return (
     <div className="grid min-w-0 gap-1">
-      <label htmlFor={id} className={labelClass}>
+      <label
+        htmlFor={id}
+        className={labelClass}
+      >
         {label}
-        {required && <span className="text-red-600" aria-hidden="true"> *</span>}
+        {required && (
+          <span
+            className="text-red-600"
+            aria-hidden="true"
+          >
+            {' '}
+            *
+          </span>
+        )}
       </label>
       {children}
       {error ? (
@@ -249,6 +260,9 @@ export function DateField({
         showYearDropdown
         dropdownMode="select"
         isClearable={!required && !disabled}
+        portalId="calls-date-portal"
+        popperClassName="z-[1600]!"
+        popperPlacement="bottom-start"
       />
     </Field>
   );

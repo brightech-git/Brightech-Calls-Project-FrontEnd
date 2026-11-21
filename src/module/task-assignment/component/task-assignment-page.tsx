@@ -1,7 +1,7 @@
 'use client';
 import { buttonClass, buttonVariants, labelClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
-import { formatDate, formatDateTime } from '@/src/utils/format/date';
+import { formatDateTime, formatWhen } from '@/src/utils/format/date';
 
 import { isValidElement, useState, useEffect } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -98,7 +98,9 @@ const callsBookingSchema = z.object({
   moduleId: z.string().optional(),
   moduleName: z.string().optional(),
   remark: z.string().optional(),
-  assignedUsers: z.string().min(1, 'Staff is required'),
+  // Required for staff/admin bookings (checked on submit). A client raising a call
+  // leaves it empty, and the admin assigns staff afterwards.
+  assignedUsers: z.string().optional(),
   status: z.string().optional(),
   // Only editable during Update (see Assignment section below) — defaults
   // to "Y" automatically on create, same as before.
@@ -112,9 +114,9 @@ type CallsBookingForm = z.infer<typeof callsBookingSchema>;
 
 const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
   {
-    key: 'sno',
-    header: 'Sno',
-    render: (row, index) => index + 1,
+    key: 'tktid',
+    header: 'TKT ID',
+    render: (row) => row.tktId,
   },
   // { key: "tktId",       header: "ID",   sortable: true, width: "10px" },
 
@@ -193,9 +195,9 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
   },
   {
     key: 'tktDate',
-    header: 'Date',
+    header: 'Date & time',
     sortable: true,
-    render: (row) => (row.tktDate ? formatDate(row.tktDate as string) : '-'),
+    render: (row) => (row.tktDate ? formatWhen(row.tktDate as string) : '-'),
   },
   {
     key: 'active',
@@ -268,12 +270,6 @@ export default function CallsBookingPage() {
     index: number;
   } | null>(null);
 
-  // ── Date filter (toolbar) ──
-  // "As On" shows a single date and filters bookings ticketed on exactly
-  // that day (fromDate === toDate). Turned off, From Date / To Date pick a
-  // range. Both are sent to the server (GET /callsbooking?fromDate=&toDate=)
-  // so the filter — and the summary tiles below — reflect the whole
-  // matching dataset, not just the currently loaded page.
   const userId = localStorage.getItem('userId') ?? '';
   const isAdmin = userId === '999';
   const isClientUser = !isAdmin && localStorage.getItem('isClient') === 'Y';
@@ -331,6 +327,7 @@ export default function CallsBookingPage() {
     reset,
     setValue,
     getValues,
+    setError,
     formState: { errors },
   } = useForm<CallsBookingForm>({
     resolver: zodResolver(callsBookingSchema),
@@ -417,7 +414,8 @@ export default function CallsBookingPage() {
 
   const openCreate = () => {
     setEditRow(null);
-    reset(DEFAULTS);
+    // A client user's own client is filled in (the field is hidden for them).
+    reset({ ...DEFAULTS, clientId: isClientUser ? myClientId : DEFAULTS.clientId });
     setMedia((prev) => {
       revokeMediaItems(prev);
       return [];
@@ -464,6 +462,10 @@ export default function CallsBookingPage() {
   // ─────────────────────────
 
   const onSubmit = async (data: CallsBookingForm) => {
+    if (!isClientUser && !data.assignedUsers) {
+      setError('assignedUsers', { type: 'required', message: 'Staff is required' });
+      return;
+    }
     // Keep every existing (already-uploaded) item so its active/order
     // state is persisted, but drop new picks the user toggled off before
     // ever saving them — those were never uploaded, so there's nothing
@@ -479,10 +481,7 @@ export default function CallsBookingPage() {
       active: m.active,
     }));
 
-    // Company is no longer a form field — every booking is filed under the
-    // company on record, applied here automatically. Active is only
-    // editable during Update (see the Assignment section); on create it
-    // isn't shown at all and defaults to "Y".
+
     const payload = {
       ...data,
       compId: editRow?.compId ?? defaultCompId,
@@ -490,10 +489,14 @@ export default function CallsBookingPage() {
       // Status is not picked on the booking form: a new booking always starts as
       // Pending, and later changes come only from status updates.
       status: editRow ? editRow.status || data.status || 'P' : 'P',
-      // clientId: myClientId,
+      // A client user always books for their own client.
+      clientId: isClientUser ? myClientId || data.clientId : data.clientId,
+      // Clients don't pick staff; an edit by a client keeps the existing assignment.
+      assignedUsers: isClientUser
+        ? (editRow?.assignedUsers ?? data.assignedUsers ?? '')
+        : (data.assignedUsers ?? ''),
     };
-    // console.log(payload,'payload')
-    // return;
+   
     try {
       if (editRow) {
         const res = await updateMutation.mutateAsync({
@@ -583,6 +586,124 @@ export default function CallsBookingPage() {
   // ─────────────────────────
 
   // ── Detail view (full page replace) ──
+  // Opens the "Add status" dialog for a booking, from the list or its single view.
+  const openStatus = (row: {
+    tktId?: number | string | null;
+    sno: number | string;
+    status?: unknown;
+    remark?: unknown;
+  }) => {
+    const current = describeCallStatus(row.status).code;
+    statusReset({
+      ...DEFAULTS_STATUS,
+      STATUS: current && current !== 'P' ? current : 'I',
+    });
+    setStatusMedia((prev) => {
+      revokeMediaItems(prev);
+      return [];
+    });
+    setTokenId(row.tktId == null ? null : Number(row.tktId));
+    setStatusRow({
+      sno: Number(row.sno),
+      remark: (row.remark as string | null | undefined) ?? '',
+    });
+    setAddOpen(true);
+  };
+
+  const statusDialog = addOpen ? (
+    <div
+      className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
+      onClick={(e) => e.target === e.currentTarget && setAddOpen(false)}
+    >
+      <div
+        className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
+        data-workspace-dialog
+        role="dialog"
+        aria-modal="true"
+        aria-label="Booking and call details"
+      >
+        <div className="shrink-0 gap-4 border-b border-line bg-slate-50/60 max-sm:px-3 flex p-2.5 justify-between items-center">
+          <div>
+            <div className="text-xl tracking-tight">Add Status</div>
+            <div className="mt-1 text-sm text-muted">Ticket: {tokenId ?? '—'}</div>
+          </div>
+          <button
+            className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
+            data-dialog-close
+            aria-label="Close form"
+            onClick={() => setAddOpen(false)}
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={statusSubmit(onStatusSubmit)}>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
+            <div className="grid gap-3">
+              <Controller
+                name="STATUS"
+                control={statusControl}
+                render={({ field }) => (
+                  <SelectInput
+                    label="Status"
+                    required
+                    value={field.value}
+                    onChange={(v) => field.onChange(v.toUpperCase())}
+                    options={STATUS_ITEMS}
+                    error={statusError.STATUS?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                name="remark"
+                control={statusControl}
+                render={({ field }) => (
+                  <TextAreaInput
+                    label="Remark"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Enter remark"
+                    rows={3}
+                  />
+                )}
+              />
+
+              <div className="flex min-w-0 flex-col gap-2">
+                <label className="text-sm text-muted">Attachments</label>
+                <MediaManager
+                  value={statusMedia}
+                  onChange={setStatusMedia}
+                  ticketAttachments
+                  maxFiles={10}
+                  onError={(msg) => toast.error('Error', msg)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="shrink-0 gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3 flex items-center justify-end">
+            <button
+              type="button"
+              className={buttonClass}
+              onClick={() => setAddOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={cn(buttonClass, buttonVariants.primary)}
+              disabled={createStatusMutation.isPending}
+            >
+              <Pencil size={12} />
+              {createStatusMutation.isPending ? 'Saving...' : 'Save Status'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  ) : null;
+
   if (viewId !== null) {
     const v = viewData;
     return (
@@ -595,12 +716,34 @@ export default function CallsBookingPage() {
                 Ticket ID: {v?.tktId ?? viewId}
               </div>
             </div>
-            <button
-              className={buttonClass}
-              onClick={() => setViewId(null)}
-            >
-              ← Back to List
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {v && (
+                <button
+                  type="button"
+                  className={cn(buttonClass, buttonVariants.primary)}
+                  onClick={() => openStatus(v)}
+                >
+                  <MessageSquarePlus size={14} /> Add status
+                </button>
+              )}
+              <button
+                type="button"
+                className={buttonClass}
+                onClick={() => {
+                  setViewId(null);
+                  openCreate();
+                }}
+              >
+                <Plus size={14} /> New booking
+              </button>
+              <button
+                type="button"
+                className={buttonClass}
+                onClick={() => setViewId(null)}
+              >
+                ← Back to list
+              </button>
+            </div>
           </div>
 
           <div className="p-4">
@@ -612,10 +755,7 @@ export default function CallsBookingPage() {
                   {(
                     [
                       ['Ticket ID', v.tktId],
-                      [
-                        'Ticket Date',
-                        v.tktDate ? formatDateTime(v.tktDate as string) : '—',
-                      ],
+                      ['Ticket Date', v.tktDate ? formatWhen(v.tktDate as string) : '—'],
                       ['Client', v.clientName],
                       ['Project', v.projectName],
                       ['Module', v.moduleName],
@@ -741,6 +881,7 @@ export default function CallsBookingPage() {
           </div>
         </div>
 
+        {statusDialog}
         {lightbox && (
           <MediaLightbox
             items={lightbox.items}
@@ -850,9 +991,12 @@ export default function CallsBookingPage() {
         className="mb-3 rounded-lg border border-line bg-white px-2.5 py-2"
       >
         <div className="mb-1.5 flex items-center justify-between gap-2">
+        
           <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-ink uppercase">
             <SlidersHorizontal size={13} /> Filters
           </p>
+        </div>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] items-end gap-x-2 gap-y-1.5">
           <SwitchField
             value={appliedFilters.asOn}
             onChange={(val) =>
@@ -860,8 +1004,6 @@ export default function CallsBookingPage() {
             }
             labels={{ on: 'As On', off: 'As On' }}
           />
-        </div>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] items-end gap-x-2 gap-y-1.5">
           {appliedFilters.asOn ? (
             <div className="grid gap-1">
               <span className={labelClass}>As on</span>
@@ -869,6 +1011,7 @@ export default function CallsBookingPage() {
                 value={appliedFilters.asOnDate || null}
                 onChange={(val) => handleChange('asOnDate', val)}
                 placeholder="Select date"
+                className="z-[100]"
               />
             </div>
           ) : (
@@ -973,23 +1116,7 @@ export default function CallsBookingPage() {
           {
             label: 'Update status',
             icon: <MessageSquarePlus size={13} />,
-            onClick: (row) => {
-              const current = describeCallStatus(row.status).code;
-              statusReset({
-                ...DEFAULTS_STATUS,
-                STATUS: current && current !== 'P' ? current : 'I',
-              });
-              setStatusMedia((prev) => {
-                revokeMediaItems(prev);
-                return [];
-              });
-              setTokenId(row.tktId);
-              setStatusRow({
-                sno: Number(row.sno),
-                remark: (row.remark as string | null | undefined) ?? '',
-              });
-              setAddOpen(true);
-            },
+            onClick: openStatus,
           },
         ]}
         // searchPlaceholder="Search ticket, project, module..."
@@ -1031,7 +1158,16 @@ export default function CallsBookingPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form
+              onSubmit={handleSubmit(onSubmit, (formErrors) => {
+                // Errors on a field the user can't see would otherwise make the
+                // button look dead, so name them in a toast.
+                const messages = Object.values(formErrors)
+                  .map((e) => e?.message)
+                  .filter(Boolean);
+                if (messages.length) toast.error('Check the form', messages.join(' · '));
+              })}
+            >
               <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
                 <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
                   Basic Information
@@ -1097,26 +1233,33 @@ export default function CallsBookingPage() {
                   />
                 </div>
 
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
-                  Assignment
-                </div>
+                {(!isClientUser || editRow) && (
+                  <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                    Assignment
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
-                  <Controller
-                    name="assignedUsers"
-                    control={control}
-                    render={({ field }) => (
-                      <MultiComboBox
-                        label="Staff"
-                        required
-                        value={field.value ? field.value.split(',').filter(Boolean) : []}
-                        onChange={(vals) => field.onChange(vals.join(','))}
-                        options={staffItems}
-                        placeholder="Select staff"
-                        error={errors.assignedUsers?.message}
-                      />
-                    )}
-                  />
+                  {/* Clients raise the call; staff are assigned by the admin. */}
+                  {!isClientUser && (
+                    <Controller
+                      name="assignedUsers"
+                      control={control}
+                      render={({ field }) => (
+                        <MultiComboBox
+                          label="Staff"
+                          required
+                          value={
+                            field.value ? field.value.split(',').filter(Boolean) : []
+                          }
+                          onChange={(vals) => field.onChange(vals.join(','))}
+                          options={staffItems}
+                          placeholder="Select staff"
+                          error={errors.assignedUsers?.message}
+                        />
+                      )}
+                    />
+                  )}
 
                   {/* Active is only editable during Update — on create it
                       defaults to "Y" automatically and isn't shown. */}
@@ -1157,6 +1300,7 @@ export default function CallsBookingPage() {
                         placeholder="Enter remarks"
                         onChange={field.onChange}
                         error={errors.remark?.message}
+                        rows={3}
                       />
                     )}
                   />
@@ -1206,100 +1350,7 @@ export default function CallsBookingPage() {
         </div>
       )}
 
-      {/* Add Status Modal */}
-      {addOpen && (
-        <div
-          className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto bg-slate-900/35 p-4 backdrop-blur-sm max-sm:p-2"
-          onClick={(e) => e.target === e.currentTarget && setAddOpen(false)}
-        >
-          <div
-            className="flex max-h-[calc(100dvh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg max-sm:max-h-[calc(100dvh-16px)] [&_form]:flex [&_form]:min-h-0 [&_form]:flex-1 [&_form]:flex-col"
-            data-workspace-dialog
-            role="dialog"
-            aria-modal="true"
-            aria-label="Booking and call details"
-          >
-            <div className="shrink-0 gap-4 border-b border-line bg-slate-50/60 max-sm:px-3 flex p-2.5 justify-between items-center">
-              <div>
-                <div className="text-xl tracking-tight">Add Status</div>
-                <div className="mt-1 text-sm text-muted">Ticket: {tokenId ?? '—'}</div>
-              </div>
-              <button
-                className="grid size-8 place-items-center rounded-lg border border-line bg-white text-muted hover:bg-rose-50 hover:text-rose-600"
-                data-dialog-close
-                aria-label="Close form"
-                onClick={() => setAddOpen(false)}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={statusSubmit(onStatusSubmit)}>
-              <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
-                <div className="grid gap-3">
-                  <Controller
-                    name="STATUS"
-                    control={statusControl}
-                    render={({ field }) => (
-                      <SelectInput
-                        label="Status"
-                        required
-                        value={field.value}
-                        onChange={(v) => field.onChange(v.toUpperCase())}
-                        options={STATUS_ITEMS}
-                        error={statusError.STATUS?.message}
-                      />
-                    )}
-                  />
-
-                  <Controller
-                    name="remark"
-                    control={statusControl}
-                    render={({ field }) => (
-                      <TextAreaInput
-                        label="Remark"
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Enter remark"
-                        rows={3}
-                      />
-                    )}
-                  />
-
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Attachments</label>
-                    <MediaManager
-                      value={statusMedia}
-                      onChange={setStatusMedia}
-                      ticketAttachments
-                      maxFiles={10}
-                      onError={(msg) => toast.error('Error', msg)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="shrink-0 gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3 flex items-center justify-end">
-                <button
-                  type="button"
-                  className={buttonClass}
-                  onClick={() => setAddOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={cn(buttonClass, buttonVariants.primary)}
-                  disabled={createStatusMutation.isPending}
-                >
-                  <Pencil size={12} />
-                  {createStatusMutation.isPending ? 'Saving...' : 'Save Status'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {statusDialog}
 
       {/* Delete Confirm */}
 

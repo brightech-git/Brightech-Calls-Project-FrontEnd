@@ -32,12 +32,27 @@ export function formatTime(value: DateValue): string {
     ? `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
     : '';
 }
+/** 12-hour clock for display, e.g. "03:30 PM". */
+export function formatTime12(value: DateValue): string {
+  const date = parseDate(value);
+  if (!date) return '';
+  const hours = date.getHours();
+  return `${pad(hours % 12 || 12)}:${pad(date.getMinutes())} ${hours < 12 ? 'AM' : 'PM'}`;
+}
+/** Date and time for display, e.g. "21-11-2026 03:30 PM". */
 export function formatDateTime(value: DateValue): string {
-  return parseDate(value) ? `${formatDate(value, true)} ${formatTime(value)}` : '';
+  return parseDate(value) ? `${formatDate(value)} ${formatTime12(value)}` : '';
 }
 export function formatApiDate(value: DateValue): string {
   const date = parseDate(value);
   return date
     ? `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
     : '';
+}
+
+/** Date with a 12-hour time when the value carries one, otherwise just the date. */
+export function formatWhen(value: DateValue): string {
+  return typeof value === 'string' && !/[T ]\d{1,2}:\d{2}/.test(value)
+    ? formatDate(value)
+    : formatDateTime(value);
 }

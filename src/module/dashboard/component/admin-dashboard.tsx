@@ -191,7 +191,7 @@ export default function AdminDashboard({
   const [company, setCompany] = useState('all');
   const users = useDashboardUsers(true);
 
-  const companies = useMemo(() => groupBy(calls, (c) => c.companyName), [calls]);
+  //const companies = useMemo(() => groupBy(calls, (c) => c.companyName), [calls]);
   const scoped = useMemo(() => {
     const inRange = filterByRange(calls, range);
     return company === 'all'

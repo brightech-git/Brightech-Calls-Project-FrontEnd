@@ -176,8 +176,8 @@ export function RangeFilter({
           aria-pressed={value === r.key}
           onClick={() => onChange(r.key)}
           className={cn(
-            'rounded px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-muted hover:text-ink',
-            value === r.key && 'bg-brand text-brand-soft hover:text-brand',
+            'rounded px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-muted hover:text-brand-soft hover:bg-brand',
+            value === r.key && 'bg-brand text-brand-soft hover:text-brand-soft',
           )}
         >
           {r.label}

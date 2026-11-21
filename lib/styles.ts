@@ -3,7 +3,7 @@
  * Components compose them with `cn()` from `@/lib/utils`.
  */
 export const controlClass =
-  'h-control w-full min-w-0 rounded-md border border-line-strong bg-white px-1.5 text-[11px] text-ink outline-none transition-colors placeholder:text-muted hover:border-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-muted aria-invalid:border-red-600';
+  'h-control z-[10] w-full min-w-0 rounded-md border border-line-strong bg-white px-1.5 text-[11px] text-ink outline-none transition-colors placeholder:text-muted hover:border-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-muted aria-invalid:border-red-600';
 
 export const buttonClass =
   'inline-flex h-control items-center justify-center gap-1.5 rounded-md border border-line bg-white px-3 text-[12px] font-semibold whitespace-nowrap text-ink transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50';

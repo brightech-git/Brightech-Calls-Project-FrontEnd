@@ -54,9 +54,11 @@ export const DatePickerInput = React.forwardRef<HTMLInputElement, DatePickerInpu
             );
             onDateSelect?.();
           }}
-          dateFormat={dateFormat ?? (showTimeSelect ? 'dd-MM-yy HH:mm:ss' : 'dd-MM-yyyy')}
+          dateFormat={
+            dateFormat ?? (showTimeSelect ? 'dd-MM-yyyy hh:mm aa' : 'dd-MM-yyyy')
+          }
           showTimeSelect={showTimeSelect}
-          timeFormat="HH:mm"
+          timeFormat="hh:mm aa"
           placeholderText={placeholder}
           disabled={disabled}
           minDate={parseDate(minDate) ?? undefined}
@@ -67,9 +69,15 @@ export const DatePickerInput = React.forwardRef<HTMLInputElement, DatePickerInpu
             onKeyDown?.(event as React.KeyboardEvent<HTMLInputElement>)
           }
           customInput={<input ref={ref} />}
+          // The calendar renders in a body-level portal above tables, sticky headers
+          // and modals, so it is never clipped or hidden behind them.
+          portalId="calls-date-portal"
+          popperClassName="z-[1600]!"
+          popperPlacement="bottom-start"
           showMonthDropdown
           showYearDropdown
           dropdownMode="select"
+          
         />
       </div>
     );

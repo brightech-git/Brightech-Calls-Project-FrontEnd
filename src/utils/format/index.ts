@@ -1,4 +1,12 @@
-export { formatDate, formatDateTime, formatTime, formatApiDate, parseDate } from './date';
+export {
+  formatDate,
+  formatDateTime,
+  formatTime,
+  formatTime12,
+  formatWhen,
+  formatApiDate,
+  parseDate,
+} from './date';
 export {
   formatNumber,
   formatCurrency,

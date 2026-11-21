@@ -2,7 +2,7 @@
 
 import { buttonClass, buttonVariants } from '@/lib/styles';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { useLogin } from '@/src/module/auth/hook/use-auth';
@@ -15,6 +15,9 @@ import {
   Workflow,
   Users,
 } from 'lucide-react';
+/** Saved on this browser only, and kept on log out. The password is never stored. */
+const REMEMBER_KEY = 'calls-remember-username';
+
 export default function LoginPage() {
   const router = useRouter();
   const { mutate: login, isPending } = useLogin();
@@ -22,6 +25,27 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [remember, setRemember] = useState(false);
+  const userRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  // A remembered username is filled in and the cursor goes straight to the password.
+  useEffect(() => {
+    let saved = '';
+    try {
+      saved = localStorage.getItem(REMEMBER_KEY) ?? '';
+    } catch {
+      /* storage blocked: start empty */
+    }
+    if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- read once from storage after mount
+      setUserName(saved);
+      setRemember(true);
+      passwordRef.current?.focus();
+    } else {
+      userRef.current?.focus();
+    }
+  }, []);
   const handleLogin = (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
@@ -31,7 +55,15 @@ export default function LoginPage() {
         password,
       },
       {
-        onSuccess: () => router.replace('/Home'),
+        onSuccess: () => {
+          try {
+            if (remember) localStorage.setItem(REMEMBER_KEY, userName.trim());
+            else localStorage.removeItem(REMEMBER_KEY);
+          } catch {
+            /* storage blocked: nothing to remember */
+          }
+          router.replace('/Home');
+        },
         onError: (error: unknown) => setError(getApiErrorMessage(error)),
       },
     );
@@ -51,7 +83,9 @@ export default function LoginPage() {
           </strong>
         </div>
         <div className="relative z-1 my-auto py-20 [&>h1]:mb-6 [&>h1]:text-[clamp(34px,3.8vw,56px)] [&>h1]:leading-[1.12] [&>h1]:tracking-tight [&>p]:max-w-sm [&>p]:text-sm [&>p]:leading-8 [&>p]:text-blue-100/80">
-          <div className="mb-6 text-[10px] tracking-widest text-blue-200">A BETTER DAY AT WORK</div>
+          <div className="mb-6 text-[10px] tracking-widest text-blue-200">
+            A BETTER DAY AT WORK
+          </div>
           <h1>
             Great service.
             <br />
@@ -86,7 +120,9 @@ export default function LoginPage() {
             <Headphones size={23} />
             Brightech Calls
           </div>
-          <div className="text-[10px] tracking-widest text-muted uppercase">YOUR WORKSPACE AWAITS</div>
+          <div className="text-[10px] tracking-widest text-muted uppercase">
+            YOUR WORKSPACE AWAITS
+          </div>
           <h2>Welcome back</h2>
           <p className="mb-8 text-sm leading-7 text-muted">
             Sign in to manage your calls and assignments.
@@ -96,6 +132,7 @@ export default function LoginPage() {
               <label htmlFor="login-username">Username</label>
               <input
                 id="login-username"
+                ref={userRef}
                 autoComplete="username"
                 required
                 value={userName}
@@ -109,6 +146,7 @@ export default function LoginPage() {
               <div className="relative [&>input]:pr-12 [&>button]:absolute [&>button]:top-1.5 [&>button]:right-1.5 [&>button]:grid [&>button]:size-9 [&>button]:place-items-center [&>button]:rounded-md [&>button]:border-0 [&>button]:bg-transparent [&>button]:text-muted">
                 <input
                   id="login-password"
+                  ref={passwordRef}
                   autoComplete="current-password"
                   required
                   type={showPassword ? 'text' : 'password'}
@@ -127,6 +165,36 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+            </div>
+            <div className="-mt-1 mb-4 flex items-center justify-between">
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-ink select-none">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
+                  disabled={isPending}
+                  className="size-4 accent-brand"
+                />
+                Remember me
+              </label>
+              {remember && userName && (
+                <button
+                  type="button"
+                  className="text-xs text-muted underline-offset-2 hover:text-ink hover:underline"
+                  onClick={() => {
+                    setUserName('');
+                    setRemember(false);
+                    try {
+                      localStorage.removeItem(REMEMBER_KEY);
+                    } catch {
+                      /* ignore */
+                    }
+                    userRef.current?.focus();
+                  }}
+                >
+                  Not you?
+                </button>
+              )}
             </div>
             {error && (
               <p
