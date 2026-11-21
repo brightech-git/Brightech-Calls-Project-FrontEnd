@@ -1,1 +1,1 @@
-export { default } from '@/src/module/staff-master/component/staff-master-page';
+export { StaffMasterPage as default } from '@/src/module/staff-master';

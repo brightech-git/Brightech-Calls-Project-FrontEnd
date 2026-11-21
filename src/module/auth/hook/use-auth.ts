@@ -1,3 +1,5 @@
+'use client';
+
 // ─────────────────────────────────────────────
 // hooks/auth/useAuth.ts
 // ─────────────────────────────────────────────
@@ -22,7 +24,7 @@ import {
   UserRecord,
   UserFilter,
 } from '@/src/module/auth/type/auth.types';
-import { ApiResponse } from '@/types/ApiResponse';
+import { ApiResponse } from '@/lib/api/api-response';
 
 // LOGIN HOOK
 export const useLogin = () => {

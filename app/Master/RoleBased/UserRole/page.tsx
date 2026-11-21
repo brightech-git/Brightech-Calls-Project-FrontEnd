@@ -1,1 +1,1 @@
-export { default } from '@/src/module/user-role/component/user-role-page';
+export { UserRolePage as default } from '@/src/module/user-role';

@@ -1,8 +1,8 @@
 // service/UserRoleService.ts
 
-import { axiosInstance } from '@/api/axiosInstance';
+import { axiosInstance } from '@/lib/api/axios-instance';
 import { UserRole, UserRolePayload } from '@/src/module/user-role/type/user-role.types';
-import { ApiResponse } from '@/types/ApiResponse';
+import { ApiResponse } from '@/lib/api/api-response';
 
 const BASE_URL = '/userrole';
 

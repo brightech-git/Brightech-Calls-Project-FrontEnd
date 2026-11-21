@@ -2,8 +2,8 @@
 // services/ModuleMasterService.ts
 // ─────────────────────────────────────────────
 
-import { axiosInstance } from '@/api/axiosInstance';
-import { ApiResponse } from '@/types/ApiResponse';
+import { axiosInstance } from '@/lib/api/axios-instance';
+import { ApiResponse } from '@/lib/api/api-response';
 
 import { ModulePayload, ModuleRecord } from '@/src/module/module-master/type/module-master.types';
 

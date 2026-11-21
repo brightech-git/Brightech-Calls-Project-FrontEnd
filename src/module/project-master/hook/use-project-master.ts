@@ -1,3 +1,5 @@
+'use client';
+
 // ─────────────────────────────────────────────
 // hooks/ProjectMaster/useProjectMaster.ts
 // ─────────────────────────────────────────────
@@ -10,9 +12,9 @@ import {
   getAllProjects,
   getProjectById,
   updateProject,
-} from '@/services/ProjectMasterService';
+} from '../api/project-master.api';
 
-import { ProjectPayload, ProjectRecord } from '@/types/ProjectMaster/ProjectMaster';
+import { ProjectPayload, ProjectRecord } from '../type/project-master.types';
 
 const PROJECT_KEY = ['project-list'];
 

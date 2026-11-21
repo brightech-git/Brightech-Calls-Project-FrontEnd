@@ -4,18 +4,18 @@ import { buttonClass, buttonVariants } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { TextInput, ComboBox, SwitchField } from '@/src/components/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Pencil, Image as ImageIcon, Search, RotateCcw } from 'lucide-react';
-import { CustomTable, TableColumn } from '@/components/CustomTable';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import { CapitalizedInput } from '@/components/ui/CapitalizedInput';
-import { SwitchInput } from '@/components/ui/SwitchInput';
-import { FileUploader } from '@/components/ui/FileUploadInput';
-import { MediaLightbox, LightboxItem } from '@/components/ui/MediaLightbox';
-import { usePageHeader } from '@/context/PageHeaderContext';
-import { useToast } from '@/components/Toast';
-import { COLORS, FONT, RADIUS } from '@/utils/theme';
+import { CustomTable, TableColumn } from '@/src/components/CustomTable';
+import ConfirmDialog from '@/src/components/ConfirmDialog';
+import { CapitalizedInput } from '@/src/components/ui/CapitalizedInput';
+import { FileUploader } from '@/src/components/ui/FileUploadInput';
+import { MediaLightbox, LightboxItem } from '@/src/components/ui/MediaLightbox';
+import { usePageHeader } from '@/src/context/PageHeaderContext';
+import { useToast } from '@/src/components/Toast';
+import { COLORS, FONT, RADIUS } from '@/src/theme';
 import {
   useClientVisitList,
   useCreateClientVisit,
@@ -26,11 +26,9 @@ import {
   ClientVisitRecord,
   ClientVisitRecord_Table,
 } from '@/src/module/client-visit/type/client-visit.types';
-import { formatDateForShow } from '@/utils/format/formatDateForAPI';
-import InputField from '@/components/ui/InputField';
-import { DatePickerInput } from '@/components/ui/DatePickerInput';
-import { SelectCombobox } from '@/components/ui/SelectComboBox';
-import { NativeSelectWrapper } from '@/components/ui/NativeSelectWrapper';
+import { formatDateForShow } from '@/src/utils/format/formatDateForAPI';
+import InputField from '@/src/components/ui/InputField';
+import { DatePickerInput } from '@/src/components/ui/DatePickerInput';
 
 // ─── Media URL helper ──────────────────────────────────────────────────────────
 // Media paths come back server-relative (e.g. "/uploads/clientvisit/xxx.jpg"),
@@ -129,6 +127,8 @@ function buildColumns(
     {
       key: 'status',
       header: 'Status',
+      total: 'breakdown',
+      totalLabel: getStatusDesc,
       render: (row) => <div>{getStatusDesc(row.status)}</div>,
     },
     {
@@ -138,9 +138,7 @@ function buildColumns(
     {
       key: 'CREATEDAT',
       header: 'Created',
-      render: (row) => (
-        <div className="text-xs">{formatDateForShow(row.CREATEDAT)}</div>
-      ),
+      render: (row) => <div className="text-xs">{formatDateForShow(row.CREATEDAT)}</div>,
     },
     {
       key: 'media',
@@ -148,15 +146,14 @@ function buildColumns(
       align: 'center',
       width: '80px',
       render: (row) => (
-        <span
-          className="inline-flex items-center gap-1 text-[11px] text-muted"
-        >
+        <span className="inline-flex items-center gap-1 text-[11px] text-muted">
           <ImageIcon size={13} /> {row.media?.length ?? 0}
         </span>
       ),
     },
     {
       key: 'ACTIVE',
+      total: 'active',
       header: 'Active',
       render: (row) => (
         <span
@@ -439,12 +436,8 @@ export default function ClientVisitMasterPage() {
       ['Existing S/w', r.existingSoftware],
     ];
     return (
-      <div
-        className="flex flex-col gap-2.5"
-      >
-        <div
-          className="grid grid-cols-3 gap-y-1.5 gap-x-6"
-        >
+      <div className="flex flex-col gap-2.5">
+        <div className="grid grid-cols-3 gap-y-1.5 gap-x-6">
           {fields.map(([label, val]) => (
             <div
               key={label}
@@ -458,9 +451,7 @@ export default function ClientVisitMasterPage() {
 
         {r.media && r.media.length > 0 && (
           <div>
-            <div
-              className="text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5"
-            >
+            <div className="text-[11px] font-bold uppercase tracking-wide text-muted mb-1.5">
               Media
             </div>
             <div className="flex flex-wrap gap-2">
@@ -518,9 +509,7 @@ export default function ClientVisitMasterPage() {
   return (
     <>
       {/* Filters */}
-      <div
-        className="rounded-lg border border-line bg-white mb-3 flex flex-wrap items-end justify-between gap-4 [&_label]:text-xs [&_label]:text-muted [&>div]:max-w-full p-4"
-      >
+      <div className="rounded-lg border border-line bg-white mb-3 flex flex-wrap items-end justify-between gap-4 [&_label]:text-xs [&_label]:text-muted [&>div]:max-w-full p-4">
         <div className="flex flex-wrap items-end gap-3">
           {/* From Date */}
           <div className="flex min-w-[140px] flex-col gap-1.5">
@@ -548,11 +537,11 @@ export default function ClientVisitMasterPage() {
           </div>
 
           {/* Status */}
-          <div className="flex min-w-[150px] flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-700">Status</label>
-
-            <SelectCombobox
-              items={statusList}
+          <div className="min-w-[160px]">
+            <ComboBox
+              label="Status"
+              placeholder="All statuses"
+              options={statusList}
               value={filterInputs.status}
               onChange={(val) => updateFilter('status', val)}
             />
@@ -710,30 +699,25 @@ export default function ClientVisitMasterPage() {
               })}
             >
               <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Basic Information</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Basic Information
+                </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Client Name *</label>
-                    <Controller
-                      name="COMPANYNAME"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="COMPANYNAME"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Full client name"
-                          isCapitalized
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.COMPANYNAME && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.COMPANYNAME.message}
-                      </span>
+                  <Controller
+                    name="COMPANYNAME"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Client Name"
+                        required
+                        uppercase
+                        value={field.value}
+                        placeholder="Full client name"
+                        onChange={field.onChange}
+                        error={errors.COMPANYNAME?.message}
+                      />
                     )}
-                  </div>
+                  />
 
                   {/* <div className="cv-field-row">
                     <label className="cv-field-label">Cost ID</label>
@@ -752,23 +736,19 @@ export default function ClientVisitMasterPage() {
                     />
                    </div> */}
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Short Key</label>
-                    <Controller
-                      name="SHORTKEY"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="SHORTKEY"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="e.g. B"
-                          max={3}
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="SHORTKEY"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Short Key"
+                        value={field.value}
+                        placeholder="e.g. B"
+                        maxLength={3}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
                   {/* <div className="cv-field-row">
                     <label className="cv-field-label">Mobile</label>
@@ -789,239 +769,186 @@ export default function ClientVisitMasterPage() {
                     />
                    </div> */}
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Mobile *</label>
-                    <Controller
-                      name="MOBILE"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="MOBILE"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="10-digit mobile"
-                          inputModeType="mobile"
-                          max={9999999999}
-                          type="number"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.MOBILE && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.MOBILE.message}
-                      </span>
+                  <Controller
+                    name="MOBILE"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Mobile"
+                        required
+                        type="mobile"
+                        value={field.value}
+                        placeholder="10-digit mobile"
+                        onChange={field.onChange}
+                        error={errors.MOBILE?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Email *</label>
-                    <Controller
-                      name="EMAIL"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="EMAIL"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="email@example.com"
-                          inputModeType="email"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.EMAIL && (
-                      <span className="mt-1 text-xs text-rose-600">{errors.EMAIL.message}</span>
+                  <Controller
+                    name="EMAIL"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Email"
+                        required
+                        type="email"
+                        value={field.value}
+                        placeholder="email@example.com"
+                        onChange={field.onChange}
+                        error={errors.EMAIL?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Active *</label>
-                    <Controller
-                      name="ACTIVE"
-                      control={control}
-                      render={({ field }) => (
-                        <SwitchInput
-                          value={field.value}
-                          onChange={field.onChange}
-                          trueValue="Y"
-                          falseValue="N"
-                          labels={{
-                            on: 'Active',
-                            off: 'Inactive',
-                          }}
-                          size="sm"
-                        />
-                      )}
-                    />
-                    {errors.ACTIVE && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.ACTIVE.message}
-                      </span>
+                  <Controller
+                    name="ACTIVE"
+                    control={control}
+                    render={({ field }) => (
+                      <SwitchField
+                        label="Active"
+                        required
+                        value={field.value}
+                        onChange={field.onChange}
+                        trueValue="Y"
+                        falseValue="N"
+                        labels={{
+                          on: 'Active',
+                          off: 'Inactive',
+                        }}
+                        error={errors.ACTIVE?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2 col-span-full">
-                    <label className="text-sm text-muted">Remarks</label>
-                    <Controller
-                      name="REMARKS"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="REMARKS"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Visit notes / remarks"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="REMARKS"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Remarks"
+                        wrapperClassName="col-span-full"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Visit notes / remarks"
+                      />
+                    )}
+                  />
                 </div>
 
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Address</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Address
+                </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Address 1</label>
-                    <Controller
-                      name="ADDRESS1"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="ADDRESS1"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Street"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="ADDRESS1"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Address 1"
+                        value={field.value}
+                        placeholder="Street"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">AREA</label>
-                    <Controller
-                      name="ADDRESS2"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="ADDRESS2"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter area"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="ADDRESS2"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="AREA"
+                        value={field.value}
+                        placeholder="Enter area"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">CITY</label>
-                    <Controller
-                      name="ADDRESS3"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="ADDRESS3"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter city"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="ADDRESS3"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="CITY"
+                        value={field.value}
+                        placeholder="Enter city"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Area code</label>
-                    <Controller
-                      name="AREACODE"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="AREACODE"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter area code"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="AREACODE"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Area code"
+                        value={field.value}
+                        placeholder="Enter area code"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
                 </div>
 
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Tax Information</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Tax Information
+                </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">GST No</label>
-                    <Controller
-                      name="GSTNO"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="GSTNO"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="GST number"
-                          isCapitalized
-                          inputModeType="gst"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="GSTNO"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="GST No"
+                        type="gst"
+                        value={field.value}
+                        placeholder="GST number"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">PAN No</label>
-                    <Controller
-                      name="PANNO"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="PANNO"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="PAN number"
-                          isCapitalized
-                          inputModeType="pan"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="PANNO"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="PAN No"
+                        type="pan"
+                        value={field.value}
+                        placeholder="PAN number"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">STATUS</label>
-                    <Controller
-                      name="status"
-                      control={control}
-                      render={({ field }) => (
-                        <SelectCombobox
-                          value={field.value ? String(field.value) : undefined}
-                          onChange={(val) => field.onChange(val ? String(val) : '')}
-                          //editId={editRow?.status ?? null}
-                          items={statusList}
-                          size="md"
-                        />
-                      )}
-                    />
-                  </div>
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">EXISTING SOFTWARE</label>
-                    <Controller
-                      name="existingSoftware"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="existingSoftware"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="existingSoftware"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                      <ComboBox
+                        label="STATUS"
+                        value={field.value ? String(field.value) : undefined}
+                        onChange={(val) => field.onChange(val ? String(val) : '')}
+                        options={statusList}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="existingSoftware"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="EXISTING SOFTWARE"
+                        value={field.value}
+                        placeholder="existingSoftware"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
                   <div className="flex min-w-0 flex-col gap-2">
                     <label className="text-sm text-muted">REMAINDER</label>
                     <Controller
@@ -1122,7 +1049,9 @@ export default function ClientVisitMasterPage() {
                    </div> */}
                 </div>
 
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Visit Media</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Visit Media
+                </div>
 
                 {editRow && !!editRow.media?.length && (
                   <div className="flex flex-wrap gap-3">

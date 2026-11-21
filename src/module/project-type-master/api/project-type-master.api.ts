@@ -2,7 +2,7 @@
 // services/ProjectTypeMasterService.ts
 // ─────────────────────────────────────────────
 
-import { axiosInstance } from '@/api/axiosInstance';
+import { axiosInstance } from '@/lib/api/axios-instance';
 
 import {
   ProjectTypePayload,

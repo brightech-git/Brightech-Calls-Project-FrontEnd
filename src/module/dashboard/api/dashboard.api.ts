@@ -1,17 +1,14 @@
-import { getAllCallsBookings, getMyTasks } from '@/src/module/task-assignment/api/task-assignment.api';
+import {
+  getAllCallsBookings,
+  getMyTasks,
+} from '@/src/module/task-assignment/api/task-assignment.api';
 import { getCallStatusHistory } from '@/src/module/call-status/api/call-status.api';
 import { CallsBookingRecord } from '@/src/module/task-assignment/type/task-assignment.types';
 import { CallStatusRecord } from '@/src/module/call-status/type/call-status.types';
-import { describeCallStatus } from '@/utils/callStatus';
+import { describeCallStatus } from '@/src/utils/callStatus';
+import type { DashboardCall } from '@/src/module/dashboard/type/dashboard.types';
 
-export type DashboardCall = CallsBookingRecord &
-  Record<string, unknown> & {
-    assignedNames?: string | null;
-    completedBy: string;
-    completedById: string | null;
-    resolutionHours: number | null;
-    historyAvailable: boolean;
-  };
+export type { DashboardCall };
 
 export function durationLabel(hours: number | null) {
   if (hours === null) return 'Not recorded';
@@ -28,8 +25,7 @@ export function enrichCall(
   // SNO breaks timestamp ties; invalid/missing timestamps never produce a duration.
   const sorted = [...history].sort(
     (a, b) =>
-      (Date.parse(b.UPDATED ?? '') || 0) - (Date.parse(a.UPDATED ?? '') || 0) ||
-      b.sno - a.sno,
+      (Date.parse(b.UPDATED ?? '') || 0) - (Date.parse(a.UPDATED ?? '') || 0) || b.sno - a.sno,
   );
   const latest = sorted[0];
   const status = latest?.STATUS?.trim() ? latest.STATUS : booking.status;
@@ -40,10 +36,29 @@ export function enrichCall(
       : undefined;
   const start = Date.parse(booking.tktDate ?? '');
   const end = Date.parse(completion?.UPDATED ?? '');
+  // Oldest status entry = first response; newest = last activity.
+  const times = history
+    .map((h) => Date.parse(h.UPDATED ?? ''))
+    .filter((t) => Number.isFinite(t))
+    .sort((a, b) => a - b);
+  const firstResponse = times.find((t) => !Number.isFinite(start) || t >= start);
   return {
     ...booking,
     status,
     historyAvailable,
+    updateCount: history.length,
+    updaters: Array.from(
+      new Map(
+        history
+          .filter((h) => h.userId != null)
+          .map((h) => [String(h.userId), h.userName || `User #${h.userId}`]),
+      ),
+    ).map(([id, name]) => ({ id, name })),
+    firstResponseHours:
+      firstResponse !== undefined && Number.isFinite(start)
+        ? (firstResponse - start) / 3600000
+        : null,
+    lastActivity: times.length ? new Date(times[times.length - 1]).toISOString() : null,
     completedById: completion?.userId != null ? String(completion.userId) : null,
     completedBy:
       completion?.userName ||
@@ -62,9 +77,7 @@ export async function getDashboardCalls(
   clientId: string,
 ) {
   if (isClient && !clientId)
-    throw new Error(
-      'This client account has no client ID. Please contact your administrator.',
-    );
+    throw new Error('This client account has no client ID. Please contact your administrator.');
   let bookings: CallsBookingRecord[];
   if (!isAdmin && !isClient) {
     bookings = (await getMyTasks(userId)).filter((call) =>

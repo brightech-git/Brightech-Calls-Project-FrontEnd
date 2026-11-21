@@ -1,6 +1,6 @@
-import { axiosInstance } from '@/api/axiosInstance';
+import { axiosInstance } from '@/lib/api/axios-instance';
 import { unwrapResponse } from '@/lib/api/errors';
-import type { ApiResponse } from '@/types/ApiResponse';
+import type { ApiResponse } from '@/lib/api/api-response';
 import type {
   ProjectLinkFilters,
   ProjectLinkPayload,

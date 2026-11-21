@@ -1,32 +1,40 @@
 'use client';
 import { buttonClass, buttonVariants } from '@/lib/styles';
 import { cn } from '@/lib/utils';
-import { formatDate } from '@/utils/format/date';
+import { formatDate } from '@/src/utils/format/date';
 
 import { useState, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import {
+  TextInput,
+  PasswordInput,
+  SelectInput,
+  ComboBox,
+  useAddNew,
+} from '@/src/components/form';
+import { ClientFormModal } from '@/src/module/client-master/component/client-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Grid, HStack, Text, VStack } from '@chakra-ui/react';
 import { Pencil } from 'lucide-react';
-import { CapitalizedInput } from '@/components/ui/CapitalizedInput';
-import { PasswordInput } from '@/components/ui/PasswordInput';
-import { CustomTable, TableColumn } from '@/components/CustomTable';
+import { CustomTable, TableColumn } from '@/src/components/CustomTable';
 import {
   useRegister,
   useGetAllUsers,
   useUpdateUser,
   useDeleteUser,
 } from '@/src/module/auth/hook/use-auth';
-import { UserRecord, UpdateUserPayload, RegisterPayload } from '@/src/module/auth/type/auth.types';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import { usePageHeader } from '@/context/PageHeaderContext';
-import { useToast } from '@/components/Toast';
-import { COLORS, FONT } from '@/utils/theme';
+import {
+  UserRecord,
+  UpdateUserPayload,
+  RegisterPayload,
+} from '@/src/module/auth/type/auth.types';
+import ConfirmDialog from '@/src/components/ConfirmDialog';
+import { usePageHeader } from '@/src/context/PageHeaderContext';
+import { useToast } from '@/src/components/Toast';
+import { COLORS, FONT } from '@/src/theme';
 import { useRole } from '@/src/module/role-master/hook/use-role-master';
 import { useClientList } from '@/src/module/client-master/hook/use-client-master';
-import { SelectCombobox } from '@/components/ui/SelectComboBox';
-import { NativeSelectWrapper } from '@/components/ui/NativeSelectWrapper';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -126,6 +134,7 @@ const COLUMNS: TableColumn<UserRecord & Record<string, unknown>>[] = [
     key: 'ACTIVE',
     header: 'Status',
     sortable: true,
+    total: 'active',
     render: (row) => (
       <span
         style={{
@@ -221,6 +230,7 @@ export default function UserMasterPage() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<UserForm>({
     resolver: zodResolver(isEditMode ? editSchema : userSchema),
@@ -239,6 +249,7 @@ export default function UserMasterPage() {
   });
   const isPending = isRegistering || isUpdating;
   const isClientSelected = watch('isClient') === 'Y';
+  const addNew = useAddNew<'client'>();
   const handleEdit = (row: UserRecord & Record<string, unknown>) => {
     setEditId(row.USERID as string);
     setEditRow(row as UserRecord);
@@ -359,9 +370,7 @@ export default function UserMasterPage() {
               <Text className="text-sm font-normal text-ink">
                 {isEditMode ? 'Edit User' : 'Register User'}
               </Text>
-              <Text
-                className="text-[11px] text-muted mt-0.5"
-              >
+              <Text className="text-[11px] text-muted mt-0.5">
                 {isEditMode ? `Editing user ID: ${editId}` : 'Create a new user account'}
               </Text>
             </div>
@@ -369,232 +378,182 @@ export default function UserMasterPage() {
             <div className="p-3">
               <form onSubmit={handleSubmit(onSubmit)}>
                 <VStack className="flex w-full flex-col items-stretch gap-4">
-                  <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
-                    <label className="block text-sm leading-5 text-muted">Username *</label>
-                    <Controller
-                      name="username"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="username"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter username"
-                          isCapitalized
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.username && (
-                      <span className="col-start-2 text-xs text-rose-600">
-                        {errors.username.message}
-                      </span>
+                  <Controller
+                    name="username"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        inline
+                        label="Username"
+                        required
+                        uppercase
+                        value={field.value}
+                        placeholder="Enter username"
+                        onChange={field.onChange}
+                        error={errors.username?.message}
+                      />
                     )}
-                  </div>
+                  />
 
                   {!isEditMode && (
                     <>
-                      <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
-                        <label className="block text-sm leading-5 text-muted">Password *</label>
-                        <Controller
-                          name="password"
-                          control={control}
-                          render={({ field }) => (
-                            <PasswordInput
-                              value={field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                              placeholder="Min 5 characters"
-                            />
-                          )}
-                        />
-                        {errors.password && (
-                          <span className="col-start-2 text-xs text-rose-600">
-                            {errors.password.message}
-                          </span>
+                      <Controller
+                        name="password"
+                        control={control}
+                        render={({ field }) => (
+                          <PasswordInput
+                            inline
+                            label="Password"
+                            required
+                            value={field.value}
+                            placeholder="Min 5 characters"
+                            onChange={field.onChange}
+                            error={errors.password?.message}
+                          />
                         )}
-                      </div>
+                      />
 
-                      <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
-                        <label className="block text-sm leading-5 text-muted">Confirm Password *</label>
-                        <Controller
-                          name="confirmPassword"
-                          control={control}
-                          render={({ field }) => (
-                            <PasswordInput
-                              value={field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                              placeholder="Re-enter password"
-                            />
-                          )}
-                        />
-                        {errors.confirmPassword && (
-                          <span className="col-start-2 text-xs text-rose-600">
-                            {errors.confirmPassword.message}
-                          </span>
+                      <Controller
+                        name="confirmPassword"
+                        control={control}
+                        render={({ field }) => (
+                          <PasswordInput
+                            inline
+                            label="Confirm Password"
+                            required
+                            value={field.value}
+                            placeholder="Re-enter password"
+                            onChange={field.onChange}
+                            error={errors.confirmPassword?.message}
+                          />
                         )}
-                      </div>
+                      />
                     </>
                   )}
 
                   {isEditMode && (
                     <>
-                      <Text
-                        className="text-[11px] font-normal text-ink tracking-wide uppercase mt-0.5"
-                      >
+                      <Text className="text-[11px] font-normal text-ink tracking-wide uppercase mt-0.5">
                         Change Password (optional)
                       </Text>
 
-                      <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
-                        <label className="block text-sm leading-5 text-muted">Old Password</label>
-                        <Controller
-                          name="oldPassword"
-                          control={control}
-                          render={({ field }) => (
-                            <PasswordInput
-                              value={field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                              placeholder="Current password"
-                            />
-                          )}
-                        />
-                        {errors.oldPassword && (
-                          <span className="col-start-2 text-xs text-rose-600">
-                            {errors.oldPassword.message}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
-                        <label className="block text-sm leading-5 text-muted">New Password</label>
-                        <Controller
-                          name="newPassword"
-                          control={control}
-                          render={({ field }) => (
-                            <PasswordInput
-                              value={field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                              placeholder="Leave blank to keep current"
-                            />
-                          )}
-                        />
-                        {errors.newPassword && (
-                          <span className="col-start-2 text-xs text-rose-600">
-                            {errors.newPassword.message}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
-                        <label className="block text-sm leading-5 text-muted">
-                          Confirm New Password
-                        </label>
-                        <Controller
-                          name="confirmNewPassword"
-                          control={control}
-                          render={({ field }) => (
-                            <PasswordInput
-                              value={field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                              placeholder="Re-enter new password"
-                            />
-                          )}
-                        />
-                        {errors.confirmNewPassword && (
-                          <span className="col-start-2 text-xs text-rose-600">
-                            {errors.confirmNewPassword.message}
-                          </span>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
-                    <label className="block text-sm leading-5 text-muted">Role *</label>
-                    <Controller
-                      name="roleId"
-                      control={control}
-                      render={({ field }) => (
-                        <SelectCombobox
-                          value={field.value}
-                          onChange={(val) => field.onChange(val)}
-                          editId={editId ? Number(editId) : null}
-                          items={roleItems}
-                          maxWidth="100%"
-                          placeholder="Select Role"
-                        />
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
-                    <label className="block text-sm leading-5 text-muted">Active *</label>
-                    <Controller
-                      name="active"
-                      control={control}
-                      render={({ field }) => (
-                        <NativeSelectWrapper
-                          value={field.value}
-                          onChange={(val) => field.onChange(val)}
-                          items={activeOptions}
-                          maxWidth="100%"
-                          placeholder="Select Status"
-                        />
-                      )}
-                    />
-                    {errors.active && (
-                      <span className="col-start-2 text-xs text-rose-600">
-                        {errors.active.message}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
-                    <label className="block text-sm leading-5 text-muted">Client *</label>
-                    <Controller
-                      name="isClient"
-                      control={control}
-                      render={({ field }) => (
-                        <NativeSelectWrapper
-                          value={field.value}
-                          onChange={(val) => field.onChange(val)}
-                          items={clientOptions}
-                          maxWidth="100%"
-                          placeholder="Select Client"
-                        />
-                      )}
-                    />
-                    {errors.isClient && (
-                      <span className="col-start-2 text-xs text-rose-600">
-                        {errors.isClient.message}
-                      </span>
-                    )}
-                  </div>
-
-                  {isClientSelected && (
-                    <div className="grid min-w-0 w-full grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 [&>label]:col-start-1 [&>label]:row-start-1 [&>div]:col-start-2 [&>div]:row-start-1 [&>div]:min-w-0 max-sm:grid-cols-[100px_minmax(0,1fr)] max-sm:gap-x-2">
-                      <label className="block text-sm leading-5 text-muted">
-                        Client (Client Master) *
-                      </label>
                       <Controller
-                        name="clientId"
+                        name="oldPassword"
                         control={control}
                         render={({ field }) => (
-                          <SelectCombobox
+                          <PasswordInput
+                            inline
+                            label="Old Password"
                             value={field.value}
-                            onChange={(val) => field.onChange(val)}
-                            editId={editId ? Number(editId) : null}
-                            items={clientItems}
-                            maxWidth="100%"
-                            placeholder="Select client"
+                            placeholder="Current password"
+                            onChange={field.onChange}
+                            error={errors.oldPassword?.message}
                           />
                         )}
                       />
-                      {errors.clientId && (
-                        <span className="col-start-2 text-xs text-rose-600">
-                          {errors.clientId.message}
-                        </span>
+
+                      <Controller
+                        name="newPassword"
+                        control={control}
+                        render={({ field }) => (
+                          <PasswordInput
+                            inline
+                            label="New Password"
+                            value={field.value}
+                            placeholder="Leave blank to keep current"
+                            onChange={field.onChange}
+                            error={errors.newPassword?.message}
+                          />
+                        )}
+                      />
+
+                      <Controller
+                        name="confirmNewPassword"
+                        control={control}
+                        render={({ field }) => (
+                          <PasswordInput
+                            inline
+                            label="Confirm New Password"
+                            value={field.value}
+                            placeholder="Re-enter new password"
+                            onChange={field.onChange}
+                            error={errors.confirmNewPassword?.message}
+                          />
+                        )}
+                      />
+                    </>
+                  )}
+
+                  <Controller
+                    name="roleId"
+                    control={control}
+                    render={({ field }) => (
+                      <ComboBox
+                        inline
+                        label="Role"
+                        required
+                        value={field.value}
+                        onChange={(val) => field.onChange(val)}
+                        options={roleItems}
+                        placeholder="Select Role"
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="active"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectInput
+                        inline
+                        label="Active"
+                        required
+                        value={field.value}
+                        options={activeOptions}
+                        placeholder="Select Status"
+                        onChange={field.onChange}
+                        error={errors.active?.message}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="isClient"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectInput
+                        inline
+                        label="Client"
+                        required
+                        value={field.value}
+                        options={clientOptions}
+                        placeholder="Select Client"
+                        onChange={field.onChange}
+                        error={errors.isClient?.message}
+                      />
+                    )}
+                  />
+
+                  {isClientSelected && (
+                    <Controller
+                      name="clientId"
+                      control={control}
+                      render={({ field }) => (
+                        <ComboBox
+                          inline
+                          label="Client (Client Master)"
+                          required
+                          value={field.value}
+                          onChange={(val) => field.onChange(val)}
+                          options={clientItems}
+                          placeholder="Select client"
+                          error={errors.clientId?.message}
+                          addNew
+                          addNewLabel="Add new client"
+                          onAddNew={(typed) => addNew.open('client', typed)}
+                        />
                       )}
-                    </div>
+                    />
                   )}
 
                   <HStack className="w-full gap-2">
@@ -650,6 +609,15 @@ export default function UserMasterPage() {
         isPending={isDeleting}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteRow(null)}
+      />
+      <ClientFormModal
+        open={addNew.is('client')}
+        initial={{ CLIENTNAME: addNew.seed.toUpperCase() }}
+        onCancel={addNew.close}
+        onSaved={(client) => {
+          setValue('clientId', String(client.CLIENTID), { shouldValidate: true });
+          addNew.close();
+        }}
       />
     </>
   );

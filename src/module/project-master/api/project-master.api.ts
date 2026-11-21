@@ -2,8 +2,8 @@
 // services/ProjectMasterService.ts
 // ─────────────────────────────────────────────
 
-import { axiosInstance } from '@/api/axiosInstance';
-import { ApiResponse } from '@/types/ApiResponse';
+import { axiosInstance } from '@/lib/api/axios-instance';
+import { ApiResponse } from '@/lib/api/api-response';
 import { ProjectPayload, ProjectRecord } from '@/src/module/project-master/type/project-master.types';
 
 // CREATE

@@ -2,7 +2,7 @@
 // services/CallsBookingService.ts
 // ─────────────────────────────────────────────
 
-import { axiosInstance } from '@/api/axiosInstance';
+import { axiosInstance } from '@/lib/api/axios-instance';
 
 import {
   CallsBookingListItem,
@@ -11,8 +11,8 @@ import {
   CallsBookingPayload,
   CallsBookingRecord,
 } from '@/src/module/task-assignment/type/task-assignment.types';
-import { PagedResponse, PageParams } from '@/types/common/Pagination';
-import { ApiResponse } from '@/types/ApiResponse';
+import { PagedResponse, PageParams } from '@/lib/api/pagination';
+import { ApiResponse } from '@/lib/api/api-response';
 
 // CREATE
 export const createCallsBooking = async (

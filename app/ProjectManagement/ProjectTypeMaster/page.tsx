@@ -1,1 +1,1 @@
-export { default } from '@/src/module/project-type-master/component/project-type-master-page';
+export { ProjectTypeMasterPage as default } from '@/src/module/project-type-master';

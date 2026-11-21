@@ -1,4 +1,4 @@
-import { axiosInstance } from '@/api/axiosInstance';
+import { axiosInstance } from '@/lib/api/axios-instance';
 
 export interface ApiResponse<T = any> {
   success: boolean;

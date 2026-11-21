@@ -16,7 +16,7 @@ import {
   Trash2,
   Users,
 } from 'lucide-react';
-import { toastCreated, toastError, toastUpdated } from '@/components/toast/toast';
+import { toastCreated, toastError, toastUpdated } from '@/src/components/toast/toast';
 import {
   useRoleTransactions,
   useInsertRoleTransaction,
@@ -30,7 +30,7 @@ import type {
   RoleTranInput,
 } from '@/src/module/role-tran/type/role-tran.types';
 import { useRole } from '@/src/module/role-master/hook/use-role-master';
-import { labelFor } from '@/config/menu/menuLabels';
+import { labelFor } from '@/src/config/menu/menuLabels';
 import { cn } from '@/lib/utils';
 import {
   buttonClass,

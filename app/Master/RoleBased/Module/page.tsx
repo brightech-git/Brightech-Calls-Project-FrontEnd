@@ -1,1 +1,1 @@
-export { default } from '@/src/module/navigation-module/component/navigation-module-page';
+export { NavigationModulePage as default } from '@/src/module/navigation-module';

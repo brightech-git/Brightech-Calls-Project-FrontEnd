@@ -1,37 +1,49 @@
 'use client';
-import { buttonClass, buttonVariants } from '@/lib/styles';
+import { buttonClass, buttonVariants, labelClass } from '@/lib/styles';
 import { cn } from '@/lib/utils';
-import { formatDate, formatDateTime } from '@/utils/format/date';
+import { formatDate, formatDateTime } from '@/src/utils/format/date';
 
 import { useState, useEffect } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import {
+  TextAreaInput,
+  SelectInput,
+  ComboBox,
+  MultiComboBox,
+  SwitchField,
+  useAddNew,
+} from '@/src/components/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Eye, RotateCcw, Search } from 'lucide-react';
-import { CustomTable, TableColumn } from '@/components/CustomTable';
-import CallStatusBadge from '@/components/CallStatusBadge';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import { SelectCombobox } from '@/components/ui/SelectComboBox';
-import { MultiSelectCombobox } from '@/components/ui/MultiSelectCombobox';
-import { TextareaField } from '@/components/ui/CapitalizesTextArea';
-import { SwitchInput } from '@/components/ui/SwitchInput';
+import {
+  CheckCircle2,
+  Clock3,
+  Eye,
+  Loader,
+  MessageSquarePlus,
+  Pencil,
+  PhoneCall,
+  Plus,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
+} from 'lucide-react';
+import { CustomTable, TableColumn } from '@/src/components/CustomTable';
+import CallStatusBadge from '@/src/components/CallStatusBadge';
+import { describeCallStatus } from '@/src/utils/callStatus';
+import ConfirmDialog from '@/src/components/ConfirmDialog';
 import {
   MediaManager,
   MediaItem,
   revokeMediaItems,
   makeExistingMediaItem,
-} from '@/components/ui/MediaManager';
-import {
-  AttachmentTile,
-  MediaLightbox,
-  LightboxItem,
-} from '@/components/ui/MediaLightbox';
-import { DatePickerInput } from '@/components/ui/DatePickerInput';
-import { usePageHeader } from '@/context/PageHeaderContext';
-import { useToast } from '@/components/Toast';
-import { useEnterNavigation } from '@/components/form/useEnterNavigation';
-import { COLORS, FONT, RADIUS } from '@/utils/theme';
-import { Box, Text, Flex, VStack, HStack, Button } from '@chakra-ui/react';
+} from '@/src/components/ui/MediaManager';
+import { AttachmentList } from '@/src/components/ui/attachments';
+import { MediaLightbox, LightboxItem } from '@/src/components/ui/MediaLightbox';
+import { DatePickerInput } from '@/src/components/ui/DatePickerInput';
+import { usePageHeader } from '@/src/context/PageHeaderContext';
+import { useToast } from '@/src/components/Toast';
+import { COLORS, FONT, RADIUS } from '@/src/theme';
 import {
   useCallsBookingList,
   useCreateCallsBooking,
@@ -45,13 +57,19 @@ import { useCompanyList } from '@/src/module/company-master/hook/use-company-mas
 import { useClientList } from '@/src/module/client-master/hook/use-client-master';
 import { useProjectList } from '@/src/module/project-master/hook/use-project-master';
 import { useModuleList } from '@/src/module/module-master/hook/use-module-master';
+import { ClientFormModal } from '@/src/module/client-master/component/client-form';
+import { ProjectFormModal } from '@/src/module/project-master/component/project-form';
+import { ModuleFormModal } from '@/src/module/module-master/component/module-form';
 import { useGetAllUsers } from '@/src/module/auth/hook/use-auth';
 import { useCallStatusHistory } from '@/src/module/call-status/hook/use-call-status';
+import {
+  statusFiles,
+  type CallFile,
+} from '@/src/module/call-status/component/call-files';
 import {
   CallsBookingRecord,
   CallsBookingListItem_Table,
 } from '@/src/module/task-assignment/type/task-assignment.types';
-import { NativeSelectWrapper } from '@/components/ui/NativeSelectWrapper';
 
 // ─────────────────────────────────────────────
 // Schema
@@ -107,19 +125,15 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
   {
     key: 'remark',
     header: 'Remark',
-    width: '100px',
-    render: (row) => (
-      <div
-        className="w-100 whitespace-normal wrap-anywhere break-words leading-[18px]"
-      >
-        {row.remark}
-      </div>
-    ),
+    maxWidth: '280px',
+    render: (row) => <span title={row.remark ?? ''}>{row.remark || '—'}</span>,
   },
   {
     key: 'status',
     header: 'Status',
     sortable: true,
+    total: 'breakdown',
+    totalLabel: (v) => describeCallStatus(v).label,
     render: (row) => <CallStatusBadge value={row.status} />,
   },
   // { key: "bookingMedia", header: "Calls Media", render: (row) => {
@@ -189,6 +203,7 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
   },
   {
     key: 'active',
+    total: 'active',
     header: 'Active',
     render: (row) => (
       <span
@@ -205,12 +220,9 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
   {
     key: 'statusRemark',
     header: 'Status Remark',
+    maxWidth: '240px',
     render: (row) => (
-      <div
-        className="w-75 whitespace-normal wrap-anywhere break-words leading-[18px]"
-      >
-        {row.statusRemark}
-      </div>
+      <span title={row.statusRemark ?? ''}>{row.statusRemark || '—'}</span>
     ),
   },
 ];
@@ -267,9 +279,9 @@ export default function CallsBookingPage() {
   const myClientId = isClientUser ? Number(localStorage.getItem('clientId')) || 0 : 0;
   const defaultFilters = {
     asOn: !isAdmin,
-    asOnDate: isAdmin ? '' : today,
-    fromDate: isAdmin ? '' : today,
-    toDate: isAdmin ? '' : today,
+    asOnDate: today,
+    fromDate: today,
+    toDate: today,
     userId: isAdmin || isClientUser ? '' : userId,
     clientId: myClientId ? String(myClientId) : '',
     projectId: '',
@@ -283,7 +295,7 @@ export default function CallsBookingPage() {
   const { data: clients = [] } = useClientList();
   const { data: projects = [] } = useProjectList();
   const { data: modules = [] } = useModuleList();
-  const { data: staffList = [] } = useGetAllUsers({active : "Y" });
+  const { data: staffList = [] } = useGetAllUsers({ active: 'Y' });
   const { data: pagedBookings, isLoading } = useCallsBookingList(searchFilters);
   const bookings = pagedBookings?.content ?? [];
   const { data: viewData, isLoading: viewLoading } = useGetCallsBookingById(viewId ?? '');
@@ -316,6 +328,7 @@ export default function CallsBookingPage() {
     handleSubmit,
     reset,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<CallsBookingForm>({
     resolver: zodResolver(callsBookingSchema),
@@ -331,11 +344,9 @@ export default function CallsBookingPage() {
     defaultValues: DEFAULTS,
   });
 
-  // Enter-to-next-field navigation for the Add/Edit Booking form.
-  const { register: registerField, focusNext } = useEnterNavigation(
-    ['clientId', 'projectId', 'moduleId', 'assignedUsers', 'status', 'remark'],
-    () => handleSubmit(onSubmit)(),
-  );
+  // "Add new" on the Client / Project / Module combos opens that master's form.
+  const addNew = useAddNew<'client' | 'project' | 'module'>();
+
   const watchedProjectId = useWatch({
     control,
     name: 'projectId',
@@ -392,28 +403,26 @@ export default function CallsBookingPage() {
   ];
 
   // ── List filters (toolbar) ──
-  const staffFilterItems = [
-    {
-      label: 'All assigned users',
-      value: '',
-    },
-    ...staffItems,
-  ];
-  const clientFilterItems = [
-    {
-      label: 'All Clients',
-      value: '',
-    },
-    ...clientItems,
-  ];
 
   // ── Summary counts (Total / Completed / Processing) ──
   // Reflects whatever is currently in filteredBookings — i.e. the date
   // range/As On filter (server-side) plus the staff/client/status filters
   // (client-side) applied on top of it.
-  const summaryTotal = pagedBookings?.numberOfElements;
-  const summaryCompleted = bookings.filter((row) => row.status === 'C').length;
-  const summaryProcessing = bookings.filter((row) => row.status === 'P').length;
+  const summary = bookings.reduce(
+    (acc, row) => {
+      const group = describeCallStatus(row.status).group;
+      if (group === 'open') acc.open++;
+      else if (group === 'progress') acc.progress++;
+      else if (group === 'complete') acc.complete++;
+      return acc;
+    },
+    {
+      total: pagedBookings?.numberOfElements ?? bookings.length,
+      open: 0,
+      progress: 0,
+      complete: 0,
+    },
+  );
 
   // ─────────────────────────
 
@@ -533,12 +542,13 @@ export default function CallsBookingPage() {
           STATUS: values.STATUS,
           remark: values.remark,
         },
-        media: media.map((m) => m.file).filter(Boolean) as File[],
+        // Only the files picked in the status dialog, and only the ones left active.
+        media: statusMedia.flatMap((m) => (m.active && m.file ? [m.file] : [])),
       });
       toast.success('Status Added', 'Call status entry created successfully.');
       setAddOpen(false);
       statusReset(DEFAULTS_STATUS);
-      setMedia((prev) => {
+      setStatusMedia((prev) => {
         revokeMediaItems(prev);
         return [];
       });
@@ -580,7 +590,9 @@ export default function CallsBookingPage() {
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-white px-4 py-3">
             <div>
               <div className="text-xl tracking-tight">Booking Details</div>
-              <div className="mt-1 text-sm text-muted">Ticket ID: {v?.tktId ?? viewId}</div>
+              <div className="mt-1 text-sm text-muted">
+                Ticket ID: {v?.tktId ?? viewId}
+              </div>
             </div>
             <button
               className={buttonClass}
@@ -592,11 +604,7 @@ export default function CallsBookingPage() {
 
           <div className="p-4">
             {viewLoading ? (
-              <div
-                className="p-12 text-center text-muted"
-              >
-                Loading...
-              </div>
+              <div className="p-12 text-center text-muted">Loading...</div>
             ) : v ? (
               <>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
@@ -614,7 +622,7 @@ export default function CallsBookingPage() {
                         'Staff',
                         v.userMap ? Object.values(v.userMap).join(', ') : v.assignedUsers,
                       ],
-                      ['Status', v.status],
+                      ['Status', describeCallStatus(v.status).label],
                       ['Active', v.active === 'Y' ? 'Active' : 'Inactive'],
                       ['Remark', v.remark],
                       ['Cancelled', v.cancel],
@@ -627,70 +635,57 @@ export default function CallsBookingPage() {
                       className="flex flex-col items-start gap-2"
                     >
                       <span className="text-xs text-muted">{label}</span>
-                      <span className="text-sm break-words text-ink">{String(val ?? '—')}</span>
+                      <span className="text-sm break-words text-ink">
+                        {String(val ?? '—')}
+                      </span>
                     </div>
                   ))}
                 </div>
 
-                {v.media && v.media.length > 0 && (
-                  <>
-                    <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Media</div>
-                    <div className="flex flex-wrap gap-3">
-                      {v.media.map((m, idx) => {
-                        return (
-                          // NOTE: m.mediaId is a shared group id (same across every
-                          // file in this booking), not unique per item — key on idx.
-                          <div
-                            key={idx}
-                            className="size-20 overflow-hidden rounded-lg border border-line bg-slate-50 [&_img]:size-full [&_img]:object-cover [&_video]:size-full [&_video]:object-cover"
-                          >
-                            <AttachmentTile
-                              item={m}
-                              onOpen={() =>
-                                setLightbox({
-                                  items: v.media as LightboxItem[],
-                                  index: idx,
-                                })
-                              }
-                            />
-                            <div
-                              style={{
-                                color:
-                                  m.active === false
-                                    ? COLORS.textMuted
-                                    : COLORS.textSecondary,
-                              }}
-                              className="text-xs p-1 text-center"
-                            >
-                              {m.active === false ? 'Inactive' : 'Active'}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
+                {(() => {
+                  const files: CallFile[] = [
+                    ...(v.media ?? []).map((m) => ({ ...m, source: 'Booking' })),
+                    ...statusHistory.flatMap((s) =>
+                      statusFiles(s).map((m) => ({
+                        ...m,
+                        source: `${describeCallStatus(s.STATUS ?? '').label} update${
+                          s.UPDATED ? ` · ${formatDateTime(s.UPDATED)}` : ''
+                        }`,
+                      })),
+                    ),
+                  ];
+                  return (
+                    <section className="mt-5">
+                      <div className="mb-3 flex items-center justify-between border-b border-line pb-2">
+                        <h3 className="text-xs font-semibold tracking-widest text-muted uppercase">
+                          All files on this call
+                        </h3>
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-ink">
+                          {files.length}
+                        </span>
+                      </div>
+                      <AttachmentList
+                        items={files}
+                        emptyText="No files were added to this call yet."
+                        onOpen={(index) => setLightbox({ items: files, index })}
+                      />
+                    </section>
+                  );
+                })()}
 
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Call Status History</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Call Status History
+                </div>
 
                 {statusHistoryLoading ? (
-                  <div
-                    className="p-4 text-muted text-sm"
-                  >
-                    Loading...
-                  </div>
+                  <div className="p-4 text-muted text-sm">Loading...</div>
                 ) : statusHistory.length === 0 ? (
-                  <div
-                    className="p-4 text-muted text-sm"
-                  >
-                    No status updates yet.
-                  </div>
+                  <div className="p-4 text-muted text-sm">No status updates yet.</div>
                 ) : (
-                  <div
-                    className="flex flex-col gap-2.5"
-                  >
+                  <div className="flex flex-col gap-2.5">
                     {statusHistory.map((s) => {
                       const label = s.STATUS ?? '—';
+                      const statusName = describeCallStatus(s.STATUS).label;
                       const bg =
                         label === 'CLOSED' || label === 'C'
                           ? COLORS.errorBg
@@ -711,9 +706,7 @@ export default function CallsBookingPage() {
                           }}
                           className="rounded-xl p-2.5 bg-white"
                         >
-                          <div
-                            className="flex items-center justify-between mb-1.5"
-                          >
+                          <div className="flex items-center justify-between mb-1.5">
                             <span
                               style={{
                                 background: bg,
@@ -721,67 +714,30 @@ export default function CallsBookingPage() {
                               }}
                               className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
                             >
-                              {label}
+                              {statusName}
                             </span>
-                            <span
-                              className="text-xs text-muted"
-                            >
+                            <span className="text-xs text-muted">
                               {s.UPDATED ? formatDateTime(s.UPDATED) : '—'}
                             </span>
                           </div>
 
-                          <div
-                            className="text-sm text-ink mb-1"
-                          >
-                            By{' '}
-                            <b className="text-ink">
-                              {s.userName ?? s.userId ?? '—'}
-                            </b>
+                          <div className="text-sm text-ink mb-1">
+                            By <b className="text-ink">{s.userName ?? s.userId ?? '—'}</b>
                           </div>
 
                           {s.remark && (
-                            <div
-                              className="text-sm text-ink mb-1.5"
-                            >
-                              {s.remark}
-                            </div>
+                            <div className="text-sm text-ink mb-1.5">{s.remark}</div>
                           )}
 
-                          {((s.media && s.media.length > 0) || s.IMAGE) &&
-                            (() => {
-                              const historyMedia =
-                                s.media && s.media.length > 0
-                                  ? s.media
-                                  : [
-                                      {
-                                        mediaUrl: s.IMAGE,
-                                        mediaType: 'IMAGE',
-                                        active: true,
-                                      },
-                                    ];
-                              return (
-                                <div className="flex flex-wrap gap-3">
-                                  {historyMedia.map((m, idx) => {
-                                    return (
-                                      <div
-                                        key={idx}
-                                        className="size-20 overflow-hidden rounded-lg border border-line bg-slate-50 [&_img]:size-full [&_img]:object-cover [&_video]:size-full [&_video]:object-cover"
-                                      >
-                                        <AttachmentTile
-                                          item={m}
-                                          onOpen={() =>
-                                            setLightbox({
-                                              items: historyMedia as LightboxItem[],
-                                              index: idx,
-                                            })
-                                          }
-                                        />
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            })()}
+                          {statusFiles(s).length > 0 && (
+                            <AttachmentList
+                              className="mt-2"
+                              items={statusFiles(s)}
+                              onOpen={(index) =>
+                                setLightbox({ items: statusFiles(s), index })
+                              }
+                            />
+                          )}
                         </div>
                       );
                     })}
@@ -789,11 +745,7 @@ export default function CallsBookingPage() {
                 )}
               </>
             ) : (
-              <div
-                className="p-12 text-center text-muted"
-              >
-                Booking not found.
-              </div>
+              <div className="p-12 text-center text-muted">Booking not found.</div>
             )}
           </div>
         </div>
@@ -823,300 +775,192 @@ export default function CallsBookingPage() {
 
   return (
     <>
-      <Box>
-        {/* Summary Tiles */}
-        <Flex className="gap-3 mb-3 flex-wrap">
-          {[
-            {
-              label: 'Calls Total Listed',
-              value: summaryTotal,
-              bg: COLORS.gray50,
-              color: COLORS.textPrimary,
-            },
-            {
-              label: 'Calls Completed',
-              value: summaryCompleted,
-              bg: COLORS.successBg,
-              color: COLORS.success,
-            },
-            {
-              label: 'Calls Processing',
-              value: summaryProcessing,
-              bg: COLORS.warningBg,
-              color: COLORS.warning,
-            },
-          ].map((tile) => (
-            <Box
-              key={tile.label}
-              bg={tile.bg}
-              className="flex-[1_1_160px] min-w-40 border border-solid border-line rounded-lg pl-4 pr-4 pt-2.5 pb-2.5"
-            >
-              <Text
-                className="text-xs text-muted font-normal uppercase tracking-wide"
-              >
-                {tile.label}
-              </Text>
+      {/* Header */}
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold tracking-widest text-muted uppercase">
+            Projects &amp; calls
+          </p>
+          <h1 className="text-lg font-semibold text-ink">Calls booking</h1>
+          <p className="text-xs text-muted">
+            Book calls, assign staff and follow every status update in one place.
+          </p>
+        </div>
+        <button
+          type="button"
+          className={cn(buttonClass, buttonVariants.primary)}
+          onClick={openCreate}
+        >
+          <Plus size={14} /> New booking
+        </button>
+      </div>
 
-              <Text
-                color={tile.color}
-                className="text-xl font-normal mt-0.5"
-              >
-                {tile.value}
-              </Text>
-            </Box>
-          ))}
-        </Flex>
-      </Box>
-      {/* Filter */}
-      <Box
-        className="flex flex-wrap items-end justify-between gap-4 [&_label]:text-xs [&_label]:text-muted [&>div]:max-w-full bg-white border border-solid border-[#E5E7EB] rounded-xl p-3 md:p-3.5 mb-3 shadow-sm"
-      >
-        <Flex className="gap-3 items-end flex-wrap">
-          {/* As On */}
-          <VStack
-            spaceX="4px"
-            className="items-stretch min-w-25"
+      {/* Summary tiles */}
+      <div className="mb-3 grid grid-cols-4 gap-2 max-lg:grid-cols-2">
+        {[
+          {
+            label: 'Calls listed',
+            value: summary.total,
+            tone: 'bg-brand',
+            icon: <PhoneCall size={16} />,
+          },
+          {
+            label: 'Pending',
+            value: summary.open,
+            tone: 'bg-amber-500',
+            icon: <Clock3 size={16} />,
+          },
+          {
+            label: 'In progress',
+            value: summary.progress,
+            tone: 'bg-blue-500',
+            icon: <Loader size={16} />,
+          },
+          {
+            label: 'Completed',
+            value: summary.complete,
+            tone: 'bg-emerald-500',
+            icon: <CheckCircle2 size={16} />,
+          },
+        ].map((tile) => (
+          <div
+            key={tile.label}
+            className="relative flex items-center gap-3 overflow-hidden rounded-lg border border-line bg-white px-3.5 py-3"
           >
-            <Text
-              className="text-sm font-normal text-gray-700"
-            >
-              As On
-            </Text>
-
-            <SwitchInput
-              value={appliedFilters.asOn}
-              onChange={(val) => {
-                setAppliedFilters((prev) => ({
-                  ...prev,
-                  asOn: val,
-                  asOnDate: today,
-                }));
-              }}
-              trueValue={true}
-              falseValue={false}
-              labels={{
-                on: 'On',
-                off: 'Off',
-              }}
-              size="sm"
+            <span
+              aria-hidden
+              className={cn('absolute inset-y-0 left-0 w-1', tile.tone)}
             />
-          </VStack>
-
-          {/* Date Filters */}
-          {appliedFilters.asOn ? (
-            <VStack
-              spaceX="4px"
-              className="items-stretch"
+            <span
+              aria-hidden
+              className={cn(
+                'grid size-9 shrink-0 place-items-center rounded-md text-white',
+                tile.tone,
+              )}
             >
-              <Text
-                className="text-sm font-normal text-gray-700"
-              >
-                Date
-              </Text>
+              {tile.icon}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold tracking-wide text-muted uppercase">
+                {tile.label}
+              </p>
+              <p className="text-xl leading-tight font-semibold text-ink tabular-nums">
+                {isLoading ? '—' : tile.value.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
 
+      {/* Filters — Enter moves through them and runs Apply on the last one */}
+      <section
+        data-enter-nav
+        aria-label="Filter bookings"
+        className="mb-3 rounded-lg border border-line bg-white px-2.5 py-2"
+      >
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-ink uppercase">
+            <SlidersHorizontal size={13} /> Filters
+          </p>
+          <SwitchField
+            value={appliedFilters.asOn}
+            onChange={(val) =>
+              setAppliedFilters((prev) => ({ ...prev, asOn: val, asOnDate: today }))
+            }
+            labels={{ on: 'Single day (as on)', off: 'Date range' }}
+          />
+        </div>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] items-end gap-x-2 gap-y-1.5">
+          {appliedFilters.asOn ? (
+            <div className="grid gap-1">
+              <span className={labelClass}>As on</span>
               <DatePickerInput
                 value={appliedFilters.asOnDate || null}
                 onChange={(val) => handleChange('asOnDate', val)}
                 placeholder="Select date"
-                className="max-w-37.5"
               />
-            </VStack>
+            </div>
           ) : (
             <>
-              <VStack
-                spaceX="4px"
-                className="items-stretch"
-              >
-                <Text
-                  className="text-sm font-normal text-gray-700"
-                >
-                  From Date
-                </Text>
-
+              <div className="grid gap-1">
+                <span className={labelClass}>From</span>
                 <DatePickerInput
                   value={appliedFilters.fromDate}
                   onChange={(val) => handleChange('fromDate', val)}
                   placeholder="From date"
                   maxDate={appliedFilters.toDate || today}
-                  className="max-w-37.5"
                 />
-              </VStack>
-
-              <VStack
-                spaceX="4px"
-                className="items-stretch"
-              >
-                <Text
-                  className="text-sm font-normal text-gray-700"
-                >
-                  To Date
-                </Text>
-
+              </div>
+              <div className="grid gap-1">
+                <span className={labelClass}>To</span>
                 <DatePickerInput
                   value={appliedFilters.toDate || null}
                   onChange={(val) => handleChange('toDate', val)}
                   placeholder="To date"
                   minDate={appliedFilters.fromDate || undefined}
                   maxDate={today}
-                  className="max-w-37.5"
                 />
-              </VStack>
+              </div>
             </>
           )}
-
-          {/* Staff */}
           {isAdmin && (
-            <VStack
-              spaceX="4px"
-              className="items-stretch min-w-37.5"
-            >
-              <Text
-                className="text-sm font-normal text-gray-700"
-              >
-                Assigned user
-              </Text>
-
-              <SelectCombobox
-                value={appliedFilters.userId || undefined}
-                onChange={(val) => handleChange('userId', val)}
-                items={staffFilterItems}
-                placeholder="All assigned users"
-                size="sm"
-                label=""
-                className="max-w-45 text-sm"
-              />
-            </VStack>
+            <ComboBox
+              label="Assigned user"
+              value={appliedFilters.userId}
+              onChange={(val) => handleChange('userId', val)}
+              options={staffItems}
+              placeholder="All users"
+            />
           )}
-
           {!isClientUser && (
-            <VStack
-              spaceX="4px"
-              className="items-stretch min-w-50"
-            >
-              <Text
-                className="text-sm font-normal text-gray-700"
-              >
-                Client
-              </Text>
-
-              <SelectCombobox
-                value={appliedFilters.clientId || undefined}
-                onChange={(val) => handleChange('clientId', val)}
-                items={clientFilterItems}
-                placeholder="Select client"
-                size="sm"
-                label=""
-                className="max-w-62.5 min-w-50 text-sm"
-              />
-            </VStack>
+            <ComboBox
+              label="Client"
+              value={appliedFilters.clientId}
+              onChange={(val) => handleChange('clientId', val)}
+              options={clientItems}
+              placeholder="All clients"
+            />
           )}
-          <VStack
-            spaceX="4px"
-            className="items-stretch min-w-50"
-          >
-            <Text
-              className="text-sm font-normal text-gray-700"
-            >
-              Project
-            </Text>
-            <SelectCombobox
-              value={appliedFilters.projectId}
-              onChange={(val) => handleChange('projectId', val)}
-              items={projectItems}
-              placeholder="Select project"
-              size="md"
-              className="max-w-full text-sm"
-            />
-          </VStack>
-          <VStack
-            spaceX="4px"
-            className="items-stretch min-w-50"
-          >
-            <Text
-              className="text-sm font-normal text-gray-700"
-            >
-              Module
-            </Text>
-            <SelectCombobox
-              value={appliedFilters.moduleId}
-              onChange={(val) => handleChange('moduleId', val)}
-              items={moduleItems}
-              placeholder="Select module"
-              size="md"
-              className="max-w-full text-sm"
-            />
-          </VStack>
-
-          {/* Status */}
-          <VStack
-            spaceX="4px"
-            className="items-stretch"
-          >
-            <Text
-              className="text-sm font-normal text-gray-700"
-            >
-              Status
-            </Text>
-
-            <NativeSelectWrapper
-              value={appliedFilters.status}
-              onChange={(e) => handleChange('status', e.target.value)}
-              items={statusItems}
-              css={{
-                bg: 'white',
-                border: '1px solid',
-                borderColor: '#D1D5DB',
-                borderRadius: '6px',
-              }}
-              className="max-w-35"
-            />
-          </VStack>
-
-          {/* Actions */}
-          <HStack
-            spaceX="8px"
-            className="ml-auto max-sm:ml-0 max-sm:w-full max-sm:flex-wrap"
-          >
-            {/* Reset */}
-            <Button
-              size="sm"
-              variant="outline"
+          <ComboBox
+            label="Project"
+            value={appliedFilters.projectId}
+            onChange={(val) => handleChange('projectId', val)}
+            options={projectItems}
+            placeholder="All projects"
+          />
+          <ComboBox
+            label="Module"
+            value={appliedFilters.moduleId}
+            onChange={(val) => handleChange('moduleId', val)}
+            options={moduleItems}
+            placeholder="All modules"
+          />
+          <SelectInput
+            label="Status"
+            value={appliedFilters.status}
+            onChange={(val) => handleChange('status', val)}
+            options={statusItems.filter((o) => o.value !== '')}
+            placeholder="All statuses"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className={cn(buttonClass, 'flex-1')}
               onClick={handleResetFilters}
-              _hover={{
-                bg: 'gray.50',
-              }}
-              className="border-[#D1D5DB] text-gray-700"
             >
-              <RotateCcw size={14} /> Reset
-            </Button>
-
-            {/* Apply */}
-            <Button
-              size="sm"
-              _hover={{
-                bg: COLORS.primaryHover,
-              }}
+              <RotateCcw size={13} /> Reset
+            </button>
+            <button
+              type="button"
+              data-enter-submit
+              className={cn(buttonClass, buttonVariants.primary, 'flex-1')}
               onClick={handleApplyFilters}
-              className="bg-brand text-white"
             >
-              <Search size={14} />
-              Apply
-            </Button>
-
-            {/* Add Booking */}
-            <Button
-              size="sm"
-              _hover={{
-                bg: COLORS.primaryHover,
-              }}
-              onClick={openCreate}
-              className="bg-brand text-white"
-            >
-              <Plus size={14} /> Add Booking
-            </Button>
-          </HStack>
-        </Flex>
-      </Box>
+              <Search size={13} /> Apply
+            </button>
+          </div>
+        </div>
+      </section>
 
       <CustomTable
         // title="All Calls Bookings"
@@ -1136,11 +980,11 @@ export default function CallsBookingPage() {
             onClick: openView,
           },
           {
-            label: 'View Details',
-            icon: <Plus size={13} />,
+            label: 'Update status',
+            icon: <MessageSquarePlus size={13} />,
             onClick: (row) => {
               statusReset(DEFAULTS_STATUS);
-              setMedia((prev) => {
+              setStatusMedia((prev) => {
                 revokeMediaItems(prev);
                 return [];
               });
@@ -1190,214 +1034,152 @@ export default function CallsBookingPage() {
 
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Basic Information</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Basic Information
+                </div>
 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
                   {!isClientUser && (
-                    <div className="flex min-w-0 flex-col gap-2">
-                      <label className="text-sm text-muted">Client *</label>
-                      <Controller
-                        name="clientId"
-                        control={control}
-                        render={({ field }) => (
-                          <SelectCombobox
-                            ref={registerField('clientId')}
-                            value={field.value ? String(field.value) : undefined}
-                            onChange={(val) => field.onChange(val ? Number(val) : 0)}
-                            onEnter={() => focusNext('clientId')}
-                            editId={editRow?.sno ?? null}
-                            items={clientItems}
-                            placeholder="Select client"
-                            size="md"
-                            disable={isClientUser}
-                            className="max-w-full text-sm"
-                          />
-                        )}
-                      />
-                      {errors.clientId && (
-                        <span className="mt-1 text-xs text-rose-600">
-                          {errors.clientId.message}
-                        </span>
+                    <Controller
+                      name="clientId"
+                      control={control}
+                      render={({ field }) => (
+                        <ComboBox
+                          label="Client"
+                          required
+                          value={field.value ? String(field.value) : undefined}
+                          onChange={(val) => field.onChange(val ? Number(val) : 0)}
+                          options={clientItems}
+                          placeholder="Select client"
+                          disabled={isClientUser}
+                          error={errors.clientId?.message}
+                          addNew
+                          addNewLabel="Add new client"
+                          onAddNew={(typed) => addNew.open('client', typed)}
+                        />
                       )}
-                    </div>
+                    />
                   )}
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Project</label>
-                    <Controller
-                      name="projectId"
-                      control={control}
-                      render={({ field }) => (
-                        <SelectCombobox
-                          ref={registerField('projectId')}
-                          value={field.value || undefined}
-                          onChange={(val) => field.onChange(val)}
-                          onEnter={() => focusNext('projectId')}
-                          editId={editRow?.sno ?? null}
-                          items={projectItems}
-                          placeholder="Select project"
-                          size="md"
-                          className="max-w-full text-sm"
-                        />
-                      )}
-                    />
-                    {errors.projectId && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.projectId.message}
-                      </span>
+                  <Controller
+                    name="projectId"
+                    control={control}
+                    render={({ field }) => (
+                      <ComboBox
+                        label="Project"
+                        value={field.value || undefined}
+                        onChange={(val) => field.onChange(val)}
+                        options={projectItems}
+                        placeholder="Select project"
+                        error={errors.projectId?.message}
+                        addNew={!isClientUser}
+                        addNewLabel="Add new project"
+                        onAddNew={(typed) => addNew.open('project', typed)}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Module</label>
-                    <Controller
-                      name="moduleId"
-                      control={control}
-                      render={({ field }) => (
-                        <SelectCombobox
-                          ref={registerField('moduleId')}
-                          value={field.value || undefined}
-                          onChange={(val) => field.onChange(val)}
-                          onEnter={() => focusNext('moduleId')}
-                          editId={editRow?.sno ?? null}
-                          items={moduleItems}
-                          placeholder="Select module"
-                          size="md"
-                          className="max-w-full text-sm"
-                        />
-                      )}
-                    />
-                    {errors.moduleId && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.moduleId.message}
-                      </span>
+                  <Controller
+                    name="moduleId"
+                    control={control}
+                    render={({ field }) => (
+                      <ComboBox
+                        label="Module"
+                        value={field.value || undefined}
+                        onChange={(val) => field.onChange(val)}
+                        options={moduleItems}
+                        placeholder="Select module"
+                        error={errors.moduleId?.message}
+                        addNew={!isClientUser}
+                        addNewLabel="Add new module"
+                        onAddNew={(typed) => addNew.open('module', typed)}
+                      />
                     )}
-                  </div>
+                  />
                 </div>
 
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Assignment</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Assignment
+                </div>
 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Staff *</label>
-                    <Controller
-                      name="assignedUsers"
-                      control={control}
-                      render={({ field }) => (
-                        <MultiSelectCombobox
-                          ref={registerField('assignedUsers')}
-                          value={
-                            field.value ? field.value.split(',').filter(Boolean) : []
-                          }
-                          onChange={(vals) => field.onChange(vals.join(','))}
-                          onEnter={() => focusNext('assignedUsers')}
-                          editId={editRow?.sno ?? null}
-                          items={staffItems}
-                          placeholder="Select staff"
-                          size="md"
-                          className="max-w-full text-sm"
-                        />
-                      )}
-                    />
-                    {errors.assignedUsers && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.assignedUsers.message}
-                      </span>
+                  <Controller
+                    name="assignedUsers"
+                    control={control}
+                    render={({ field }) => (
+                      <MultiComboBox
+                        label="Staff"
+                        required
+                        value={field.value ? field.value.split(',').filter(Boolean) : []}
+                        onChange={(vals) => field.onChange(vals.join(','))}
+                        options={staffItems}
+                        placeholder="Select staff"
+                        error={errors.assignedUsers?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Status</label>
-                    <Controller
-                      name="status"
-                      control={control}
-                      render={({ field }) => (
-                        <>
-                          <NativeSelectWrapper
-                            ref={registerField('status')}
-                            value={field.value ?? ''}
-                            onChange={(e) => {
-                              field.onChange(e);
-                            }}
-                            onEnter={() => focusNext('status')}
-                            items={statusItems}
-                            css={{
-                              border: '1px solid #DDD',
-                              bg: '#EEE',
-                              color: '#222',
-                              fontSize: '14px',
-                            }}
-                          />
-                        </>
-                      )}
-                    />
-                    {errors.status && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.status.message}
-                      </span>
+                  <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectInput
+                        label="Status"
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        options={statusItems}
+                        error={errors.status?.message}
+                      />
                     )}
-                  </div>
+                  />
 
                   {/* Active is only editable during Update — on create it
                       defaults to "Y" automatically and isn't shown. */}
                   {editRow && (
-                    <div className="flex min-w-0 flex-col gap-2">
-                      <label className="text-sm text-muted">Active</label>
-                      <Controller
-                        name="active"
-                        control={control}
-                        render={({ field }) => (
-                          <SwitchInput
-                            value={field.value === 'N' ? 'N' : 'Y'}
-                            onChange={field.onChange}
-                            trueValue="Y"
-                            falseValue="N"
-                            labels={{
-                              on: 'Active',
-                              off: 'Inactive',
-                            }}
-                            size="sm"
-                          />
-                        )}
-                      />
-                      {errors.active && (
-                        <span className="mt-1 text-xs text-rose-600">
-                          {errors.active.message}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Details</div>
-
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Remark</label>
                     <Controller
-                      name="remark"
+                      name="active"
                       control={control}
                       render={({ field }) => (
-                        <TextareaField
-                          inputRef={registerField('remark')}
-                          value={field.value}
-                          field="remark"
-                          onChange={(_, value) => field.onChange(value)}
-                          onEnter={() => focusNext('remark')}
-                          placeholder="Enter remarks"
-                          mode="inline"
+                        <SwitchField
+                          label="Active"
+                          value={field.value === 'N' ? 'N' : 'Y'}
+                          onChange={field.onChange}
+                          trueValue="Y"
+                          falseValue="N"
+                          labels={{
+                            on: 'Active',
+                            off: 'Inactive',
+                          }}
+                          error={errors.active?.message}
                         />
                       )}
                     />
-                    {errors.remark && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.remark.message}
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Media</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Details
+                </div>
+
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
+                  <Controller
+                    name="remark"
+                    control={control}
+                    render={({ field }) => (
+                      <TextAreaInput
+                        label="Remark"
+                        value={field.value}
+                        placeholder="Enter remarks"
+                        onChange={field.onChange}
+                        error={errors.remark?.message}
+                      />
+                    )}
+                  />
+                </div>
+
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Media
+                </div>
 
                 <div className="flex min-w-0 flex-col gap-2">
                   <label className="text-sm text-muted">Attachments</label>
@@ -1452,9 +1234,7 @@ export default function CallsBookingPage() {
             aria-modal="true"
             aria-label="Booking and call details"
           >
-            <div
-              className="shrink-0 gap-4 border-b border-line bg-slate-50/60 max-sm:px-3 flex p-2.5 justify-between items-center"
-            >
+            <div className="shrink-0 gap-4 border-b border-line bg-slate-50/60 max-sm:px-3 flex p-2.5 justify-between items-center">
               <div>
                 <div className="text-xl tracking-tight">Add Status</div>
                 <div className="mt-1 text-sm text-muted">Ticket:</div>
@@ -1471,70 +1251,50 @@ export default function CallsBookingPage() {
 
             <form onSubmit={statusSubmit(onStatusSubmit)}>
               <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
-                <div className="flex min-w-0 flex-col gap-2">
-                  <label className="text-sm text-muted">Status *</label>
+                <div className="grid gap-3">
                   <Controller
                     name="STATUS"
                     control={statusControl}
                     render={({ field }) => (
-                      <>
-                        <NativeSelectWrapper
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                          items={STATUS_ITEMS}
-                          css={{
-                            fontSize: '14px',
-                            background: '#ddd',
-                            color: '#222',
-                          }}
-                          className="min-w-37.5"
-                        />
-                      </>
+                      <SelectInput
+                        label="Status"
+                        required
+                        value={field.value}
+                        onChange={(v) => field.onChange(v.toUpperCase())}
+                        options={STATUS_ITEMS}
+                        error={statusError.STATUS?.message}
+                      />
                     )}
                   />
-                  {statusError.STATUS && (
-                    <span className="mt-1 text-xs text-rose-600">
-                      {statusError.STATUS.message}
-                    </span>
-                  )}
-                </div>
 
-                <div className="flex min-w-0 flex-col gap-2">
-                  <label className="text-sm text-muted">Remark</label>
                   <Controller
                     name="remark"
                     control={statusControl}
                     render={({ field }) => (
-                      <TextareaField
+                      <TextAreaInput
+                        label="Remark"
                         value={field.value}
-                        field="remark"
-                        onChange={(_, value) => field.onChange(value)}
+                        onChange={field.onChange}
                         placeholder="Enter remark"
-                        mode="inline"
                         rows={3}
                       />
                     )}
                   />
-                  {errors.remark && (
-                    <span className="mt-1 text-xs text-rose-600">{errors.remark.message}</span>
-                  )}
-                </div>
 
-                <div className="flex min-w-0 flex-col gap-2">
-                  <label className="text-sm text-muted">Attachments</label>
-                  <MediaManager
-                    value={statusMedia}
-                    onChange={setStatusMedia}
-                    ticketAttachments
-                    maxFiles={10}
-                    onError={(msg) => toast.error('Error', msg)}
-                  />
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <label className="text-sm text-muted">Attachments</label>
+                    <MediaManager
+                      value={statusMedia}
+                      onChange={setStatusMedia}
+                      ticketAttachments
+                      maxFiles={10}
+                      onError={(msg) => toast.error('Error', msg)}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div
-                className="shrink-0 gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3 flex items-center justify-end"
-              >
+              <div className="shrink-0 gap-2.5 border-t border-line bg-white px-4 py-3 max-sm:px-3 flex items-center justify-end">
                 <button
                   type="button"
                   className={buttonClass}
@@ -1564,6 +1324,40 @@ export default function CallsBookingPage() {
         isPending={deleteMutation.isPending}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteRow(null)}
+      />
+      {/* "Add new" from the booking form's combos */}
+      <ClientFormModal
+        open={addNew.is('client')}
+        initial={{ CLIENTNAME: addNew.seed.toUpperCase() }}
+        onCancel={addNew.close}
+        onSaved={(client) => {
+          setValue('clientId', client.CLIENTID, { shouldValidate: true });
+          addNew.close();
+        }}
+      />
+      <ProjectFormModal
+        open={addNew.is('project')}
+        initial={{
+          PROJECTNAME: addNew.seed.toUpperCase(),
+          CLIENTID: Number(getValues('clientId')) || 0,
+        }}
+        onCancel={addNew.close}
+        onSaved={(project) => {
+          setValue('projectId', String(project.projectId), { shouldValidate: true });
+          addNew.close();
+        }}
+      />
+      <ModuleFormModal
+        open={addNew.is('module')}
+        initial={{
+          MODULENAME: addNew.seed.toUpperCase(),
+          PROJECTID: Number(getValues('projectId')) || 0,
+        }}
+        onCancel={addNew.close}
+        onSaved={(module) => {
+          setValue('moduleId', String(module.moduleId), { shouldValidate: true });
+          addNew.close();
+        }}
       />
     </>
   );

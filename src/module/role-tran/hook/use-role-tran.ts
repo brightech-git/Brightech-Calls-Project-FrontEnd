@@ -1,3 +1,5 @@
+'use client';
+
 // ================= HOOKS =================
 // hooks/useRoleTran.ts
 
@@ -29,7 +31,7 @@ import {
   toggleRoleTransactionActive,
 } from '@/src/module/role-tran/api/role-tran.api';
 
-import { toastCreated, toastError } from '@/components/toast/toast';
+import { toastCreated, toastError } from '@/src/components/toast/toast';
 
 // =====================================================
 // MODULE

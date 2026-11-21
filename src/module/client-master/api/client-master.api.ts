@@ -1,5 +1,5 @@
-import { axiosInstance } from '@/api/axiosInstance';
-import { ApiResponse } from '@/types/ApiResponse';
+import { axiosInstance } from '@/lib/api/axios-instance';
+import { ApiResponse } from '@/lib/api/api-response';
 import { ClientPayload, ClientRecord } from '@/src/module/client-master/type/client-master.types';
 
 export const createClient = async (payload: ClientPayload): Promise<ClientRecord> => {

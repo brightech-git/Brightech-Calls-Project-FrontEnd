@@ -18,11 +18,11 @@ import {
 import { AiOutlineSave } from 'react-icons/ai';
 import { IoIosExit } from 'react-icons/io';
 import { FaEdit, FaTrash, FaPrint, FaFileExcel } from 'react-icons/fa';
-import { Toaster, toaster } from '@/components/ui/toaster';
+import { Toaster, toaster } from '@/src/components/ui/toaster';
 
 /*------------------CONTEXT ------------------------------*/
-// import { useTheme } from "@/context/theme/themeContext";
-// import { usePrint } from "@/context/print/usePrintContext";
+// import { useTheme } from "@/src/context/theme/themeContext";
+// import { usePrint } from "@/src/context/print/usePrintContext";
 
 /*------------------HOOKS ------------------------------*/
 import { useRole } from '@/src/module/role-master/hook/use-role-master';
@@ -34,11 +34,11 @@ import { RoleMaster as RoleMasterConfig } from '@/src/module/role-master/type/ro
 import { Role, RolePayload } from '@/src/module/role-master/type/role-master.types';
 
 /*------------------COMPONENTS ------------------------------*/
-import ScrollToTop from '@/components/scroll/ScrollToTop';
-import { CustomTable } from '@/components/CustomTable';
-import SearchBar from '@/components/search/SearchBar';
-import { DynamicForm } from '@/components/form/DynamicForm';
-import { useEnterNavigation } from '@/components/form/useEnterNavigation';
+import ScrollToTop from '@/src/components/scroll/ScrollToTop';
+import { CustomTable } from '@/src/components/CustomTable';
+import SearchBar from '@/src/components/search/SearchBar';
+import { DynamicForm } from '@/src/components/form/DynamicForm';
+import { useEnterNavigation } from '@/src/components/form/useEnterNavigation';
 const USERID = 1;
 const emptyForm: RolePayload = {
   ROLENAME: '',

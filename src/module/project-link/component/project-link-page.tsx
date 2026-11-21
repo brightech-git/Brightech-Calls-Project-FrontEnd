@@ -3,26 +3,30 @@ import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, RefreshCw } from 'lucide-react';
-import { usePageHeader } from '@/context/PageHeaderContext';
+import { usePageHeader } from '@/src/context/PageHeaderContext';
 import { useClientList } from '@/src/module/client-master/hook/use-client-master';
 import { useProjectTypeList } from '@/src/module/project-type-master/hook/use-project-type-master';
 import {
-  AppDialog,
   Button,
   ConfirmDialog,
   DataTable,
   SecretValue,
   ErrorState,
   Notification,
-  SelectField,
   useToast,
   type TableColumn,
-} from '@/components/common';
-import { FormFields, type FormFieldConfig } from '@/components/form/FormFields';
-import { DataExport, type ExportColumn } from '@/components/DataExport';
+} from '@/src/components/common';
+import { FormFields, type FormFieldConfig } from '@/src/components/form/FormFields';
+import { ComboBox, FormModal, FormModalBody, useAddNew } from '@/src/components/form';
+import { ClientFormModal } from '@/src/module/client-master/component/client-form';
+import { DataExport, type ExportColumn } from '@/src/components/DataExport';
 import { getApiErrorMessage, normalizeApiError } from '@/lib/api/errors';
 import type { ProjectLinkRecord_Table } from '@/src/module/project-link/type/project-link.types';
-import { projectLinkDefaults, projectLinkSchema, type ProjectLinkForm } from '../type/project-link.schema';
+import {
+  projectLinkDefaults,
+  projectLinkSchema,
+  type ProjectLinkForm,
+} from '../type/project-link.schema';
 import {
   useProjectLinkList,
   useCreateProjectLink,
@@ -88,6 +92,7 @@ const columns: TableColumn<ProjectLinkRecord_Table>[] = [
   },
   {
     key: 'active',
+    total: 'active',
     header: 'Active',
     render: (row) => (row.active ? 'Active' : 'Inactive'),
   },
@@ -125,6 +130,8 @@ export default function ProjectLinksPage() {
   const update = useUpdateProjectLink();
   const remove = useDeleteProjectLink();
   const pending = create.isPending || update.isPending;
+  // "Add new" on the Client combo opens the Client Master form.
+  const addNew = useAddNew<'client'>();
   const form = useForm<ProjectLinkForm>({
     resolver: zodResolver(projectLinkSchema),
     defaultValues: projectLinkDefaults,
@@ -221,30 +228,31 @@ export default function ProjectLinksPage() {
         </div>
       </div>
       <div className="flex flex-wrap items-end gap-2 border-b border-line pb-3 [&>*]:min-w-36 [&>*]:flex-1">
-        <SelectField
+        <ComboBox
           label="Client"
           value={filters.clientId}
           options={clientOptions}
           placeholder="All clients"
-          onChange={(event) => setFilters({ ...filters, clientId: event.target.value })}
+          advanceOnSelect={false}
+          onChange={(value) => setFilters({ ...filters, clientId: value })}
         />
-        <SelectField
+        <ComboBox
           label="Project type"
           value={filters.projectTypeId}
           options={typeOptions}
           placeholder="All types"
-          onChange={(event) =>
-            setFilters({ ...filters, projectTypeId: event.target.value })
-          }
+          advanceOnSelect={false}
+          onChange={(value) => setFilters({ ...filters, projectTypeId: value })}
         />
-        <SelectField
+        <ComboBox
           label="Device"
           value={filters.deviceType}
           options={devices}
           placeholder="All devices"
-          onChange={(event) => setFilters({ ...filters, deviceType: event.target.value })}
+          advanceOnSelect={false}
+          onChange={(value) => setFilters({ ...filters, deviceType: value })}
         />
-        <SelectField
+        <ComboBox
           label="Activity"
           value={filters.active}
           options={[
@@ -252,7 +260,8 @@ export default function ProjectLinksPage() {
             { value: 'false', label: 'Inactive' },
           ]}
           placeholder="All records"
-          onChange={(event) => setFilters({ ...filters, active: event.target.value })}
+          advanceOnSelect={false}
+          onChange={(value) => setFilters({ ...filters, active: value })}
         />
         <Button
           onClick={() =>
@@ -299,11 +308,12 @@ export default function ProjectLinksPage() {
           emptyMessage="No project links match these filters."
         />
       )}
-      <AppDialog
+      <FormModal
         open={open}
+        size="md"
         onClose={() => setOpen(false)}
         title={editing ? 'Edit project link' : 'New project link'}
-        description="Set the client, project and connection details."
+        subtitle="Set the client, project and connection details."
         busy={pending}
         footer={
           <>
@@ -328,48 +338,67 @@ export default function ProjectLinksPage() {
           </>
         }
       >
-        <form
-          id="project-link-form"
-          onSubmit={form.handleSubmit(submit)}
-          noValidate
-        >
-          <div className="mb-3 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-            {(['clientId', 'projectTypeId'] as const).map((name) => (
-              <Controller
-                key={name}
-                control={form.control}
-                name={name}
-                render={({ field, fieldState }) => (
-                  <SelectField
-                    {...field}
-                    label={name === 'clientId' ? 'Client' : 'Project type'}
-                    value={field.value ? String(field.value) : ''}
-                    onChange={(event) => field.onChange(Number(event.target.value))}
-                    options={name === 'clientId' ? clientOptions : typeOptions}
-                    required
-                    error={fieldState.error?.message}
-                    disabled={pending}
-                  />
-                )}
-              />
-            ))}
-          </div>
-          <FormFields
-            fields={fields}
-            control={form.control}
-            disabled={pending}
-          />
-          <label className="my-3 flex items-center gap-2 text-[13px]">
-            <input
-              type="checkbox"
-              className="size-4 accent-brand"
-              {...form.register('active')}
+        <FormModalBody>
+          <form
+            id="project-link-form"
+            onSubmit={form.handleSubmit(submit)}
+            noValidate
+          >
+            <div className="mb-3 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+              {(['clientId', 'projectTypeId'] as const).map((name) => (
+                <Controller
+                  key={name}
+                  control={form.control}
+                  name={name}
+                  render={({ field, fieldState }) => (
+                    <ComboBox
+                      ref={field.ref}
+                      name={field.name}
+                      label={name === 'clientId' ? 'Client' : 'Project type'}
+                      value={field.value ? String(field.value) : ''}
+                      onChange={(value) => field.onChange(value ? Number(value) : 0)}
+                      onBlur={field.onBlur}
+                      options={name === 'clientId' ? clientOptions : typeOptions}
+                      placeholder={
+                        name === 'clientId' ? 'Select client' : 'Select project type'
+                      }
+                      required
+                      error={fieldState.error?.message}
+                      disabled={pending}
+                      addNew={name === 'clientId'}
+                      addNewLabel="Add new client"
+                      onAddNew={(typed) => addNew.open('client', typed)}
+                    />
+                  )}
+                />
+              ))}
+            </div>
+            <FormFields
+              fields={fields}
+              control={form.control}
               disabled={pending}
             />
-            Active
-          </label>
-        </form>
-      </AppDialog>
+            <label className="my-3 flex items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                className="size-4 accent-brand"
+                {...form.register('active')}
+                disabled={pending}
+              />
+              Active
+            </label>
+          </form>
+        </FormModalBody>
+      </FormModal>
+      <ClientFormModal
+        open={addNew.is('client')}
+        initial={{ CLIENTNAME: addNew.seed.toUpperCase() }}
+        onCancel={addNew.close}
+        onSaved={(client) => {
+          form.setValue('clientId', client.CLIENTID, { shouldValidate: true });
+          addNew.close();
+        }}
+      />
       <ConfirmDialog
         open={!!deleting}
         title="Delete project link"

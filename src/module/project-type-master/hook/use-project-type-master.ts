@@ -1,3 +1,5 @@
+'use client';
+
 // ─────────────────────────────────────────────
 // hooks/ProjectTypeMaster/useProjectTypeMaster.ts
 // ─────────────────────────────────────────────

@@ -4,23 +4,25 @@ import { buttonClass, buttonVariants } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { TextInput, SwitchField } from '@/src/components/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Pencil } from 'lucide-react';
-import { CustomTable, TableColumn } from '@/components/CustomTable';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import { CapitalizedInput } from '@/components/ui/CapitalizedInput';
-import { SwitchInput } from '@/components/ui/SwitchInput';
-import { usePageHeader } from '@/context/PageHeaderContext';
-import { useToast } from '@/components/Toast';
-import { COLORS, FONT, RADIUS } from '@/utils/theme';
+import { CustomTable, TableColumn } from '@/src/components/CustomTable';
+import ConfirmDialog from '@/src/components/ConfirmDialog';
+import { usePageHeader } from '@/src/context/PageHeaderContext';
+import { useToast } from '@/src/components/Toast';
+import { COLORS, FONT, RADIUS } from '@/src/theme';
 import {
   useCompanyList,
   useCreateCompany,
   useUpdateCompany,
   useDeleteCompany,
 } from '@/src/module/company-master/hook/use-company-master';
-import { CompanyRecord, CompanyRecord_Table } from '@/src/module/company-master/type/company-master.types';
+import {
+  CompanyRecord,
+  CompanyRecord_Table,
+} from '@/src/module/company-master/type/company-master.types';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -85,6 +87,7 @@ const COLUMNS: TableColumn<CompanyRecord_Table>[] = [
   },
   {
     key: 'ACTIVE',
+    total: 'active',
     header: 'Status',
     sortable: true,
     render: (row) => (
@@ -296,390 +299,304 @@ export default function CompanyMasterPage() {
               })}
             >
               <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Basic Information</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Basic Information
+                </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Company ID *</label>
-                    <Controller
-                      name="COMPANYID"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="COMPANYID"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="e.g. BTS"
-                          isCapitalized
-                          disabled={!!editRow}
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.COMPANYID && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.COMPANYID.message}
-                      </span>
+                  <Controller
+                    name="COMPANYID"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Company ID"
+                        required
+                        uppercase
+                        value={field.value}
+                        placeholder="e.g. BTS"
+                        disabled={!!editRow}
+                        onChange={field.onChange}
+                        error={errors.COMPANYID?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Company Name *</label>
-                    <Controller
-                      name="COMPANYNAME"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="COMPANYNAME"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Full company name"
-                          isCapitalized
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.COMPANYNAME && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.COMPANYNAME.message}
-                      </span>
+                  <Controller
+                    name="COMPANYNAME"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Company Name"
+                        required
+                        uppercase
+                        value={field.value}
+                        placeholder="Full company name"
+                        onChange={field.onChange}
+                        error={errors.COMPANYNAME?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Cost ID</label>
-                    <Controller
-                      name="COSTID"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="COSTID"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="e.g. BT"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
-
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Short Key</label>
-                    <Controller
-                      name="SHORTKEY"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="SHORTKEY"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="e.g. B"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
-
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Phone</label>
-                    <Controller
-                      name="PHONE"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="PHONE"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="e.g. 04422334455"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
-
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Mobile *</label>
-                    <Controller
-                      name="MOBILE"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="MOBILE"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="10-digit mobile"
-                          inputModeType="mobile"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.MOBILE && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.MOBILE.message}
-                      </span>
+                  <Controller
+                    name="COSTID"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Cost ID"
+                        value={field.value}
+                        placeholder="e.g. BT"
+                        onChange={field.onChange}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Email *</label>
-                    <Controller
-                      name="EMAIL"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="EMAIL"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="email@example.com"
-                          inputModeType="email"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.EMAIL && (
-                      <span className="mt-1 text-xs text-rose-600">{errors.EMAIL.message}</span>
+                  <Controller
+                    name="SHORTKEY"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Short Key"
+                        value={field.value}
+                        placeholder="e.g. B"
+                        onChange={field.onChange}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Status *</label>
-                    <Controller
-                      name="ACTIVE"
-                      control={control}
-                      render={({ field }) => (
-                        <SwitchInput
-                          value={field.value}
-                          onChange={field.onChange}
-                          trueValue="Y"
-                          falseValue="N"
-                          labels={{
-                            on: 'Active',
-                            off: 'Inactive',
-                          }}
-                          size="sm"
-                        />
-                      )}
-                    />
-                    {errors.ACTIVE && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.ACTIVE.message}
-                      </span>
+                  <Controller
+                    name="PHONE"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Phone"
+                        type="tel"
+                        value={field.value}
+                        placeholder="e.g. 04422334455"
+                        onChange={field.onChange}
+                      />
                     )}
-                  </div>
+                  />
+
+                  <Controller
+                    name="MOBILE"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Mobile"
+                        required
+                        type="mobile"
+                        value={field.value}
+                        placeholder="10-digit mobile"
+                        onChange={field.onChange}
+                        error={errors.MOBILE?.message}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="EMAIL"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Email"
+                        required
+                        type="email"
+                        value={field.value}
+                        placeholder="email@example.com"
+                        onChange={field.onChange}
+                        error={errors.EMAIL?.message}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="ACTIVE"
+                    control={control}
+                    render={({ field }) => (
+                      <SwitchField
+                        label="Status"
+                        required
+                        value={field.value}
+                        onChange={field.onChange}
+                        trueValue="Y"
+                        falseValue="N"
+                        labels={{
+                          on: 'Active',
+                          off: 'Inactive',
+                        }}
+                        error={errors.ACTIVE?.message}
+                      />
+                    )}
+                  />
                 </div>
 
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Address</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Address
+                </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Address 1</label>
-                    <Controller
-                      name="ADDRESS1"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="ADDRESS1"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Street"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="ADDRESS1"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Address 1"
+                        value={field.value}
+                        placeholder="Street"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Address 2</label>
-                    <Controller
-                      name="ADDRESS2"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="ADDRESS2"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Area"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="ADDRESS2"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Address 2"
+                        value={field.value}
+                        placeholder="Area"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Address 3</label>
-                    <Controller
-                      name="ADDRESS3"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="ADDRESS3"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="City"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="ADDRESS3"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Address 3"
+                        value={field.value}
+                        placeholder="City"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Address 4</label>
-                    <Controller
-                      name="ADDRESS4"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="ADDRESS4"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="State"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="ADDRESS4"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Address 4"
+                        value={field.value}
+                        placeholder="State"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Area Code</label>
-                    <Controller
-                      name="AREACODE"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="AREACODE"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="PIN code"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="AREACODE"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Area Code"
+                        type="pincode"
+                        value={field.value}
+                        placeholder="PIN code"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
                 </div>
 
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Tax Information</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Tax Information
+                </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">GST No</label>
-                    <Controller
-                      name="GSTNO"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="GSTNO"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="GST number"
-                          isCapitalized
-                          inputModeType="gst"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="GSTNO"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="GST No"
+                        type="gst"
+                        value={field.value}
+                        placeholder="GST number"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">PAN No</label>
-                    <Controller
-                      name="PANNO"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="PANNO"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="PAN number"
-                          isCapitalized
-                          inputModeType="pan"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="PANNO"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="PAN No"
+                        type="pan"
+                        value={field.value}
+                        placeholder="PAN number"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">TAN No</label>
-                    <Controller
-                      name="TANNO"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="TANNO"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="TAN number"
-                          isCapitalized
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="TANNO"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="TAN No"
+                        uppercase
+                        value={field.value}
+                        placeholder="TAN number"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">TDS No</label>
-                    <Controller
-                      name="TDSNO"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="TDSNO"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="TDS number"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="TDSNO"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="TDS No"
+                        value={field.value}
+                        placeholder="TDS number"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">TIN No</label>
-                    <Controller
-                      name="TINNO"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="TINNO"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="TIN number"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="TINNO"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="TIN No"
+                        value={field.value}
+                        placeholder="TIN number"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">CST No</label>
-                    <Controller
-                      name="CSTNO"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="CSTNO"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="CST number"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="CSTNO"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="CST No"
+                        value={field.value}
+                        placeholder="CST number"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Local Tax No</label>
-                    <Controller
-                      name="LOCALTAXNO"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="LOCALTAXNO"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Local tax number"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="LOCALTAXNO"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Local Tax No"
+                        value={field.value}
+                        placeholder="Local tax number"
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
                 </div>
               </div>
 

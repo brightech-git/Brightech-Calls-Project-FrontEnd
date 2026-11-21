@@ -22,7 +22,7 @@
   --color-line-strong: var(--input-border);
   --color-ink: var(--text-main);
   --color-muted: var(--text-muted);
-  --color-sidebar: var(--sidebar);
+  --color-sidebar: var(--sidebar-brand);
 
   --text-xs: var(--font-xs);
   --text-sm: var(--font-sm);
@@ -54,12 +54,13 @@
   --border: #e5e7eb;
   --input-border: #d4d4d8;
 
-  /* Accent (Appearance settings can swap it). */
+  /* Brand colours. src/theme presets override these on <html>
+     (defaults match the Ocean preset). */
   --primary: #2859d8;
   --secondary: #0e7490;
-  --sidebar: #ffffff;
+  --primary-light: #eef2fc;
+  --sidebar-brand: #111e38;
   --primary-hover: color-mix(in srgb, var(--primary) 85%, #000);
-  --primary-light: color-mix(in srgb, var(--primary) 8%, white);
 
   /* Status tokens used by legacy COLORS helpers. */
   --success: #15803d;
@@ -71,7 +72,7 @@
   --info: #1d4ed8;
   --info-bg: #eff6ff;
 
-  /* Compact by default. */
+  /* Compact by default; src/theme display settings set data-density / data-text-size. */
   --font-xs: 12px;
   --font-sm: 13px;
   --font-md: 14px;

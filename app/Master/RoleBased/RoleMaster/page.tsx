@@ -1,1 +1,1 @@
-export { default } from '@/src/module/role-master/component/role-master-page';
+export { RoleMasterPage as default } from '@/src/module/role-master';

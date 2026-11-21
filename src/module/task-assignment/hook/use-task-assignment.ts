@@ -1,3 +1,5 @@
+'use client';
+
 import { invalidateCallQueries } from '@/lib/query/invalidate';
 // ─────────────────────────────────────────────
 // hooks/CallsBooking/useCallsBooking.ts

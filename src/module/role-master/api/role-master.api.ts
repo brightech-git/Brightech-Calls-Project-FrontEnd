@@ -1,4 +1,4 @@
-import { axiosInstance } from '@/api/axiosInstance';
+import { axiosInstance } from '@/lib/api/axios-instance';
 import { Role, RolePayload, ApiResponse } from '@/src/module/role-master/type/role-master.types';
 
 // ✅ GET ALL

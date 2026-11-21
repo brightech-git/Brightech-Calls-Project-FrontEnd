@@ -1,25 +1,28 @@
 'use client';
 import { buttonClass, buttonVariants } from '@/lib/styles';
 import { cn } from '@/lib/utils';
-import { formatDateTime } from '@/utils/format/date';
+import { formatDateTime } from '@/src/utils/format/date';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
+import { TextAreaInput, SelectInput } from '@/src/components/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { List, Plus, Pencil, ChevronRightCircle } from 'lucide-react';
-import { CustomTable, TableColumn } from '@/components/CustomTable';
-import { TextareaField } from '@/components/ui/CapitalizesTextArea';
-import { MediaManager, MediaItem, revokeMediaItems } from '@/components/ui/MediaManager';
+import { CustomTable, TableColumn } from '@/src/components/CustomTable';
 import {
-  AttachmentTile,
-  MediaLightbox,
-  LightboxItem,
-} from '@/components/ui/MediaLightbox';
-import { usePageHeader } from '@/context/PageHeaderContext';
-import { useToast } from '@/components/Toast';
-import { COLORS, RADIUS, FONT } from '@/utils/theme';
+  MediaManager,
+  MediaItem,
+  revokeMediaItems,
+} from '@/src/components/ui/MediaManager';
+import { AttachmentList } from '@/src/components/ui/attachments';
+import { statusFiles, type CallFile } from './call-files';
+import { describeCallStatus } from '@/src/utils/callStatus';
+import { MediaLightbox, LightboxItem } from '@/src/components/ui/MediaLightbox';
+import { usePageHeader } from '@/src/context/PageHeaderContext';
+import { useToast } from '@/src/components/Toast';
+import { COLORS, RADIUS, FONT } from '@/src/theme';
 import {
   useActiveBookingsWithLastStatus,
   useCallStatusTicketDetail,
@@ -29,7 +32,6 @@ import {
   CallStatusListItem_Table,
   CallStatusRecord,
 } from '@/src/module/call-status/type/call-status.types';
-import { NativeSelectWrapper } from '@/components/ui/NativeSelectWrapper';
 
 // ─────────────────────────────────────────────
 // Schema — Add Status form
@@ -76,7 +78,7 @@ const statusBadge = (label?: string | null) => {
       }}
       className="py-0.5 px-2.5 rounded-full text-xs font-semibold"
     >
-      {s}
+      {label ? describeCallStatus(label).label : '—'}
     </span>
   );
 };
@@ -118,9 +120,7 @@ const COLUMNS: TableColumn<CallStatusListItem_Table>[] = [
       row.lastStatus ? (
         statusBadge(row.lastStatus as string)
       ) : (
-        <span className="text-muted text-sm">
-          No status yet
-        </span>
+        <span className="text-muted text-sm">No status yet</span>
       ),
   },
 ];
@@ -130,11 +130,7 @@ const COLUMNS: TableColumn<CallStatusListItem_Table>[] = [
 
 export default function CallStatusPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="p-12 text-center">Loading...</div>
-      }
-    >
+    <Suspense fallback={<div className="p-12 text-center">Loading...</div>}>
       <CallStatusPageInner />
     </Suspense>
   );
@@ -232,14 +228,26 @@ function CallStatusPageInner() {
   // ── Detail view (full page replace) ──
   if (viewTktId !== null) {
     const booking = detail?.callBooking;
-    const bookingMedia = booking?.media ?? [];
+    const allFiles: CallFile[] = [
+      ...(booking?.media ?? []).map((m) => ({ ...m, source: 'Booking' })),
+      ...sortedStatuses.flatMap((s) =>
+        statusFiles(s).map((m) => ({
+          ...m,
+          source: `${describeCallStatus(s.STATUS ?? '').label} update${
+            s.UPDATED ? ` · ${formatDateTime(s.UPDATED)}` : ''
+          }`,
+        })),
+      ),
+    ];
     return (
       <>
         <div className="rounded-lg border border-line bg-white overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-white px-4 py-3">
             <div>
               <div className="text-xl tracking-tight">Call Status</div>
-              <div className="mt-1 text-sm text-muted">Ticket ID: {booking?.tktId ?? viewTktId}</div>
+              <div className="mt-1 text-sm text-muted">
+                Ticket ID: {booking?.tktId ?? viewTktId}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -264,11 +272,7 @@ function CallStatusPageInner() {
 
           <div className="p-4">
             {detailLoading ? (
-              <div
-                className="p-12 text-center text-muted"
-              >
-                Loading...
-              </div>
+              <div className="p-12 text-center text-muted">Loading...</div>
             ) : (
               <>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
@@ -297,116 +301,59 @@ function CallStatusPageInner() {
                   ))}
                 </div>
 
-                {bookingMedia.length > 0 && (
-                  <>
-                    <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Booking attachments</div>
-                    <div className="flex flex-wrap gap-3">
-                      {bookingMedia.map((item, index) => (
-                        <AttachmentTile
-                          key={item.id ?? index}
-                          item={item}
-                          onOpen={() => setLightbox({ items: bookingMedia, index })}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
+                <section className="mt-5">
+                  <div className="mb-3 flex items-center justify-between border-b border-line pb-2">
+                    <h3 className="text-xs font-semibold tracking-widest text-muted uppercase">
+                      All files on this call
+                    </h3>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-ink">
+                      {allFiles.length}
+                    </span>
+                  </div>
+                  <AttachmentList
+                    items={allFiles}
+                    emptyText="No files were added to this call yet."
+                    onOpen={(index) => setLightbox({ items: allFiles, index })}
+                  />
+                </section>
 
-                {latestStatus?.media && latestStatus.media.length > 0 && (
-                  <>
-                    <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Media (latest status)</div>
-                    <div className="flex flex-wrap gap-3">
-                      {latestStatus.media.map((m, idx) => (
-                        <AttachmentTile
-                          key={m.id ?? idx}
-                          item={m}
-
-                          onOpen={() =>
-                            setLightbox({
-                              items: latestStatus.media as LightboxItem[],
-                              index: idx,
-                            })
-                          }
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Status History</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Status History
+                </div>
 
                 {sortedStatuses.length === 0 ? (
-                  <div
-                    className="p-4 text-muted text-sm"
-                  >
-                    No status updates yet.
-                  </div>
+                  <div className="p-4 text-muted text-sm">No status updates yet.</div>
                 ) : (
-                  <div
-                    className="flex flex-col gap-2.5"
-                  >
+                  <div className="flex flex-col gap-2.5">
                     {sortedStatuses.map((s) => (
                       <div
                         key={s.sno}
                         className="rounded-xl border border-line border-l-3 border-l-brand bg-white p-3"
                       >
-                        <div
-                          className="flex items-center justify-between mb-1.5"
-                        >
+                        <div className="flex items-center justify-between mb-1.5">
                           {statusBadge(s.STATUS)}
-                          <span
-                            className="text-xs text-muted"
-                          >
+                          <span className="text-xs text-muted">
                             {s.UPDATED ? formatDateTime(s.UPDATED) : '—'}
                           </span>
                         </div>
 
-                        <div
-                          className="text-sm text-ink mb-1"
-                        >
-                          By{' '}
-                          <b className="text-ink">
-                            {s.userName ?? s.userId ?? '—'}
-                          </b>
+                        <div className="text-sm text-ink mb-1">
+                          By <b className="text-ink">{s.userName ?? s.userId ?? '—'}</b>
                         </div>
 
                         {s.remark && (
-                          <div
-                            className="text-sm text-ink mb-1.5"
-                          >
-                            {s.remark}
-                          </div>
+                          <div className="text-sm text-ink mb-1.5">{s.remark}</div>
                         )}
 
-                        {((s.media && s.media.length > 0) || s.IMAGE) &&
-                          (() => {
-                            const historyMedia =
-                              s.media && s.media.length > 0
-                                ? s.media
-                                : [
-                                    {
-                                      mediaUrl: s.IMAGE,
-                                      mediaType: 'IMAGE',
-                                    },
-                                  ];
-                            return (
-                              <div className="flex flex-wrap gap-3">
-                                {historyMedia.map((m, idx) => (
-                                  <AttachmentTile
-                                    key={idx}
-                                    item={m}
-
-                                    onOpen={() =>
-                                      setLightbox({
-                                        items: historyMedia as LightboxItem[],
-                                        index: idx,
-                                      })
-                                    }
-                                  />
-                                ))}
-                              </div>
-                            );
-                          })()}
+                        {statusFiles(s).length > 0 && (
+                          <AttachmentList
+                            className="mt-2"
+                            items={statusFiles(s)}
+                            onOpen={(index) =>
+                              setLightbox({ items: statusFiles(s), index })
+                            }
+                          />
+                        )}
                       </div>
                     ))}
                   </div>
@@ -448,56 +395,35 @@ function CallStatusPageInner() {
 
               <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Status *</label>
-                    <Controller
-                      name="STATUS"
-                      control={control}
-                      render={({ field }) => (
-                        <>
-                          <NativeSelectWrapper
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                            items={STATUS_ITEMS}
-                            css={{
-                              fontSize: '14px',
-                              background: '#ddd',
-                              color: '#222',
-                            }}
-                            className="min-w-37.5"
-                          />
-                        </>
-                      )}
-                    />
-                    {errors.STATUS && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.STATUS.message}
-                      </span>
+                  <Controller
+                    name="STATUS"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectInput
+                        label="Status"
+                        required
+                        value={field.value}
+                        onChange={(v) => field.onChange(v.toUpperCase())}
+                        options={STATUS_ITEMS}
+                        error={errors.STATUS?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Remark</label>
-                    <Controller
-                      name="remark"
-                      control={control}
-                      render={({ field }) => (
-                        <TextareaField
-                          value={field.value}
-                          field="remark"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter remark"
-                          mode="inline"
-                          rows={3}
-                        />
-                      )}
-                    />
-                    {errors.remark && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.remark.message}
-                      </span>
+                  <Controller
+                    name="remark"
+                    control={control}
+                    render={({ field }) => (
+                      <TextAreaInput
+                        label="Remark"
+                        value={field.value}
+                        placeholder="Enter remark"
+                        rows={3}
+                        onChange={field.onChange}
+                        error={errors.remark?.message}
+                      />
                     )}
-                  </div>
+                  />
 
                   <div className="flex min-w-0 flex-col gap-2">
                     <label className="text-sm text-muted">Attachments</label>

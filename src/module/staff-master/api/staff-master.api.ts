@@ -1,6 +1,6 @@
-import { axiosInstance } from '@/api/axiosInstance';
+import { axiosInstance } from '@/lib/api/axios-instance';
 import { StaffPayload, StaffRecord } from '@/src/module/staff-master/type/staff-master.types';
-import { ApiResponse } from '@/types/ApiResponse';
+import { ApiResponse } from '@/lib/api/api-response';
 
 // CREATE
 export const createStaff = async (payload: StaffPayload): Promise<StaffRecord> => {

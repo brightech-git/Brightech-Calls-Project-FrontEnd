@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
-import LayoutWrapper from '@/components/LayoutWrapper';
+import LayoutWrapper from '@/src/components/LayoutWrapper';
+import { ThemeScript } from '@/src/theme';
 
 // Single font family for the whole app: regular, semibold and bold.
 const poppins = Poppins({
@@ -21,7 +22,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       className={`${poppins.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="min-h-full bg-white font-sans text-ink">
         <Providers>
           <LayoutWrapper>{children}</LayoutWrapper>

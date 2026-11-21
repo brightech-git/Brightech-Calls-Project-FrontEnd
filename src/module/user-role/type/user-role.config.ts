@@ -1,4 +1,4 @@
-import { FormField } from '@/types/form/form';
+import { FormField } from '@/src/types/form';
 
 type UserRoleMasterFormConfig = {
   users: { label: string; value: string }[];

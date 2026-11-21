@@ -2,13 +2,13 @@
 // services/ClientVisitService.ts
 // ─────────────────────────────────────────────
 
-import { axiosInstance } from '@/api/axiosInstance';
+import { axiosInstance } from '@/lib/api/axios-instance';
 import {
   ClientVisitMediaMeta,
   ClientVisitPayload,
   ClientVisitRecord,
 } from '@/src/module/client-visit/type/client-visit.types';
-import { ApiResponse } from '@/types/ApiResponse';
+import { ApiResponse } from '@/lib/api/api-response';
 
 const buildFormData = (
   payload: ClientVisitPayload,

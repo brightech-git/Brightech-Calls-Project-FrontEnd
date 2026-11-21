@@ -1,1 +1,1 @@
-export { default } from '@/src/module/auth/component/login-page';
+export { LoginPage as default } from '@/src/module/auth';

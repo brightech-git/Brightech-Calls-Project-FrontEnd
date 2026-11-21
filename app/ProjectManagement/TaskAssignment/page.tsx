@@ -1,1 +1,1 @@
-export { default } from '@/src/module/task-assignment/component/task-assignment-page';
+export { TaskAssignmentPage as default } from '@/src/module/task-assignment';

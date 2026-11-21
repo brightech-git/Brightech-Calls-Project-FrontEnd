@@ -1,3 +1,5 @@
+'use client';
+
 // hooks/UserRole/useUserRole.ts
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

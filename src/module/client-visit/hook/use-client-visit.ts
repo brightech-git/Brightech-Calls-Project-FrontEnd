@@ -1,5 +1,6 @@
+'use client';
+
 // ─────────────────────────────────────────────
-// hooks/ApiHooks/ClientVisit/useClientVisit.ts
 // ─────────────────────────────────────────────
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

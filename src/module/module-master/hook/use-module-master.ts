@@ -1,3 +1,5 @@
+'use client';
+
 // ─────────────────────────────────────────────
 // hooks/ModuleMaster/useModuleMaster.ts
 // ─────────────────────────────────────────────
@@ -10,9 +12,9 @@ import {
   getModuleById,
   updateModule,
   deleteModule,
-} from '@/services/ModuleMasterService';
+} from '../api/module-master.api'
 
-import { ModulePayload } from '@/types/ModuleMaster/ModuleMaster';
+import { ModulePayload } from '../type/module-master.types';
 
 const MODULE_KEY = ['module-list'];
 

@@ -4,17 +4,16 @@ import { buttonClass, buttonVariants } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { TextInput, SwitchField } from '@/src/components/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Pencil } from 'lucide-react';
-import { CustomTable, TableColumn } from '@/components/CustomTable';
-import { DataExport, ExportColumn } from '@/components/DataExport';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import { CapitalizedInput } from '@/components/ui/CapitalizedInput';
-import { SwitchInput } from '@/components/ui/SwitchInput';
-import { usePageHeader } from '@/context/PageHeaderContext';
-import { useToast } from '@/components/Toast';
-import { COLORS, FONT, RADIUS } from '@/utils/theme';
+import { CustomTable, TableColumn } from '@/src/components/CustomTable';
+import { DataExport, ExportColumn } from '@/src/components/DataExport';
+import ConfirmDialog from '@/src/components/ConfirmDialog';
+import { usePageHeader } from '@/src/context/PageHeaderContext';
+import { useToast } from '@/src/components/Toast';
+import { COLORS, FONT, RADIUS } from '@/src/theme';
 import {
   useProjectTypeList,
   useCreateProjectType,
@@ -63,6 +62,7 @@ const COLUMNS: TableColumn<ProjectTypeRecord_Table>[] = [
   },
   {
     key: 'active',
+    total: 'active',
     header: 'Status',
     sortable: true,
     render: (row) => (
@@ -286,77 +286,57 @@ export default function ProjectTypeMasterPage() {
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Project Type Name *</label>
-                    <Controller
-                      name="projectTypeName"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="projectTypeName"
-                          isCapitalized
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter project type name"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.projectTypeName && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.projectTypeName.message}
-                      </span>
+                  <Controller
+                    name="projectTypeName"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Project Type Name"
+                        required
+                        uppercase
+                        value={field.value}
+                        placeholder="Enter project type name"
+                        onChange={field.onChange}
+                        error={errors.projectTypeName?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Display Order *</label>
-                    <Controller
-                      name="displayOrder"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value != null ? String(field.value) : ''}
-                          field="displayOrder"
-                          type="number"
-                          onChange={(_, value) =>
-                            field.onChange(value === '' ? 0 : Number(value))
-                          }
-                          placeholder="Enter display order"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.displayOrder && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.displayOrder.message}
-                      </span>
+                  <Controller
+                    name="displayOrder"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Display Order"
+                        required
+                        type="number"
+                        value={field.value != null ? String(field.value) : ''}
+                        placeholder="Enter display order"
+                        onChange={(value: string) =>
+                          field.onChange(value === '' ? 0 : Number(value))
+                        }
+                        error={errors.displayOrder?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Status *</label>
-                    <Controller
-                      name="active"
-                      control={control}
-                      render={({ field }) => (
-                        <SwitchInput
-                          value={field.value}
-                          onChange={field.onChange}
-                          labels={{
-                            on: 'Active',
-                            off: 'Inactive',
-                          }}
-                          size="sm"
-                        />
-                      )}
-                    />
-                    {errors.active && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.active.message}
-                      </span>
+                  <Controller
+                    name="active"
+                    control={control}
+                    render={({ field }) => (
+                      <SwitchField
+                        label="Status"
+                        required
+                        value={field.value}
+                        onChange={field.onChange}
+                        labels={{
+                          on: 'Active',
+                          off: 'Inactive',
+                        }}
+                        error={errors.active?.message}
+                      />
                     )}
-                  </div>
+                  />
                 </div>
               </div>
 

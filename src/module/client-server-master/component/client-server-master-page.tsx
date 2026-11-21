@@ -1,21 +1,19 @@
 'use client';
 import { buttonClass } from '@/lib/styles';
-import { formatDate } from '@/utils/format/date';
+import { formatDate } from '@/src/utils/format/date';
 
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { TextInput, SelectInput, ComboBox, useAddNew } from '@/src/components/form';
+import { ClientFormModal } from '@/src/module/client-master/component/client-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Pencil } from 'lucide-react';
-import { CustomTable, TableColumn } from '@/components/CustomTable';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import { SelectCombobox } from '@/components/ui/SelectComboBox';
-import { CapitalizedInput } from '@/components/ui/CapitalizedInput';
-import { NativeSelectWrapper } from '@/components/ui/NativeSelectWrapper';
-import { usePageHeader } from '@/context/PageHeaderContext';
-import { useToast } from '@/components/Toast';
-import { useEnterNavigation } from '@/components/form/useEnterNavigation';
-import { COLORS, FONT, RADIUS } from '@/utils/theme';
+import { CustomTable, TableColumn } from '@/src/components/CustomTable';
+import ConfirmDialog from '@/src/components/ConfirmDialog';
+import { usePageHeader } from '@/src/context/PageHeaderContext';
+import { useToast } from '@/src/components/Toast';
+import { COLORS, FONT, RADIUS } from '@/src/theme';
 import {
   useClientServerList,
   useCreateClientServer,
@@ -55,13 +53,6 @@ const ACTIVE_OPTIONS = [
     value: 'N',
   },
 ];
-const ACTIVE_FILTER_OPTIONS = [
-  {
-    label: 'All Status',
-    value: '',
-  },
-  ...ACTIVE_OPTIONS,
-];
 
 // ─────────────────────────────────────────────
 // Columns
@@ -98,6 +89,7 @@ const COLUMNS: TableColumn<ClientServerRecord_Table>[] = [
   },
   {
     key: 'active',
+    total: 'active',
     header: 'Status',
     sortable: true,
     render: (row) => (
@@ -159,17 +151,13 @@ export default function ClientServerMasterPage() {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<ClientServerForm>({
     resolver: zodResolver(clientServerSchema),
     defaultValues: DEFAULTS,
   });
-
-  // Enter-to-next-field navigation for the Add/Edit Client Server form.
-  const { register: registerField, focusNext } = useEnterNavigation(
-    ['CLIENTID', 'SERVERNAME', 'IPADDRESS', 'PASSWORD', 'ACTIVE'],
-    () => handleSubmit(onSubmit)(),
-  );
+  const addNew = useAddNew<'client'>();
 
   // ─────────────────────────
 
@@ -266,26 +254,21 @@ export default function ClientServerMasterPage() {
         emptyMessage="No client servers found."
         toolbarRight={
           <div className="flex flex-col sm:flex-row min-w-lg items-center gap-2">
-            <SelectCombobox
+            <ComboBox
               value={filterClientId || undefined}
               onChange={(val) => setFilterClientId(val ?? '')}
-              items={[
-                {
-                  label: 'All Clients',
-                  value: '',
-                },
-                ...clientItems,
-              ]}
-              placeholder="Filter by client"
-              className="min-w-45"
+              options={clientItems}
+              placeholder="All clients"
+              wrapperClassName="min-w-52"
             />
 
-            <NativeSelectWrapper
+            <SelectInput
+              aria-label="Filter by status"
               value={filterActive}
-              onChange={(e) => setFilterActive(e.target.value)}
-              items={ACTIVE_FILTER_OPTIONS}
-              placeholder="Filter by status"
-              className="max-w-25"
+              onChange={(val) => setFilterActive(val)}
+              options={ACTIVE_OPTIONS}
+              placeholder="All statuses"
+              wrapperClassName="min-w-36"
             />
 
             <button
@@ -339,134 +322,87 @@ export default function ClientServerMasterPage() {
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Client *</label>
-                    <Controller
-                      name="CLIENTID"
-                      control={control}
-                      render={({ field }) => (
-                        <SelectCombobox
-                          ref={registerField('CLIENTID')}
-                          value={field.value ? String(field.value) : undefined}
-                          onChange={(val) => field.onChange(val ? Number(val) : 0)}
-                          onEnter={() => focusNext('CLIENTID')}
-                          editId={editRow?.sno ?? null}
-                          items={clientItems}
-                          placeholder="Select client"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.CLIENTID && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.CLIENTID.message}
-                      </span>
+                  <Controller
+                    name="CLIENTID"
+                    control={control}
+                    render={({ field }) => (
+                      <ComboBox
+                        label="Client"
+                        required
+                        value={field.value ? String(field.value) : undefined}
+                        onChange={(val) => field.onChange(val ? Number(val) : 0)}
+                        options={clientItems}
+                        placeholder="Select client"
+                        error={errors.CLIENTID?.message}
+                        addNew
+                        addNewLabel="Add new client"
+                        onAddNew={(typed) => addNew.open('client', typed)}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Server Name *</label>
-                    <Controller
-                      name="SERVERNAME"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          inputRef={registerField('SERVERNAME')}
-                          value={field.value}
-                          field="SERVERNAME"
-                          isCapitalized
-                          onChange={(_, value) => field.onChange(value)}
-                          onEnter={() => focusNext('SERVERNAME')}
-                          placeholder="Enter server name"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.SERVERNAME && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.SERVERNAME.message}
-                      </span>
+                  <Controller
+                    name="SERVERNAME"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Server Name"
+                        required
+                        uppercase
+                        value={field.value}
+                        placeholder="Enter server name"
+                        onChange={field.onChange}
+                        error={errors.SERVERNAME?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">IP Address *</label>
-                    <Controller
-                      name="IPADDRESS"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          inputRef={registerField('IPADDRESS')}
-                          value={field.value}
-                          field="IPADDRESS"
-                          isCapitalized
-                          onChange={(_, value) => field.onChange(value)}
-                          onEnter={() => focusNext('IPADDRESS')}
-                          placeholder="Enter IP address"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.IPADDRESS && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.IPADDRESS.message}
-                      </span>
+                  <Controller
+                    name="IPADDRESS"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="IP Address"
+                        required
+                        uppercase
+                        value={field.value}
+                        placeholder="Enter IP address"
+                        onChange={field.onChange}
+                        error={errors.IPADDRESS?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Password</label>
-                    <Controller
-                      name="PASSWORD"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          inputRef={registerField('PASSWORD')}
-                          value={field.value}
-                          field="PASSWORD"
-                          isCapitalized
-                          onChange={(_, value) => field.onChange(value)}
-                          onEnter={() => focusNext('PASSWORD')}
-                          placeholder="Enter password"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.PASSWORD && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.PASSWORD.message}
-                      </span>
+                  <Controller
+                    name="PASSWORD"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Password"
+                        uppercase
+                        value={field.value}
+                        placeholder="Enter password"
+                        onChange={field.onChange}
+                        error={errors.PASSWORD?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Status *</label>
-                    <Controller
-                      name="ACTIVE"
-                      control={control}
-                      render={({ field }) => (
-                        <NativeSelectWrapper
-                          ref={registerField('ACTIVE')}
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          onEnter={() => focusNext('ACTIVE')}
-                          items={ACTIVE_OPTIONS}
-                          placeholder="Select Status"
-                          css={{
-                            border: '1px solid #DDD',
-                            bg: '#EEE',
-                            color: '#222',
-                          }}
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.ACTIVE && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.ACTIVE.message}
-                      </span>
+                  <Controller
+                    name="ACTIVE"
+                    control={control}
+                    render={({ field }) => (
+                      <SelectInput
+                        label="Status"
+                        required
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={ACTIVE_OPTIONS}
+                        placeholder="Select status"
+                        error={errors.ACTIVE?.message}
+                      />
                     )}
-                  </div>
+                  />
                 </div>
               </div>
 
@@ -505,6 +441,15 @@ export default function ClientServerMasterPage() {
         isPending={deleteMutation.isPending}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteRow(null)}
+      />
+      <ClientFormModal
+        open={addNew.is('client')}
+        initial={{ CLIENTNAME: addNew.seed.toUpperCase() }}
+        onCancel={addNew.close}
+        onSaved={(client) => {
+          setValue('CLIENTID', client.CLIENTID, { shouldValidate: true });
+          addNew.close();
+        }}
       />
     </>
   );

@@ -1,1 +1,1 @@
-export { default } from '@/src/module/client-server-master/component/client-server-master-page';
+export { ClientServerMasterPage as default } from '@/src/module/client-server-master';

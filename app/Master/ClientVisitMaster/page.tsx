@@ -1,1 +1,1 @@
-export { default } from '@/src/module/client-visit/component/client-visit-page';
+export { ClientVisitPage as default } from '@/src/module/client-visit';

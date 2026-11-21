@@ -4,11 +4,12 @@ import { ChakraProvider, ClientOnly } from '@chakra-ui/react';
 import { chakraSystem } from '@/lib/chakra-system';
 import { AppQueryProvider } from '@/lib/query/provider';
 
-import { PageHeaderProvider } from '@/context/PageHeaderContext';
-import { ThemeProvider } from '@/context/ThemeContext';
-import { ToastProvider } from '@/components/Toast';
-import { SidebarProvider } from '@/context/layout/SideBarContext';
-import { Toaster } from '@/components/ui/toaster';
+import { PageHeaderProvider } from '@/src/context/PageHeaderContext';
+import { ThemeProvider, ThemeStudioProvider } from '@/src/theme';
+import { ToastProvider } from '@/src/components/Toast';
+import { EnterNavigation } from '@/src/components/form';
+import { SidebarProvider } from '@/src/context/layout/SideBarContext';
+import { Toaster } from '@/src/components/ui/toaster';
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AppQueryProvider>
@@ -24,14 +25,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
       >
         <ChakraProvider value={chakraSystem}>
           <ThemeProvider>
-            <PageHeaderProvider>
-              <ToastProvider>
-                <SidebarProvider>
-                  <Toaster />
-                  {children}
-                </SidebarProvider>
-              </ToastProvider>
-            </PageHeaderProvider>
+            <ThemeStudioProvider>
+              <PageHeaderProvider>
+                <ToastProvider>
+                  <SidebarProvider>
+                    <Toaster />
+                    <EnterNavigation />
+                    {children}
+                  </SidebarProvider>
+                </ToastProvider>
+              </PageHeaderProvider>
+            </ThemeStudioProvider>
           </ThemeProvider>
         </ChakraProvider>
       </ClientOnly>

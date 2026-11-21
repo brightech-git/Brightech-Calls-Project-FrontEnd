@@ -28,10 +28,10 @@ import {
   useUpdateContent,
   useDeleteContent,
 } from '@/src/module/role-tran/hook/use-role-tran';
-import { useSidebar, type DirectMenuItem, type MenuGroup } from '@/context/layout/SideBarContext';
-import { menuConfig } from '@/config/menu/menuConfig';
-import { labelFor } from '@/config/menu/menuLabels';
-import { toastError } from '@/components/toast/toast';
+import { useSidebar, type DirectMenuItem, type MenuGroup } from '@/src/context/layout/SideBarContext';
+import { menuConfig } from '@/src/config/menu/menuConfig';
+import { labelFor } from '@/src/config/menu/menuLabels';
+import { toastError } from '@/src/components/toast/toast';
 import { cn } from '@/lib/utils';
 import {
   buttonClass,

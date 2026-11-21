@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { positiveId, optionalUrl } from '@/utils/validation';
+import { positiveId, optionalUrl } from '@/src/utils/validation';
 export const projectLinkSchema = z.object({
   clientId: positiveId('Client'),
   projectTypeId: positiveId('Project type'),

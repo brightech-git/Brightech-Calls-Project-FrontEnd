@@ -9,12 +9,12 @@ The Jewellery Savings Scheme frontend at `D:/ash/NextJsProjects/savingscheme` wa
 - `lib/api/`: base URL/timeouts, normalized errors and explicit response unwrapping.
 - `lib/auth/`: browser-safe session reads/writes and cleanup.
 - `lib/query/`: shared QueryClient policy, session cache isolation, reusable list/mutation hooks and call-query invalidation.
-- `components/common/`: shared controls, overlays and data states; barrel exports the existing configurable DataTable and toast API.
-- `components/form/FormFields.tsx`: typed field configuration integrated with React Hook Form. The owning form supplies a Zod resolver.
-- `utils/format/`: pure numeric/date/display helpers. Compatibility exports keep legacy consumers working.
-- `utils/validation.ts`: shared validation and flag conversion helpers.
-- `utils/theme.ts`, `context/ThemeContext.tsx`, `app/globals.css`: semantic tokens, palettes, density and type size.
-- Root `hooks/` and `types/` keep only shared code (menu access, dialog focus, API response, pagination, form types).
+- `src/components/common/`: shared controls, overlays and data states; barrel exports the existing configurable DataTable and toast API.
+- `src/components/form/FormFields.tsx`: typed field configuration integrated with React Hook Form. The owning form supplies a Zod resolver.
+- `src/utils/format/`: pure numeric/date/display helpers. Compatibility exports keep legacy consumers working.
+- `src/utils/validation.ts`: shared validation and flag conversion helpers.
+- `src/theme/*`, `app/globals.css`: semantic tokens, presets, density and type size (see `docs/frontend-design.md`).
+- Root `hooks/` keeps only shared hooks (dialog focus). API response and pagination types live in `lib/api/`, form types in `src/types/`, menu access in the auth module.
 
 ## API and session behavior
 
@@ -32,7 +32,7 @@ Project Links mutations finish when the write succeeds and refresh lists in the 
 
 ## Shared controls
 
-`components/common` provides TextField, NumberField, TextareaField, BarcodeField, SelectField, MultiSelectField, AsyncSelectField, DateField, TimeField, Button, AppDialog, AppDrawer, ConfirmDialog, DataTable, Loader, Skeleton, EmptyState, ErrorState, Notification and useToast.
+`src/components/common` provides TextField, NumberField, TextareaField, BarcodeField, SelectField, MultiSelectField, AsyncSelectField, DateField, TimeField, Button, AppDialog, AppDrawer, ConfirmDialog, DataTable, Loader, Skeleton, EmptyState, ErrorState, Notification and useToast.
 
 Fields share labels, required indicators, accessible error/help associations, disabled styling and forwarded refs where applicable. Barcode Enter invokes `onScan` without submitting a form. Number inputs preserve numeric values instead of passing formatted strings into calculations. Async selects debounce searches, cancel obsolete queries and retain a selected option across searches; include parent/client scope in their query keys. Native multi-select supports Ctrl/Cmd or keyboard selection.
 
@@ -68,7 +68,7 @@ Poppins (400/600/700) from Google Fonts is the single font family, loaded throug
 - `node scripts/test-foundations.cjs`: formatting/precision, validation, session lifecycle, request headers, absence of company waterfall, multipart, application errors, HTTP 401, retries and cancellation.
 - `npx tsc --noEmit`: TypeScript.
 - `npm run build -- --webpack`: production static export when the local Turbopack subprocess fails. The normal build command remains unchanged.
-- Targeted ESLint on `lib`, `src/module/project-link`, `components/common`, new formatting/validation and shared controls.
+- Targeted ESLint on `lib`, `src/module/project-link`, `src/components/common`, new formatting/validation and shared controls.
 - `node scripts/preview-fixture.cjs` starts a test-only in-memory API on 8112; run `next dev --webpack --port 3110` with `NEXT_PUBLIC_API_URL=http://localhost:8112/api/v1` to inspect without touching backend records. This fixture is not imported by the application or production build.
 
 ## Backend limits

@@ -4,25 +4,26 @@ import { buttonClass, buttonVariants } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { TextInput, ComboBox, SwitchField } from '@/src/components/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Pencil } from 'lucide-react';
-import { CustomTable, TableColumn } from '@/components/CustomTable';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import { SelectCombobox } from '@/components/ui/SelectComboBox';
-import { CapitalizedInput } from '@/components/ui/CapitalizedInput';
-import { SwitchInput } from '@/components/ui/SwitchInput';
-import { DatePickerInput } from '@/components/ui/DatePicker';
-import { usePageHeader } from '@/context/PageHeaderContext';
-import { COLORS, FONT, RADIUS } from '@/utils/theme';
-import { useToast } from '@/components/Toast';
+import { CustomTable, TableColumn } from '@/src/components/CustomTable';
+import ConfirmDialog from '@/src/components/ConfirmDialog';
+import { DatePickerInput } from '@/src/components/ui/DatePicker';
+import { usePageHeader } from '@/src/context/PageHeaderContext';
+import { COLORS, FONT, RADIUS } from '@/src/theme';
+import { useToast } from '@/src/components/Toast';
 import {
   useStaffList,
   useCreateStaff,
   useUpdateStaff,
   useDeleteStaff,
 } from '@/src/module/staff-master/hook/use-staff-master';
-import { StaffRecord, StaffRecord_Table } from '@/src/module/staff-master/type/staff-master.types';
+import {
+  StaffRecord,
+  StaffRecord_Table,
+} from '@/src/module/staff-master/type/staff-master.types';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -100,6 +101,7 @@ const COLUMNS: TableColumn<StaffRecord_Table>[] = [
   },
   {
     key: 'ACTIVE',
+    total: 'active',
     header: 'Status',
     sortable: true,
     render: (row) => (
@@ -293,99 +295,76 @@ export default function StaffMasterPage() {
 
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="min-h-0 flex-1 overflow-y-auto p-4 max-sm:p-3">
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Basic Information</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Basic Information
+                </div>
                 <div className="flex flex-col gap-1.5">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Staff Name *</label>
-                    <Controller
-                      name="STAFFNAME"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="STAFFNAME"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Enter staff name"
-                          isCapitalized
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.STAFFNAME && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.STAFFNAME.message}
-                      </span>
+                  <Controller
+                    name="STAFFNAME"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Staff Name"
+                        required
+                        uppercase
+                        value={field.value}
+                        placeholder="Enter staff name"
+                        onChange={field.onChange}
+                        error={errors.STAFFNAME?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Mobile No *</label>
-                    <Controller
-                      name="MOBILENO"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="MOBILENO"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="e.g. 9659721856"
-                          inputModeType="mobile"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.MOBILENO && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.MOBILENO.message}
-                      </span>
+                  <Controller
+                    name="MOBILENO"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Mobile No"
+                        required
+                        type="mobile"
+                        value={field.value}
+                        placeholder="e.g. 9659721856"
+                        onChange={field.onChange}
+                        error={errors.MOBILENO?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Role *</label>
-                    <Controller
-                      name="ROLE"
-                      control={control}
-                      render={({ field }) => (
-                        <SelectCombobox
-                          value={field.value || undefined}
-                          onChange={(val) => field.onChange(val)}
-                          items={ROLE_OPTIONS}
-                          placeholder="Select role"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.ROLE && (
-                      <span className="mt-1 text-xs text-rose-600">{errors.ROLE.message}</span>
+                  <Controller
+                    name="ROLE"
+                    control={control}
+                    render={({ field }) => (
+                      <ComboBox
+                        label="Role"
+                        required
+                        value={field.value || undefined}
+                        onChange={(val) => field.onChange(val)}
+                        options={ROLE_OPTIONS}
+                        placeholder="Select role"
+                        error={errors.ROLE?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Status</label>
-                    <Controller
-                      name="ACTIVE"
-                      control={control}
-                      render={({ field }) => (
-                        <SwitchInput
-                          value={field.value}
-                          onChange={field.onChange}
-                          trueValue="Y"
-                          falseValue="N"
-                          labels={{
-                            on: 'Active',
-                            off: 'Inactive',
-                          }}
-                          size="sm"
-                        />
-                      )}
-                    />
-                    {errors.ACTIVE && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.ACTIVE.message}
-                      </span>
+                  <Controller
+                    name="ACTIVE"
+                    control={control}
+                    render={({ field }) => (
+                      <SwitchField
+                        label="Status"
+                        value={field.value}
+                        onChange={field.onChange}
+                        trueValue="Y"
+                        falseValue="N"
+                        labels={{
+                          on: 'Active',
+                          off: 'Inactive',
+                        }}
+                        error={errors.ACTIVE?.message}
+                      />
                     )}
-                  </div>
+                  />
 
                   <div className="flex min-w-0 flex-col gap-2">
                     <label className="text-sm text-muted">Date of Join</label>
@@ -401,78 +380,58 @@ export default function StaffMasterPage() {
                       )}
                     />
                     {errors.DOJ && (
-                      <span className="mt-1 text-xs text-rose-600">{errors.DOJ.message}</span>
+                      <span className="mt-1 text-xs text-rose-600">
+                        {errors.DOJ.message}
+                      </span>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">Address</div>
+                <div className="mt-3 mb-4 border-b border-line pb-3 text-xs tracking-widest text-muted uppercase first:mt-0">
+                  Address
+                </div>
                 <div className="flex flex-col gap-1.5">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Address 1</label>
-                    <Controller
-                      name="ADDRESS1"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="ADDRESS1"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Street"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.ADDRESS1 && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.ADDRESS1.message}
-                      </span>
+                  <Controller
+                    name="ADDRESS1"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Address 1"
+                        value={field.value}
+                        placeholder="Street"
+                        onChange={field.onChange}
+                        error={errors.ADDRESS1?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">Address 2</label>
-                    <Controller
-                      name="ADDRESS2"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="ADDRESS2"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="Area"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.ADDRESS2 && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.ADDRESS2.message}
-                      </span>
+                  <Controller
+                    name="ADDRESS2"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Address 2"
+                        value={field.value}
+                        placeholder="Area"
+                        onChange={field.onChange}
+                        error={errors.ADDRESS2?.message}
+                      />
                     )}
-                  </div>
+                  />
 
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <label className="text-sm text-muted">City</label>
-                    <Controller
-                      name="ADDRESS3"
-                      control={control}
-                      render={({ field }) => (
-                        <CapitalizedInput
-                          value={field.value}
-                          field="ADDRESS3"
-                          onChange={(_, value) => field.onChange(value)}
-                          placeholder="City"
-                          className="max-w-full"
-                        />
-                      )}
-                    />
-                    {errors.ADDRESS3 && (
-                      <span className="mt-1 text-xs text-rose-600">
-                        {errors.ADDRESS3.message}
-                      </span>
+                  <Controller
+                    name="ADDRESS3"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="City"
+                        value={field.value}
+                        placeholder="City"
+                        onChange={field.onChange}
+                        error={errors.ADDRESS3?.message}
+                      />
                     )}
-                  </div>
+                  />
                 </div>
               </div>
 

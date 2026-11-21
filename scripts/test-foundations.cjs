@@ -63,7 +63,7 @@ function load(name) {
   return module.exports;
 }
 async function main() {
-  const date = load('utils/format/date.ts');
+  const date = load('src/utils/format/date.ts');
   assert.equal(date.formatDate('2026-11-02'), '02-11-2026');
   assert.equal(date.formatDate('2026-11-02', true), '02-11-26');
   assert.equal(date.formatApiDate(new Date(2026, 10, 2)), '2026-11-02');
@@ -71,7 +71,7 @@ async function main() {
   assert.equal(date.formatDate('invalid'), '');
   assert.equal(date.formatDateTime(new Date(2026, 10, 2, 9, 4, 3)), '02-11-26 09:04:03');
   assert.equal(date.formatTime('09:04'), '09:04:00');
-  const numbers = load('utils/format/number.ts');
+  const numbers = load('src/utils/format/number.ts');
   assert.equal(numbers.formatNumber(12.5), '12.50');
   assert.equal(numbers.formatWeight(12.5), '12.500');
   assert.equal(numbers.formatWeight(12.5, 4), '12.5000');
@@ -89,7 +89,7 @@ async function main() {
     calls_token: 'fixture-token',
     isLoggedIn: 'true',
   });
-  const { axiosInstance: client } = load('api/axiosInstance.ts');
+  const { axiosInstance: client } = load('lib/api/axios-instance.ts');
   const requests = [];
   client.defaults.adapter = async (config) => {
     requests.push(config);

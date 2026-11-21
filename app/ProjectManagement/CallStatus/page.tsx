@@ -1,1 +1,1 @@
-export { default } from '@/src/module/call-status/component/call-status-page';
+export { CallStatusPage as default } from '@/src/module/call-status';
