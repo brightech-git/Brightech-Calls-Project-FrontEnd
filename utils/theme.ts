@@ -1,121 +1,136 @@
-// ============================================
-// 🎨 THEME — Central design tokens
-// Change values here to update the entire app
-// ============================================
-
+const token = (name: string) => `var(--${name})`;
 export const COLORS = {
-  // ===== BRAND =====
-  primary:            "#111827",
-  primaryHover:       "#1f2937",
-  primaryLight:       "#f3f4f6",
-
-  // ===== SHELL (Sidebar + Topbar share these) =====
-  shellBg:            "#ffffff",
-  shellBorder:        "#e5e7eb",
-  contentBg:          "#f5f5f5",
-
-  // ===== SIDEBAR =====
-  sidebarLogoIconBg:      "#111827",
-  sidebarLogoIconColor:   "#ffffff",
-  sidebarLogoText:        "#111827",
-  sidebarLogoSub:         "#6b7280",
-  sidebarSectionLabel:    "#9ca3af",
-  sidebarNavText:         "#6b7280",
-  sidebarNavHoverBg:      "#f3f4f6",
-  sidebarNavHoverText:    "#111827",
-  sidebarNavActiveBg:     "#f3f4f6",
-  sidebarNavActiveText:   "#111827",
-  sidebarChevron:         "#9ca3af",
-  sidebarChevronActive:   "#111827",
-  sidebarChildDot:        "#d1d5db",
-  sidebarChildDotActive:  "#111827",
-  sidebarScrollThumb:     "#d1d5db",
-  sidebarUserName:        "#111827",
-  sidebarUserRole:        "#6b7280",
-  sidebarUserHoverBg:     "#f3f4f6",
-  sidebarLogoutBg:        "#f3f4f6",
-  sidebarLogoutColor:     "#6b7280",
-  sidebarLogoutHoverBg:   "#fee2e2",
-  sidebarLogoutHoverColor:"#ef4444",
-
-  // ===== TOPBAR =====
-  topbarTitle:            "#111827",
-  topbarSubtitle:         "#6b7280",
-  topbarDivider:          "#e5e7eb",
-  topbarIconBg:           "#f9fafb",
-  topbarIconColor:        "#6b7280",
-  topbarIconHoverBg:      "#f3f4f6",
-  topbarIconHoverColor:   "#111827",
-
-  // ===== TEXT =====
-  textPrimary:   "#111827",
-  textSecondary: "#6b7280",
-  textMuted:     "#9ca3af",
-  textDisabled:  "#d1d5db",
-
-  // ===== GRAY SCALE =====
-  gray50:  "#f9fafb",
-  gray100: "#f3f4f6",
-  gray200: "#e5e7eb",
-  gray300: "#d1d5db",
-  gray400: "#9ca3af",
-  gray500: "#6b7280",
-  gray600: "#4b5563",
-  gray700: "#374151",
-  gray800: "#1f2937",
-  gray900: "#111827",
-
-  // ===== STATUS =====
-  success:    "#16a34a",
-  successBg:  "#dcfce7",
-  error:      "#ef4444",
-  errorBg:    "#fee2e2",
-  warning:    "#b45309",
-  warningBg:  "#fef9c3",
-  info:       "#3b82f6",
-  infoBg:     "#dbeafe",
-
-  // ===== CARD =====
-  cardBg:     "#ffffff",
-  cardBorder: "#e5e7eb",
-  cardShadow: "rgba(0,0,0,0.06)",
-
-  // ===== INPUT =====
-  inputBg:           "#ffffff",
-  inputBorder:       "#d1d5db",
-  inputBorderFocus:  "#6b7280",
-  inputPlaceholder:  "#9ca3af",
-  inputText:         "#111827",
-
-  // ===== BUTTON =====
-  btnPrimaryBg:       "#111827",
-  btnPrimaryText:     "#ffffff",
-  btnPrimaryHover:    "#1f2937",
-  btnSecondaryBg:     "#ffffff",
-  btnSecondaryText:   "#374151",
-  btnSecondaryBorder: "#d1d5db",
-  btnSecondaryHover:  "#f3f4f6",
+  primary: token('primary'),
+  primaryHover: token('primary-hover'),
+  primaryLight: token('primary-light'),
+  secondary: token('secondary'),
+  secondaryHover: token('secondary'),
+  secondaryLight: token('primary-light'),
+  shellBg: token('sidebar'),
+  shellBorder: token('border'),
+  contentBg: token('bg'),
+  sidebarLogoIconBg: token('primary'),
+  sidebarLogoIconColor: '#fff',
+  sidebarLogoText: '#fff',
+  sidebarLogoSub: '#aebcda',
+  sidebarSectionLabel: '#91a1c3',
+  sidebarNavText: '#c5cfe4',
+  sidebarNavHoverBg: 'rgba(255,255,255,.08)',
+  sidebarNavHoverText: '#fff',
+  sidebarNavActiveBg: token('primary'),
+  sidebarNavActiveText: '#fff',
+  sidebarChevron: '#aebcda',
+  sidebarChevronActive: '#fff',
+  sidebarChildDot: '#91a1c3',
+  sidebarChildDotActive: '#fff',
+  sidebarScrollThumb: '#485875',
+  sidebarUserName: '#fff',
+  sidebarUserRole: '#aebcda',
+  sidebarUserHoverBg: 'rgba(255,255,255,.08)',
+  sidebarLogoutBg: 'rgba(255,255,255,.08)',
+  sidebarLogoutColor: '#c5cfe4',
+  sidebarLogoutHoverBg: '#422533',
+  sidebarLogoutHoverColor: '#fda4af',
+  topbarTitle: token('text-main'),
+  topbarSubtitle: token('text-muted'),
+  topbarDivider: token('border'),
+  topbarIconBg: token('surface'),
+  topbarIconColor: token('text-muted'),
+  topbarIconHoverBg: token('primary-light'),
+  topbarIconHoverColor: token('primary'),
+  textPrimary: token('text-main'),
+  textSecondary: '#111111',
+  textMuted: token('text-muted'),
+  textDisabled: '#64748b',
+  gray50: '#f8fafc',
+  gray100: '#f1f5f9',
+  gray200: token('border'),
+  gray300: '#cbd5e1',
+  gray400: '#94a3b8',
+  gray500: '#64748b',
+  gray600: '#475569',
+  gray700: '#334155',
+  gray800: '#1e293b',
+  gray900: '#0f172a',
+  success: token('success'),
+  successBg: token('success-bg'),
+  error: token('error'),
+  errorBg: token('error-bg'),
+  warning: token('warning'),
+  warningBg: token('warning-bg'),
+  info: token('info'),
+  infoBg: token('info-bg'),
+  cardBg: token('surface'),
+  cardBorder: token('border'),
+  cardShadow: 'rgba(15,23,42,.05)',
+  inputBg: token('surface'),
+  inputBorder: token('input-border'),
+  inputBorderFocus: token('primary'),
+  inputPlaceholder: token('text-muted'),
+  inputText: token('text-main'),
+  btnPrimaryBg: token('primary'),
+  btnPrimaryText: '#fff',
+  btnPrimaryHover: token('primary-hover'),
+  btnSecondaryBg: token('surface'),
+  btnSecondaryText: token('text-main'),
+  btnSecondaryBorder: token('border'),
+  btnSecondaryHover: token('primary-light'),
+  link: token('primary'),
+  linkHover: token('primary-hover'),
 };
-
 export const FONT = {
-  family: "'DM Sans', 'Inter', sans-serif",
+  family: 'var(--font-family)',
   size: {
-    xs:  "10px",
-    sm:  "11px",
-    md:  "13px",
-    lg:  "14px",
-    xl:  "16px",
-    xxl: "18px",
+    xs: 'var(--font-xs)',
+    sm: 'var(--font-sm)',
+    md: 'var(--font-md)',
+    lg: 'var(--font-lg)',
+    xl: 'var(--font-xl)',
+    xxl: 'var(--font-xxl)',
   },
+  weight: { regular: 400, medium: 600, semibold: 600, bold: 700 },
 };
-
-export const RADIUS = {
-  sm:   "6px",
-  md:   "8px",
-  lg:   "12px",
-  xl:   "14px",
-  full: "9999px",
+export const RADIUS = { sm: '6px', md: '10px', lg: '14px', xl: '20px', full: '9999px' };
+export const SPACING = {
+  xs: 'var(--space-1)',
+  sm: 'var(--space-2)',
+  md: 'var(--space-4)',
+  lg: 'var(--space-6)',
 };
-
+export const SHADOW = { sm: 'var(--shadow-sm)', dialog: 'var(--shadow-dialog)' };
+export const THEME_PRESETS = {
+  graphite: {
+    name: 'Graphite',
+    primary: '#334155',
+    secondary: '#64748b',
+    sidebar: '#17202e',
+  },
+  ocean: { name: 'Ocean', primary: '#2859d8', secondary: '#0e7490', sidebar: '#111e38' },
+  forest: {
+    name: 'Forest',
+    primary: '#087f5b',
+    secondary: '#0e7490',
+    sidebar: '#102c29',
+  },
+  violet: {
+    name: 'Violet',
+    primary: '#7040c8',
+    secondary: '#2563eb',
+    sidebar: '#201a38',
+  },
+  ember: { name: 'Ember', primary: '#b93c60', secondary: '#b45309', sidebar: '#321d2b' },
+} as const;
+export type ThemePreset = keyof typeof THEME_PRESETS;
+export type Appearance = {
+  preset: ThemePreset;
+  density: 'comfortable' | 'compact';
+  textSize: 'standard' | 'large';
+};
+export const DEFAULT_APPEARANCE: Appearance = {
+  preset: 'ocean',
+  density: 'compact',
+  textSize: 'standard',
+};
+export const APPEARANCE_KEY = 'calls-appearance';
 const theme = { COLORS, FONT, RADIUS };
 export default theme;

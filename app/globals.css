@@ -1,23 +1,175 @@
-:root {
-  --bg: #f0f6ff;
-  --surface: #ffffff;
-  --border: #dbeafe;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --primary-light: #eff6ff;
-  --text-main: #1e3a5f;
-  --text-muted: #64748b;
-  --text-faint: #93c5fd;
+/*
+ * Cascade order: Tailwind's reset first, then Chakra's layers, then Tailwind
+ * components and utilities. A Tailwind class always wins over a Chakra recipe
+ * without `!important`, and Chakra parts keep their own spacing otherwise.
+ */
+@layer theme, base, chakra-reset, chakra-base, chakra-tokens, chakra-recipes, components, utilities;
+
+@import 'tailwindcss';
+
+@theme inline {
+  /* One font family everywhere: Poppins (400 / 600 / 700) from next/font. */
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-poppins), ui-monospace, monospace;
+  --font-weight-medium: 600;
+
+  --color-brand: var(--primary);
+  --color-brand-hover: var(--primary-hover);
+  --color-brand-soft: var(--primary-light);
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-line: var(--border);
+  --color-line-strong: var(--input-border);
+  --color-ink: var(--text-main);
+  --color-muted: var(--text-muted);
+  --color-sidebar: var(--sidebar);
+
+  --text-xs: var(--font-xs);
+  --text-sm: var(--font-sm);
+  --text-base: var(--font-md);
+  --text-lg: var(--font-lg);
+  --text-xl: var(--font-xl);
+  --text-2xl: var(--font-xxl);
+
+  --spacing-control: var(--control-height);
+  --spacing-row: var(--row-padding);
+  --spacing-page: var(--page-space);
+
+  --animate-toast-in: toast-in 0.2s ease-out;
 }
 
-*, *::before, *::after { box-sizing: border-box; }
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
 
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  background: var(--bg);
-  color: var(--text-main);
-  font-family: 'DM Sans', 'Inter', Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
+:root {
+  /* White background, black text. */
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --text-main: #000000;
+  --text-muted: #525252;
+  --border: #e5e7eb;
+  --input-border: #d4d4d8;
+
+  /* Accent (Appearance settings can swap it). */
+  --primary: #2859d8;
+  --secondary: #0e7490;
+  --sidebar: #ffffff;
+  --primary-hover: color-mix(in srgb, var(--primary) 85%, #000);
+  --primary-light: color-mix(in srgb, var(--primary) 8%, white);
+
+  /* Status tokens used by legacy COLORS helpers. */
+  --success: #15803d;
+  --success-bg: #ecfdf3;
+  --error: #be123c;
+  --error-bg: #fff1f2;
+  --warning: #a16207;
+  --warning-bg: #fffbeb;
+  --info: #1d4ed8;
+  --info-bg: #eff6ff;
+
+  /* Compact by default. */
+  --font-xs: 12px;
+  --font-sm: 13px;
+  --font-md: 14px;
+  --font-lg: 16px;
+  --font-xl: 20px;
+  --font-xxl: 26px;
+  --control-height: 32px;
+  --row-padding: 6px;
+  --page-space: 12px;
+
+  --font-family: var(--font-poppins), sans-serif;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-4: 12px;
+  --space-6: 16px;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-dialog: 0 12px 40px rgb(0 0 0 / 0.14);
+}
+
+:root[data-density='comfortable'] {
+  --control-height: 38px;
+  --row-padding: 10px;
+  --page-space: 20px;
+}
+
+:root[data-text-size='large'] {
+  --font-xs: 13px;
+  --font-sm: 14px;
+  --font-md: 16px;
+  --font-lg: 18px;
+  --font-xl: 22px;
+  --font-xxl: 30px;
+}
+
+@layer base {
+  html,
+  body {
+    @apply bg-white font-sans text-ink;
+  }
+
+  body {
+    @apply min-h-screen text-sm antialiased;
+    font-synthesis: none;
+    overflow-wrap: break-word;
+  }
+
+  /* Chakra parts and form controls inherit Poppins instead of their own stacks. */
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  strong,
+  b,
+  th {
+    @apply font-semibold;
+  }
+
+  button:not(:disabled),
+  select {
+    @apply cursor-pointer;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-muted opacity-100;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand;
+  }
+
+  ::selection {
+    @apply bg-brand-soft text-brand;
+  }
+
+  .react-datepicker-wrapper {
+    @apply w-full;
+  }
+
+  .react-datepicker,
+  .react-datepicker * {
+    font-family: inherit;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

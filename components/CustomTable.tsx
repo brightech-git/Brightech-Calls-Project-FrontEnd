@@ -1,45 +1,5 @@
-"use client";
+'use client';
 
-/**
- * CustomTable.tsx
- * ─────────────────────────────────────────────────────────────────────────────
- * A fully-featured, config-driven data table that follows the project's dark
- * design system.
- *
- * Features:
- *  • Column configuration with optional sort, custom render, and cell alignment
- *  • Global search/filter
- *  • Column-level sorting (asc / desc toggle)
- *  • Client-side pagination
- *  • Row selection (checkbox) with bulk-action slot
- *  • Status badge auto-coloring
- *  • Empty state
- *  • Loading skeleton rows
- *  • Optional row action buttons (Edit / Delete / custom)
- *  • Responsive horizontal scroll
- *
- * Usage:
- *   <CustomTable
- *     columns={columns}
- *     data={data}
- *     isLoading={isFetching}
- *     onEdit={(row) => openForm(row)}
- *     onDelete={(row) => deleteRow(row.id)}
- *   />
- */
-
-import {
-  Box,
-  HStack,
-  VStack,
-  Text,
-  Input,
-  Badge,
-  Checkbox,
-  Spinner,
-  Button,
-  IconButton,
-} from "@chakra-ui/react";
 import {
   ChevronUp,
   ChevronDown,
@@ -52,13 +12,24 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Inbox,
-} from "lucide-react";
-import { useState, useMemo, useCallback } from "react";
+  ChevronRightCircle,
+} from 'lucide-react';
+import { useState, useMemo, useCallback, Fragment } from 'react';
+import { usePathname } from 'next/navigation';
+import { PAGE_CONFIG } from '@/config/pageConfig';
+import { cn } from '@/lib/utils';
+import { cardClass, iconButtonClass } from '@/lib/styles';
+
+const thClass =
+  'sticky top-0 z-[1] border-b border-line bg-gray-50 px-3 py-2 text-left text-[11px] font-semibold tracking-wide whitespace-nowrap text-ink uppercase';
+const tdClass = 'border-t border-line px-3 py-row align-middle text-[13px] whitespace-nowrap text-ink';
+const pageBtnClass =
+  'inline-flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-xs text-ink hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30';
+const checkboxClass = 'size-3.5 cursor-pointer accent-brand';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type SortDir = "asc" | "desc" | null;
-
+export type SortDir = 'asc' | 'desc' | null;
 export interface TableColumn<T = Record<string, unknown>> {
   /** Maps to the key in your data object */
   key: keyof T | string;
@@ -69,21 +40,19 @@ export interface TableColumn<T = Record<string, unknown>> {
   /** Enable column sorting */
   sortable?: boolean;
   /** Cell text alignment */
-  align?: "left" | "center" | "right";
+  align?: 'left' | 'center' | 'right';
   /** Fixed pixel / % width */
   width?: string;
   /** Auto-apply status badge coloring if value matches status words */
   isStatus?: boolean;
 }
-
 export interface RowAction<T = Record<string, unknown>> {
   label: string;
   icon?: React.ReactNode;
   onClick: (row: T) => void;
-  colorScheme?: "blue" | "red" | "green" | "amber";
+  colorScheme?: 'blue' | 'red' | 'green' | 'amber';
 }
-
-export interface CustomTableProps<T extends Record<string, unknown>> {
+export interface CustomTableProps<T extends object> {
   columns: TableColumn<T>[];
   data: T[];
   isLoading?: boolean;
@@ -112,74 +81,75 @@ export interface CustomTableProps<T extends Record<string, unknown>> {
   title?: string;
   /** Slot rendered in the top-right toolbar (e.g. an "Add" button) */
   toolbarRight?: React.ReactNode;
+
+  expandedRowRender?: (row: T) => React.ReactNode;
+  showSearch?: boolean;
+  showPagination?: boolean;
+  highlightRowId?: string | number | null;
+  onRowClick?: (row: T) => void;
 }
+
 
 // ─── Status badge coloring ────────────────────────────────────────────────────
 
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  active:    { bg: "#dcfce7", color: "#16a34a" },
-  inactive:  { bg: "#fee2e2", color: "#ef4444" },
-  pending:   { bg: "#fef9c3", color: "#b45309" },
-  approved:  { bg: "#dcfce7", color: "#16a34a" },
-  rejected:  { bg: "#fee2e2", color: "#ef4444" },
-  cancelled: { bg: "#fee2e2", color: "#ef4444" },
-  draft:     { bg: "#f1f5f9", color: "#64748b" },
-  paid:      { bg: "#dcfce7", color: "#16a34a" },
-  unpaid:    { bg: "#fee2e2", color: "#ef4444" },
-  processing:{ bg: "#fef9c3", color: "#b45309" },
-  y:         { bg: "#dcfce7", color: "#16a34a" },
-  n:         { bg: "#fee2e2", color: "#ef4444" },
+const GOOD = 'bg-emerald-50 text-emerald-700';
+const BAD = 'bg-rose-50 text-rose-700';
+const WAIT = 'bg-amber-50 text-amber-700';
+const STATUS_CLASSES: Record<string, string> = {
+  active: GOOD,
+  inactive: BAD,
+  pending: WAIT,
+  approved: GOOD,
+  rejected: BAD,
+  cancelled: BAD,
+  draft: 'bg-gray-100 text-ink',
+  paid: GOOD,
+  unpaid: BAD,
+  processing: WAIT,
+  y: GOOD,
+  n: BAD,
 };
-
 function StatusBadge({ value }: { value: string }) {
-  const key = String(value).toLowerCase();
-  const style = STATUS_COLORS[key] ?? { bg: "#f1f5f9", color: "#64748b" };
+  const tone = STATUS_CLASSES[String(value).toLowerCase()] ?? 'bg-gray-100 text-ink';
   return (
-    <Badge
-      px="9px"
-      py="3px"
-      borderRadius="20px"
-      bg={style.bg}
-      color={style.color}
-      fontSize="11px"
-      fontWeight="600"
-      letterSpacing="0.02em"
-    >
+    <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold', tone)}>
       {String(value)}
-    </Badge>
+    </span>
   );
 }
 
 // ─── Sort icon ────────────────────────────────────────────────────────────────
 
 function SortIcon({ dir }: { dir: SortDir }) {
-  if (dir === "asc")  return <ChevronUp size={13}  color="#3b82f6" />;
-  if (dir === "desc") return <ChevronDown size={13} color="#3b82f6" />;
-  return <ChevronsUpDown size={13} color="#bfdbfe" />;
+  if (dir === 'asc') return <ChevronUp size={12} className="text-brand" />;
+  if (dir === 'desc') return <ChevronDown size={12} className="text-brand" />;
+  return <ChevronsUpDown size={12} className="text-gray-400" />;
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function SkeletonRow({ cols }: { cols: number }) {
   return (
-    <Box as="tr" borderTop="1px solid #f3f4f6">
+    <tr className="border-t border-line">
       {Array.from({ length: cols }).map((_, i) => (
-        <Box as="td" key={i} px="16px" py="11px">
-          <Box h="12px" borderRadius="6px" bg="#e5e7eb"
-            w={i === 0 ? "60%" : i % 2 === 0 ? "80%" : "50%"}
-            style={{ animation: "pulse 1.5s ease-in-out infinite" }}
+        <td key={i} className="px-3 py-2">
+          <div
+            className={cn(
+              'h-3 animate-pulse rounded bg-gray-100',
+              i === 0 ? 'w-3/5' : i % 2 === 0 ? 'w-4/5' : 'w-1/2',
+            )}
           />
-        </Box>
+        </td>
       ))}
-    </Box>
+    </tr>
   );
 }
 
 // ─── Get nested value ─────────────────────────────────────────────────────────
 
-function getVal(row: Record<string, unknown>, key: string): unknown {
-  return key.split(".").reduce<unknown>((acc, k) => {
-    if (acc != null && typeof acc === "object") {
+function getVal(row: object, key: string): unknown {
+  return key.split('.').reduce<unknown>((acc, k) => {
+    if (acc != null && typeof acc === 'object') {
       return (acc as Record<string, unknown>)[k];
     }
     return undefined;
@@ -188,86 +158,106 @@ function getVal(row: Record<string, unknown>, key: string): unknown {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function CustomTable<T extends Record<string, unknown>>({
+export function CustomTable<T extends object>({
   columns,
   data,
   isLoading = false,
   pageSizeOptions = [10, 25, 50, 100],
   defaultPageSize = 10,
-  rowKey = "id" as keyof T,
+  rowKey = 'id' as keyof T,
   selectable = false,
   onSelectionChange,
   onEdit,
   onDelete,
   extraActions = [],
   bulkActionSlot,
-  searchPlaceholder = "Search...",
-  emptyMessage = "No records found",
+  searchPlaceholder = 'Search...',
+  emptyMessage = 'No records found',
   title,
   toolbarRight,
+  expandedRowRender,
+  showSearch = true,
+  showPagination = true,
+  highlightRowId,
+  onRowClick,
 }: CustomTableProps<T>) {
+  const pathname = usePathname();
+  const tableTitle = title || PAGE_CONFIG[pathname]?.title || 'Records';
   // ── State ──
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
   const [selected, setSelected] = useState<Set<unknown>>(new Set());
+  const [expandedKeys, setExpandedKeys] = useState<Set<unknown>>(new Set());
+  const toggleExpanded = (row: T) => {
+    const key = row[rowKey];
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
   // ── Derived data ──
+  const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
   const filtered = useMemo(() => {
-    if (!search.trim()) return data;
+    if (!search.trim()) return rows;
     const q = search.toLowerCase();
-    return data.filter((row) =>
+    return rows.filter((row) =>
       columns.some((col) => {
         const val = getVal(row, col.key as string);
-        return String(val ?? "").toLowerCase().includes(q);
-      })
+        return String(val ?? '')
+          .toLowerCase()
+          .includes(q);
+      }),
     );
-  }, [data, search, columns]);
-
+  }, [rows, search, columns]);
   const sorted = useMemo(() => {
     if (!sortKey || !sortDir) return filtered;
     return [...filtered].sort((a, b) => {
       const av = getVal(a, sortKey);
       const bv = getVal(b, sortKey);
-      const cmp = String(av ?? "").localeCompare(String(bv ?? ""), undefined, {
+      const cmp = String(av ?? '').localeCompare(String(bv ?? ''), undefined, {
         numeric: true,
       });
-      return sortDir === "asc" ? cmp : -cmp;
+      return sortDir === 'asc' ? cmp : -cmp;
     });
   }, [filtered, sortKey, sortDir]);
-
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const safePage   = Math.min(page, totalPages);
-  const paged      = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const safePage = Math.min(page, totalPages);
+  const paged = showPagination
+    ? sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+    : sorted;
 
   // ── Sort handler ──
   const handleSort = useCallback(
     (key: string) => {
       if (sortKey !== key) {
         setSortKey(key);
-        setSortDir("asc");
-      } else if (sortDir === "asc") {
-        setSortDir("desc");
+        setSortDir('asc');
+      } else if (sortDir === 'asc') {
+        setSortDir('desc');
       } else {
         setSortKey(null);
         setSortDir(null);
       }
       setPage(1);
     },
-    [sortKey, sortDir]
+    [sortKey, sortDir],
   );
 
   // ── Selection ──
   const selectedRows = useMemo(
     () => data.filter((r) => selected.has(r[rowKey])),
-    [data, selected, rowKey]
+    [data, selected, rowKey],
   );
-
-  const allPageSelected =
-    paged.length > 0 && paged.every((r) => selected.has(r[rowKey]));
-
+  const allPageSelected = paged.length > 0 && paged.every((r) => selected.has(r[rowKey]));
   const toggleAll = () => {
     const next = new Set(selected);
     if (allPageSelected) {
@@ -278,7 +268,6 @@ export function CustomTable<T extends Record<string, unknown>>({
     setSelected(next);
     onSelectionChange?.(data.filter((r) => next.has(r[rowKey])));
   };
-
   const toggleRow = (row: T) => {
     const next = new Set(selected);
     if (next.has(row[rowKey])) {
@@ -289,15 +278,15 @@ export function CustomTable<T extends Record<string, unknown>>({
     setSelected(next);
     onSelectionChange?.(data.filter((r) => next.has(r[rowKey])));
   };
-
   const clearSelection = () => {
     setSelected(new Set());
     onSelectionChange?.([]);
   };
 
   // ── Actions present? ──
-  const hasActions = onEdit || onDelete || extraActions.length > 0;
-  const colCount   = columns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0);
+  const hasActions =
+    !!onEdit || !!onDelete || extraActions.length > 0 || !!expandedRowRender;
+  const colCount = columns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0);
 
   // ── Page number window ──
   const pageWindow = useMemo(() => {
@@ -313,100 +302,32 @@ export function CustomTable<T extends Record<string, unknown>>({
     return range;
   }, [safePage, totalPages]);
 
+
+  const alignClass = (align?: 'left' | 'center' | 'right') =>
+    align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left';
+  const justifyClass = (align?: 'left' | 'center' | 'right') =>
+    align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start';
+
   // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <>
-      <style>{`
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .ct-table { width: 100%; border-collapse: collapse; }
-        .ct-th {
-          font-size: 10px; font-weight: 700; letter-spacing: 0.09em;
-          text-transform: uppercase; color: #374151;
-          padding: 10px 16px; text-align: left; white-space: nowrap;
-          border-bottom: 1px solid #e5e7eb; background: #f9fafb;
-          position: sticky; top: 0; z-index: 1;
-        }
-        .ct-th.sortable { cursor: pointer; user-select: none; }
-        .ct-th.sortable:hover { color: #111827; }
-        .ct-th.active { color: #111827; }
-        .ct-td {
-          font-size: 13px; color: #6b7280;
-          padding: 10px 16px; border-top: 1px solid #f3f4f6;
-          vertical-align: middle; white-space: nowrap;
-        }
-        .ct-td.primary { color: #111827; font-weight: 600; }
-        .ct-tr:hover .ct-td { background: #f9fafb; }
-        .ct-actions-btn {
-          display: inline-flex; align-items: center; justify-content: center;
-          width: 28px; height: 28px; border-radius: 7px; border: none;
-          cursor: pointer; transition: background 0.15s, color 0.15s;
-          background: transparent; color: #9ca3af;
-        }
-        .ct-actions-btn:hover { background: #f3f4f6; color: #111827; }
-        .ct-actions-btn.delete:hover { background: #fee2e2; color: #ef4444; }
-        .ct-actions-btn.edit:hover   { background: #f3f4f6; color: #111827; }
-        .ct-page-btn {
-          min-width: 30px; height: 30px; border-radius: 7px;
-          border: 1px solid transparent; background: transparent;
-          color: #6b7280; font-size: 12px; font-family: inherit;
-          cursor: pointer; display: inline-flex; align-items: center;
-          justify-content: center; transition: background 0.15s, color 0.15s; padding: 0 6px;
-        }
-        .ct-page-btn:hover:not(:disabled) { background: #f3f4f6; color: #111827; }
-        .ct-page-btn.active { background: #111827; color: #fff; border-color: #111827; font-weight: 600; }
-        .ct-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .ct-search {
-          background: #ffffff; border: 1px solid #d1d5db; border-radius: 8px;
-          color: #111827; font-size: 13px; padding: 0 12px 0 34px;
-          height: 34px; outline: none; width: 220px;
-          transition: border-color 0.15s; font-family: inherit;
-        }
-        .ct-search::placeholder { color: #9ca3af; }
-        .ct-search:focus { border-color: #6b7280; }
-        .ct-size-select {
-          background: #ffffff; border: 1px solid #d1d5db; border-radius: 7px;
-          color: #6b7280; font-size: 12px; padding: 4px 8px;
-          outline: none; cursor: pointer; font-family: inherit;
-        }
-        .ct-size-select option { background: #ffffff; }
-      `}</style>
-
-      <Box bg="#ffffff" border="1px solid #e5e7eb" borderRadius="12px"
-        fontFamily="'DM Sans', 'Inter', sans-serif"
-        boxShadow="0 1px 4px rgba(0,0,0,0.06)"
-        display="flex" flexDirection="column"
-        minH="480px"
-      >
-        {/* ── Toolbar ── */}
-        <HStack
-          px="16px"
-          py="12px"
-          borderBottom="1px solid #e5e7eb"
-          justify="space-between"
-          flexWrap="wrap"
-          gap="8px"
-        >
-          <HStack gap="8px">
-            {title && (
-              <Text fontSize="13.5px" fontWeight="700" color="#1e3a5f" mr="4px">
-                {title}
-              </Text>
-            )}
-            {/* Search */}
-            <Box position="relative">
-              <Box
-                position="absolute"
-                left="10px"
-                top="50%"
-                transform="translateY(-50%)"
-                color="#93c5fd"
-                pointerEvents="none"
-              >
-                <Search size={13} />
-              </Box>
+    <div className={cn(cardClass, 'flex min-h-64 flex-col overflow-hidden')}>
+      {/* ── Toolbar ── */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          {tableTitle && <p className="text-sm font-semibold text-ink">{tableTitle}</p>}
+          <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-ink">
+            {isLoading ? '…' : sorted.length.toLocaleString()}
+          </span>
+          {showSearch && (
+            <div className="relative ml-auto max-sm:ml-0 max-sm:w-full">
+              <Search
+                size={13}
+                className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted"
+              />
               <input
                 type="text"
-                className="ct-search"
+                aria-label={searchPlaceholder || 'Search records'}
+                className="h-8 w-56 max-w-full rounded-md border border-line bg-white pr-2.5 pl-7 text-xs text-ink outline-none placeholder:text-muted focus:border-brand focus:ring-2 focus:ring-brand/15 max-sm:w-full"
                 placeholder={searchPlaceholder}
                 value={search}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -414,203 +335,262 @@ export function CustomTable<T extends Record<string, unknown>>({
                   setPage(1);
                 }}
               />
-            </Box>
-          </HStack>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {selected.size > 0 && bulkActionSlot && (
+            <div>{bulkActionSlot(selectedRows, clearSelection)}</div>
+          )}
+          {toolbarRight}
+        </div>
+      </div>
 
-          <HStack gap="8px">
-            {selected.size > 0 && bulkActionSlot && (
-              <Box>{bulkActionSlot(selectedRows, clearSelection)}</Box>
-            )}
-            {toolbarRight}
-          </HStack>
-        </HStack>
+      {/* ── Bulk selection banner ── */}
+      {selected.size > 0 && !bulkActionSlot && (
+        <div className="flex items-center gap-2 border-b border-line bg-brand-soft px-3 py-1.5">
+          <p className="text-xs font-semibold text-brand">
+            {selected.size} row{selected.size > 1 ? 's' : ''} selected
+          </p>
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="cursor-pointer text-xs text-ink underline"
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
-        {/* ── Bulk selection banner ── */}
-        {selected.size > 0 && !bulkActionSlot && (
-          <HStack px="16px" py="8px" bg="#eff6ff" borderBottom="1px solid #dbeafe" gap="8px">
-            <Text fontSize="12px" color="#1d4ed8" fontWeight="500">
-              {selected.size} row{selected.size > 1 ? "s" : ""} selected
-            </Text>
-            <button type="button"
-              style={{ fontSize: 11, color: "#64748b", cursor: "pointer", background: "transparent", border: "none" }}
-              onClick={clearSelection}>Clear</button>
-          </HStack>
-        )}
+      {/* ── Table ── */}
+      <div className="flex-1 overflow-x-auto">
+        <table
+          className="w-full border-collapse"
+          aria-label={title || 'Records'}
+          aria-busy={isLoading}
+        >
+          <thead>
+            <tr>
+              {selectable && (
+                <th className={cn(thClass, 'w-10 text-center')}>
+                  <input
+                    type="checkbox"
+                    className={checkboxClass}
+                    aria-label="Select all rows on this page"
+                    checked={allPageSelected && paged.length > 0}
+                    onChange={toggleAll}
+                  />
+                </th>
+              )}
+              {hasActions && <th className={cn(thClass, 'w-20')}>Actions</th>}
+              {columns.map((col) => {
+                const isSortActive = sortKey === col.key;
+                return (
+                  <th
+                    key={col.key as string}
+                    className={cn(
+                      thClass,
+                      alignClass(col.align),
+                      col.sortable && 'cursor-pointer select-none hover:text-brand',
+                      isSortActive && 'text-brand',
+                    )}
+                    style={col.width ? { width: col.width } : undefined}
+                    aria-sort={
+                      col.sortable
+                        ? isSortActive && sortDir
+                          ? sortDir === 'asc'
+                            ? 'ascending'
+                            : 'descending'
+                          : 'none'
+                        : undefined
+                    }
+                    tabIndex={col.sortable ? 0 : undefined}
+                    onKeyDown={
+                      col.sortable
+                        ? (event: React.KeyboardEvent) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              handleSort(col.key as string);
+                            }
+                          }
+                        : undefined
+                    }
+                    onClick={col.sortable ? () => handleSort(col.key as string) : undefined}
+                  >
+                    <span className={cn('flex items-center gap-1', justifyClass(col.align))}>
+                      {col.header}
+                      {col.sortable && <SortIcon dir={isSortActive ? sortDir : null} />}
+                    </span>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
 
-        {/* ── Table ── */}
-        <Box overflowX="auto" flex="1">
-          <Box as="table" className="ct-table" style={{ height: "100%" }}>
-            <Box as="thead">
-              <Box as="tr">
-                {selectable && (
-                  <Box as="th" className="ct-th" w="40px" textAlign="center">
-                    <Checkbox.Root
-                      checked={allPageSelected && paged.length > 0}
-                      onCheckedChange={toggleAll}
-                    >
-                      <Checkbox.HiddenInput />
-                      <Checkbox.Control w="15px" h="15px" borderRadius="4px" border="1px solid"
-                        borderColor={allPageSelected ? "#3b82f6" : "#bfdbfe"}
-                        bg={allPageSelected ? "#dbeafe" : "transparent"}>
-                        <Checkbox.Indicator color="#3b82f6" />
-                      </Checkbox.Control>
-                    </Checkbox.Root>
-                  </Box>
-                )}
-
-                {hasActions && (
-                  <Box as="th" className="ct-th" style={{ textAlign: "left", width: "70px" }}>
-                    Actions
-                  </Box>
-                )}
-
-                {columns.map((col) => {
-                  const isSortActive = sortKey === col.key;
-                  return (
-                    <Box
-                      as="th"
-                      key={col.key as string}
-                      className={`ct-th${col.sortable ? " sortable" : ""}${
-                        isSortActive ? " active" : ""
-                      }`}
-                      style={{
-                        textAlign: col.align ?? "left",
-                        width: col.width,
-                      }}
-                      onClick={col.sortable ? () => handleSort(col.key as string) : undefined}
-                    >
-                      <HStack
-                        gap="4px"
-                        justify={
-                          col.align === "center"
-                            ? "center"
-                            : col.align === "right"
-                            ? "flex-end"
-                            : "flex-start"
-                        }
-                      >
-                        {col.header}
-                        {col.sortable && (
-                          <SortIcon dir={isSortActive ? sortDir : null} />
-                        )}
-                      </HStack>
-                    </Box>
-                  );
-                })}
-
-              </Box>
-            </Box>
-
-            <Box as="tbody">
-              {isLoading ? (
-                Array.from({ length: pageSize > 5 ? 5 : pageSize }).map((_, i) => (
-                  <SkeletonRow key={i} cols={colCount} />
-                ))
-              ) : paged.length === 0 ? (
-                <Box as="tr">
-                  <td colSpan={colCount} style={{ padding: "48px 0", textAlign: "center" }}>
-                    <VStack gap="8px" color="#9ca3af">
-                      <Inbox size={32} strokeWidth={1.2} />
-                      <Text fontSize="13px">{emptyMessage}</Text>
-                    </VStack>
-                  </td>
-                </Box>
-              ) : (
-                paged.map((row, rowIdx) => {
-                  const isSelected = selected.has(row[rowKey]);
-                  return (
-                    <Box
-                      as="tr"
-                      key={String(row[rowKey] ?? rowIdx)}
-                      className="ct-tr"
-                      bg={isSelected ? "#eff6ff" : "transparent"}
+          <tbody>
+            {isLoading ? (
+              Array.from({ length: pageSize > 5 ? 5 : pageSize }).map((_, i) => (
+                <SkeletonRow
+                  key={i}
+                  cols={colCount}
+                />
+              ))
+            ) : paged.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={colCount}
+                  className="px-0 py-10 text-center"
+                >
+                  <div className="flex flex-col items-center gap-1.5 text-muted">
+                    <Inbox
+                      size={28}
+                      strokeWidth={1.2}
+                    />
+                    <p className="text-[13px]">{emptyMessage}</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              paged.map((row, rowIdx) => {
+                const isSelected = selected.has(row[rowKey]);
+                const isExpanded = expandedRowRender ? expandedKeys.has(row[rowKey]) : false;
+                const highlighted =
+                  isSelected ||
+                  (highlightRowId != null && String(row[rowKey]) === String(highlightRowId));
+                return (
+                  <Fragment key={String(row[rowKey] ?? rowIdx)}>
+                    <tr
+                      className={cn(
+                        'hover:bg-gray-50',
+                        highlighted && 'bg-brand-soft hover:bg-brand-soft',
+                      )}
                     >
                       {selectable && (
-                        <Box as="td" className="ct-td" textAlign="center">
-                          <Checkbox.Root
+                        <td className={cn(tdClass, 'text-center')}>
+                          <input
+                            type="checkbox"
+                            className={checkboxClass}
+                            aria-label="Select row"
                             checked={isSelected}
-                            onCheckedChange={() => toggleRow(row)}
-                          >
-                            <Checkbox.HiddenInput />
-                            <Checkbox.Control w="15px" h="15px" borderRadius="4px" border="1px solid"
-                              borderColor={isSelected ? "#3b82f6" : "#bfdbfe"}
-                              bg={isSelected ? "#dbeafe" : "transparent"}>
-                              <Checkbox.Indicator color="#3b82f6" />
-                            </Checkbox.Control>
-                          </Checkbox.Root>
-                        </Box>
+                            onChange={() => toggleRow(row)}
+                          />
+                        </td>
                       )}
 
                       {hasActions && (
-                        <Box as="td" className="ct-td" style={{ textAlign: "left" }}>
-                          <HStack gap="4px" justify="flex-start">
+                        <td className={tdClass}>
+                          <div className="flex items-center gap-1">
+                            {expandedRowRender && (
+                              <button
+                                type="button"
+                                className={cn(iconButtonClass, isExpanded && 'bg-gray-100')}
+                                title={isExpanded ? 'Hide details' : 'Show details'}
+                                aria-label={isExpanded ? 'Hide details' : 'Show details'}
+                                aria-expanded={isExpanded}
+                                onClick={() => toggleExpanded(row)}
+                              >
+                                <ChevronRightCircle
+                                  size={15}
+                                  className={cn('transition-transform', isExpanded && 'rotate-90')}
+                                />
+                              </button>
+                            )}
                             {extraActions.map((act, ai) => (
-                              <button type="button" key={ai} className="ct-actions-btn" title={act.label} onClick={() => act.onClick(row)}>
-                                {act.icon}
+                              <button
+                                type="button"
+                                key={ai}
+                                className={iconButtonClass}
+                                title={act.label}
+                                aria-label={act.label}
+                                onClick={() => act.onClick(row)}
+                              >
+                                {act.icon ?? <ChevronRightCircle size={14} />}
                               </button>
                             ))}
                             {onEdit && (
-                              <button type="button" className="ct-actions-btn edit" title="Edit" onClick={() => onEdit(row)}>
+                              <button
+                                type="button"
+                                className={cn(iconButtonClass, 'hover:border-brand hover:text-brand')}
+                                title="Edit"
+                                aria-label="Edit"
+                                onClick={() => onEdit(row)}
+                              >
                                 <Pencil size={13} />
                               </button>
                             )}
                             {onDelete && (
-                              <button type="button" className="ct-actions-btn delete" title="Delete" onClick={() => onDelete(row)}>
+                              <button
+                                type="button"
+                                className={cn(
+                                  iconButtonClass,
+                                  'hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600',
+                                )}
+                                title="Delete"
+                                aria-label="Delete"
+                                onClick={() => onDelete(row)}
+                              >
                                 <Trash2 size={13} />
                               </button>
                             )}
-                          </HStack>
-                        </Box>
+                          </div>
+                        </td>
                       )}
 
                       {columns.map((col, colIdx) => {
                         const rawVal = getVal(row, col.key as string);
                         return (
-                          <Box
-                            as="td"
+                          <td
                             key={col.key as string}
-                            className={`ct-td${colIdx === 0 ? " primary" : ""}`}
-                            style={{ textAlign: col.align ?? "left" }}
+                            className={cn(
+                              tdClass,
+                              alignClass(col.align),
+                              colIdx === 0 && 'font-semibold',
+                              onRowClick && 'cursor-pointer',
+                            )}
+                            onClick={onRowClick ? () => onRowClick(row) : undefined}
                           >
                             {col.render ? (
                               col.render(row, rowIdx)
                             ) : col.isStatus ? (
-                              <StatusBadge value={String(rawVal ?? "")} />
+                              <StatusBadge value={String(rawVal ?? '')} />
                             ) : (
-                              <span>{String(rawVal ?? "—")}</span>
+                              <span>{String(rawVal ?? '—')}</span>
                             )}
-                          </Box>
+                          </td>
                         );
                       })}
-                    </Box>
-                  );
-                })
-              )}
-            </Box>
-          </Box>
-        </Box>
+                    </tr>
 
-        {/* ── Footer / Pagination ── */}
-        <HStack
-          px="16px"
-          py="10px"
-          borderTop="1px solid #e5e7eb"
-          justify="space-between"
-          flexWrap="wrap"
-          gap="8px"
-        >
-          {/* Row count + page size */}
-          <HStack gap="10px">
-            <Text fontSize="12px" color="#6b7280">
+                    {expandedRowRender && isExpanded && (
+                      <tr>
+                        <td
+                          colSpan={colCount}
+                          className="border-t border-line bg-gray-50 px-3 py-2.5"
+                        >
+                          {expandedRowRender(row)}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ── Footer / Pagination ── */}
+      {showPagination && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-3 py-1.5">
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-ink">
               {sorted.length === 0
-                ? "0 records"
-                : `${(safePage - 1) * pageSize + 1}–${Math.min(
-                    safePage * pageSize,
-                    sorted.length
-                  )} of ${sorted.length}`}
-            </Text>
+                ? '0 records'
+                : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, sorted.length)} of ${sorted.length}`}
+            </p>
             <select
-              className="ct-size-select"
+              className="h-7 rounded-md border border-line bg-white px-1.5 text-xs text-ink"
+              aria-label="Rows per page"
               value={pageSize}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                 setPageSize(Number(e.target.value));
@@ -618,17 +598,19 @@ export function CustomTable<T extends Record<string, unknown>>({
               }}
             >
               {pageSizeOptions.map((s) => (
-                <option key={s} value={s}>
+                <option
+                  key={s}
+                  value={s}
+                >
                   {s} / page
                 </option>
               ))}
             </select>
-          </HStack>
+          </div>
 
-          {/* Page buttons */}
-          <HStack gap="3px">
+          <div className="flex items-center gap-0.5">
             <button
-              className="ct-page-btn"
+              className={pageBtnClass}
               onClick={() => setPage(1)}
               disabled={safePage === 1}
               title="First page"
@@ -636,46 +618,52 @@ export function CustomTable<T extends Record<string, unknown>>({
               <ChevronsLeft size={13} />
             </button>
             <button
-              className="ct-page-btn"
+              className={pageBtnClass}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={safePage === 1}
               title="Previous"
             >
               <ChevronLeft size={13} />
             </button>
-
             {pageWindow[0] > 1 && (
               <>
-                <button className="ct-page-btn" onClick={() => setPage(1)}>1</button>
-                {pageWindow[0] > 2 && (
-                  <span style={{ fontSize: 12, color: "#9ca3af", padding: "0 2px" }}>…</span>
-                )}
+                <button
+                  className={pageBtnClass}
+                  onClick={() => setPage(1)}
+                >
+                  1
+                </button>
+                {pageWindow[0] > 2 && <span className="px-0.5 text-xs text-muted">…</span>}
               </>
             )}
-
             {pageWindow.map((p) => (
               <button
                 key={p}
-                className={`ct-page-btn${p === safePage ? " active" : ""}`}
+                aria-current={p === safePage ? 'page' : undefined}
+                className={cn(
+                  pageBtnClass,
+                  p === safePage && 'bg-brand font-semibold text-white hover:bg-brand',
+                )}
                 onClick={() => setPage(p)}
               >
                 {p}
               </button>
             ))}
-
             {pageWindow[pageWindow.length - 1] < totalPages && (
               <>
                 {pageWindow[pageWindow.length - 1] < totalPages - 1 && (
-                  <span style={{ fontSize: 12, color: "#9ca3af", padding: "0 2px" }}>…</span>
+                  <span className="px-0.5 text-xs text-muted">…</span>
                 )}
-                <button className="ct-page-btn" onClick={() => setPage(totalPages)}>
+                <button
+                  className={pageBtnClass}
+                  onClick={() => setPage(totalPages)}
+                >
                   {totalPages}
                 </button>
               </>
             )}
-
             <button
-              className="ct-page-btn"
+              className={pageBtnClass}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
               title="Next"
@@ -683,16 +671,16 @@ export function CustomTable<T extends Record<string, unknown>>({
               <ChevronRight size={13} />
             </button>
             <button
-              className="ct-page-btn"
+              className={pageBtnClass}
               onClick={() => setPage(totalPages)}
               disabled={safePage === totalPages}
               title="Last page"
             >
               <ChevronsRight size={13} />
             </button>
-          </HStack>
-        </HStack>
-      </Box>
-    </>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
