@@ -1,11 +1,10 @@
 'use client';
 
-import { ui } from '@/utils/ui';
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
 import { useAccessibleMenu } from '@/hooks/ApiHooks/Menu/useAccessibleMenu';
-import { useSession } from '@/hooks/Auth/useSession';
+import { useSession } from '@/src/module/auth/hook/use-session';
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -22,7 +21,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   if (!loggedIn || !allowed)
     return (
       <div
-        className={ui('session-loading')}
+        className="grid min-h-dvh place-items-center bg-white text-sm text-muted"
         role="status"
       >
         Opening your workspace…

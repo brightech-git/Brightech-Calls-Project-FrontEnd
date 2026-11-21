@@ -30,7 +30,7 @@ function parse(raw: string | null): Appearance {
     const value = JSON.parse(raw ?? '{}');
     return {
       preset: Object.hasOwn(THEME_PRESETS, value.preset) ? value.preset : 'ocean',
-      density: value.density === 'compact' ? 'compact' : 'comfortable',
+      density: value.density === 'comfortable' ? 'comfortable' : 'compact',
       textSize: value.textSize === 'large' ? 'large' : 'standard',
     };
   } catch {

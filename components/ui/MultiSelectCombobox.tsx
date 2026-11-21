@@ -1,6 +1,5 @@
 'use client';
 
-import { ui } from '@/utils/ui';
 import React, { useEffect, useState, forwardRef } from 'react';
 import {
   Field,
@@ -143,7 +142,7 @@ export const MultiSelectCombobox = forwardRef<HTMLInputElement, MultiSelectCombo
                 onFocus={() => {
                   setIsOpen(true);
                 }}
-                className={ui('form-control ' + '')}
+                className="min-h-control w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-brand focus:ring-3 focus:ring-brand-soft disabled:bg-slate-50 disabled:text-slate-600"
               />
             </Wrap>
 

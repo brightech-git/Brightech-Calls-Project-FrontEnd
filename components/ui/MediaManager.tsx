@@ -3,6 +3,8 @@
 // ─────────────────────────────────────────────
 'use client';
 
+import { cn } from '@/lib/utils';
+import { buttonClass } from '@/lib/styles';
 import { useEffect, useEffectEvent, useRef, useState, CSSProperties } from 'react';
 import { RefreshCw, X, ChevronLeft, ChevronRight, FileText, Plus } from 'lucide-react';
 
@@ -228,7 +230,7 @@ export function MediaManager({
       {ticketAttachments && (
         <button
           type="button"
-          className="button w-full flex-col border-dashed p-4 whitespace-normal"
+          className={cn(buttonClass, 'h-auto w-full flex-col border-dashed p-3 whitespace-normal')}
           style={
             dragging
               ? { background: COLORS.primaryLight, borderColor: COLORS.primary }
@@ -319,7 +321,7 @@ export function MediaManager({
             >
               <button
                 type="button"
-                className="attachment-tile"
+                className={cn(buttonClass, 'flex size-20 flex-col items-center justify-center gap-1 overflow-hidden p-1 text-[11px] text-muted [&_img]:min-h-0 [&_img]:w-full [&_img]:flex-1 [&_img]:object-cover [&>span]:w-full [&>span]:truncate')}
                 aria-label={
                   'Preview ' + (item.file?.name ?? item.fileName ?? 'attachment')
                 }

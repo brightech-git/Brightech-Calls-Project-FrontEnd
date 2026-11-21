@@ -13,7 +13,7 @@
 
 import { useMemo } from 'react';
 import { menuConfig, MenuEntryConfig } from '@/config/menu/menuConfig';
-import { useSession } from '@/hooks/Auth/useSession';
+import { useSession } from '@/src/module/auth/hook/use-session';
 
 function getAllowedMenuIds(raw: string | null | undefined): string[] | null {
   if (!raw) return null;

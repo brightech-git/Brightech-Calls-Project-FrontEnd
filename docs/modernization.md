@@ -5,7 +5,7 @@ The Jewellery Savings Scheme frontend at `D:/ash/NextJsProjects/savingscheme` wa
 ## Structure
 
 - `app/`: route entries, layouts and providers.
-- `features/project-links/`: complete feature example: schema, types, services, queries/mutations and screen. The route is a single export.
+- `src/module/<screen>/`: one folder per screen with `api/`, `hook/`, `type/`, `component/` and an `index.ts`. Each route in `app/` is a single re-export of the module screen.
 - `lib/api/`: base URL/timeouts, normalized errors and explicit response unwrapping.
 - `lib/auth/`: browser-safe session reads/writes and cleanup.
 - `lib/query/`: shared QueryClient policy, session cache isolation, reusable list/mutation hooks and call-query invalidation.
@@ -14,7 +14,7 @@ The Jewellery Savings Scheme frontend at `D:/ash/NextJsProjects/savingscheme` wa
 - `utils/format/`: pure numeric/date/display helpers. Compatibility exports keep legacy consumers working.
 - `utils/validation.ts`: shared validation and flag conversion helpers.
 - `utils/theme.ts`, `context/ThemeContext.tsx`, `app/globals.css`: semantic tokens, palettes, density and type size.
-- Existing `services/`, `hooks/`, `types/` and specialized grid components remain compatible. Project Links services/hooks re-export the feature modules. Other feature screens are not yet all relocated into feature folders.
+- Root `hooks/` and `types/` keep only shared code (menu access, dialog focus, API response, pagination, form types).
 
 ## API and session behavior
 
@@ -61,14 +61,14 @@ Formatting returns strings for display only. `toNumber`, `calculateWeight` and `
 
 Appearance settings offer Graphite, Ocean, Forest, Violet and Ember plus compact/comfortable density and standard/larger text. Settings persist and synchronize across tabs. Use semantic tokens for new code; do not put hex colors in feature components. Status tokens, spacing, shadows, radii and control sizes live centrally. Legacy specialized components still have some historical literal colors.
 
-One global Segoe UI / Arial font stack replaces the build-time Google Fonts dependency and supports real regular/medium/semibold/bold weights. Shared forms use two columns on wider screens and one column below 640px. Toolbars/filters wrap, dialogs stay within the viewport, navigation keeps its mobile drawer, and tables scroll within the content region. Reduced-motion preferences are respected.
+Poppins (400/600/700) from Google Fonts is the single font family, loaded through `next/font` at build time. Shared forms use two columns on wider screens and one column below 640px. Toolbars/filters wrap, dialogs stay within the viewport, navigation keeps its mobile drawer, and tables scroll within the content region. Reduced-motion preferences are respected.
 
 ## Checks and local fixture
 
 - `node scripts/test-foundations.cjs`: formatting/precision, validation, session lifecycle, request headers, absence of company waterfall, multipart, application errors, HTTP 401, retries and cancellation.
 - `npx tsc --noEmit`: TypeScript.
 - `npm run build -- --webpack`: production static export when the local Turbopack subprocess fails. The normal build command remains unchanged.
-- Targeted ESLint on `lib`, `features/project-links`, `components/common`, new formatting/validation and shared controls.
+- Targeted ESLint on `lib`, `src/module/project-link`, `components/common`, new formatting/validation and shared controls.
 - `node scripts/preview-fixture.cjs` starts a test-only in-memory API on 8112; run `next dev --webpack --port 3110` with `NEXT_PUBLIC_API_URL=http://localhost:8112/api/v1` to inspect without touching backend records. This fixture is not imported by the application or production build.
 
 ## Backend limits

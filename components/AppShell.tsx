@@ -1,16 +1,15 @@
 'use client';
 
-import { ui } from '@/utils/ui';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { Menu, Search, ArrowUpRight, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { Menu, Search, ArrowUpRight, ChevronRight } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import { useSidebar } from '@/context/layout/SideBarContext';
 import AppearanceSettings from '@/components/AppearanceSettings';
 import { useCurrentPageHeader } from '@/context/PageHeaderContext';
 import { useAccessibleMenu } from '@/hooks/ApiHooks/Menu/useAccessibleMenu';
-import { MenuEntryConfig, menuConfig } from '@/config/menu/menuConfig';
+import type { MenuEntryConfig } from '@/config/menu/menuConfig';
 import { PAGE_CONFIG } from '@/config/pageConfig';
 import { useDialogFocus } from '@/hooks/useDialogFocus';
 import QueryErrorNotice from '@/components/QueryErrorNotice';
@@ -45,27 +44,28 @@ function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
     return () => window.removeEventListener('keydown', shortcut);
   }, []);
   return (
-    <header className={ui('topbar-root')}>
+    <header className="relative z-30 flex h-12 shrink-0 items-center gap-3 border-b border-line bg-white px-4 max-md:px-3">
       <button
-        className={ui('shell-icon-button mobile-menu')}
+        className="hidden size-8 shrink-0 items-center justify-center rounded-md text-ink transition-colors hover:bg-gray-100 max-md:inline-flex"
         aria-label="Open navigation"
         onClick={onMenuClick}
       >
-        <Menu size={20} />
+        <Menu size={18} />
       </button>
-      <div className={ui('shell-breadcrumb')}>
+      <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted max-md:hidden">
         <span>{PAGE_CONFIG[pathname]?.group || 'Workspace'}</span>
         <ChevronRight size={14} />
-        <strong>{PAGE_CONFIG[pathname]?.title || title || 'Overview'}</strong>
+        <strong className="truncate font-semibold text-ink">{PAGE_CONFIG[pathname]?.title || title || 'Overview'}</strong>
       </div>
       <div
-        className={ui('workspace-search')}
+        className="relative ml-auto flex w-72 items-center gap-2 rounded-md border border-line bg-white px-2.5 text-muted focus-within:border-brand max-md:w-auto max-md:flex-1"
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
         }}
       >
-        <Search size={16} />
+        <Search size={14} />
         <input
+          className="h-8 w-full min-w-0 border-0 bg-transparent text-xs text-ink outline-none placeholder:text-muted"
           ref={input}
           aria-label="Search pages"
           placeholder="Find a page…"
@@ -73,10 +73,10 @@ function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           onChange={(event) => setSearch(event.target.value)}
           onFocus={() => setFocused(true)}
         />
-        <kbd>Ctrl K</kbd>
+        <kbd className="rounded border border-line px-1 text-[10px] whitespace-nowrap text-muted max-md:hidden">Ctrl K</kbd>
         {focused && (
-          <div className={ui('workspace-search-results')}>
-            <div className={ui('ui-eyebrow')}>
+          <div className="absolute top-[calc(100%+6px)] right-0 w-80 max-w-[calc(100vw-32px)] rounded-lg border border-line bg-white p-1.5 shadow-lg [&>a]:flex [&>a]:items-center [&>a]:gap-2 [&>a]:rounded-md [&>a]:px-2.5 [&>a]:py-1.5 [&>a]:text-[13px] [&>a]:text-ink [&>a:hover]:bg-gray-100 [&>a>svg:last-child]:ml-auto [&>p]:p-2.5 [&>p]:text-[13px]">
+            <div className="px-2.5 py-1 text-[10px] font-semibold tracking-wider text-muted uppercase">
               {search ? 'Matching pages' : 'Quick navigation'}
             </div>
             {results.length ? (
@@ -108,15 +108,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   useDialogFocus();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { sidebarCollapsed: collapsed, toggleSidebar: toggleCollapsed } = useSidebar();
-  const { title, subtitle } = useCurrentPageHeader();
   const pathname = usePathname();
-  const page = PAGE_CONFIG[pathname];
-  const PageIcon =
-    flatten(menuConfig).find((entry) => entry.href === pathname)?.icon || LayoutDashboard;
   return (
-    <div className={ui('app-shell')}>
+    <div className="flex h-dvh overflow-hidden bg-white font-sans text-ink">
       <a
-        className={ui('skip-link')}
+        className="fixed -top-24 left-4 z-[2000] rounded-md bg-white px-4 py-2 text-brand shadow focus:top-3"
         href="#main-content"
       >
         Skip to content
@@ -127,19 +123,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         collapsed={collapsed}
         onToggleCollapse={toggleCollapsed}
       />
-      <div className={ui('app-main')}>
+      <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onMenuClick={() => setMobileNavOpen(true)} />
         <main
           id="main-content"
-          className={ui('app-content')}
+          className="min-h-0 flex-1 overflow-auto p-3 max-md:p-2"
           tabIndex={-1}
         >
-          {/* {pathname !== '/Home' && 
-        <div className={ui("page-heading")}><span className={ui("page-title-mark")}><PageIcon size={20} /></span><div>
-        <div className={ui("ui-eyebrow")}>{page?.group || 'Brightech Calls'}</div>
-          <h1>{page?.title || title || 'Workspace'}</h1>{(page?.description || subtitle) && <p>{page?.description || subtitle}</p>}
-          </div>
-        </div>} */}
           {pathname !== '/Home' && <QueryErrorNotice />}
           {children}
         </main>

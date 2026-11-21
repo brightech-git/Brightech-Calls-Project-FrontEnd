@@ -50,10 +50,10 @@ export function FormFields<T extends FieldValues>({
   disabled?: boolean;
 }) {
   return (
-    <div className="form-grid">
+    <div className="mb-3 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
       {fields.map((config) => (
         <div
-          className={config.fullWidth ? 'field-full' : undefined}
+          className={config.fullWidth ? 'col-span-full' : undefined}
           key={config.name}
         >
           <Controller

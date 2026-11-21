@@ -1,6 +1,7 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { buttonClass, buttonVariants } from '@/lib/styles';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
 import { COLORS, FONT, RADIUS } from '@/utils/theme';
@@ -13,19 +14,19 @@ import { COLORS, FONT, RADIUS } from '@/utils/theme';
 export default function NotFoundView() {
   return (
     <>
-      <div className={ui('nf-wrap')}>
-        <div className={ui('nf-icon')}>
+      <div className="flex min-h-[65vh] flex-col items-center justify-center gap-4 p-4 text-center">
+        <div className="mb-2 grid size-12 place-items-center rounded-lg bg-rose-50 text-rose-600">
           <ShieldAlert size={30} />
         </div>
-        <div className={ui('nf-code')}>404</div>
-        <div className={ui('nf-title')}>Page Not Found</div>
-        <div className={ui('nf-sub')}>
+        <div className="text-5xl tracking-tight">404</div>
+        <div className="text-xl">Page Not Found</div>
+        <div className="max-w-sm text-sm leading-7 text-muted">
           This page doesn&apos;t exist, or you don&apos;t have access to it with your
           current role.
         </div>
         <Link
           href="/Home"
-          className={ui('nf-btn')}
+          className={cn(buttonClass, buttonVariants.primary, 'mt-3')}
         >
           Back to Home
         </Link>

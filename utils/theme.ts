@@ -39,7 +39,7 @@ export const COLORS = {
   topbarIconHoverBg: token('primary-light'),
   topbarIconHoverColor: token('primary'),
   textPrimary: token('text-main'),
-  textSecondary: '#1e293b',
+  textSecondary: '#111111',
   textMuted: token('text-muted'),
   textDisabled: '#64748b',
   gray50: '#f8fafc',
@@ -88,7 +88,7 @@ export const FONT = {
     xl: 'var(--font-xl)',
     xxl: 'var(--font-xxl)',
   },
-  weight: { regular: 400, medium: 500, semibold: 600, bold: 700 },
+  weight: { regular: 400, medium: 600, semibold: 600, bold: 700 },
 };
 export const RADIUS = { sm: '6px', md: '10px', lg: '14px', xl: '20px', full: '9999px' };
 export const SPACING = {
@@ -128,7 +128,7 @@ export type Appearance = {
 };
 export const DEFAULT_APPEARANCE: Appearance = {
   preset: 'ocean',
-  density: 'comfortable',
+  density: 'compact',
   textSize: 'standard',
 };
 export const APPEARANCE_KEY = 'calls-appearance';

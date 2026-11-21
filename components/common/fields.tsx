@@ -1,4 +1,6 @@
 'use client';
+import { cn } from '@/lib/utils';
+import { controlClass, fieldErrorClass, labelClass } from '@/lib/styles';
 import {
   forwardRef,
   useId,
@@ -26,15 +28,15 @@ export function Field({
   children,
 }: FieldMeta & { id: string; children: ReactNode }) {
   return (
-    <div className="field">
-      <label htmlFor={id}>
+    <div className="grid min-w-0 gap-1">
+      <label htmlFor={id} className={labelClass}>
         {label}
-        {required && <span aria-hidden="true"> *</span>}
+        {required && <span className="text-red-600" aria-hidden="true"> *</span>}
       </label>
       {children}
       {error ? (
         <span
-          className="field-error"
+          className={fieldErrorClass}
           id={`${id}-help`}
           role="alert"
         >
@@ -42,7 +44,7 @@ export function Field({
         </span>
       ) : hint ? (
         <span
-          className="field-hint"
+          className="text-[11px] text-muted"
           id={`${id}-help`}
         >
           {hint}
@@ -70,7 +72,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
         required={required}
         aria-invalid={!!error}
         aria-describedby={error || hint ? `${fieldId}-help` : undefined}
-        className={`control ${className}`}
+        className={cn(controlClass, className)}
       />
     </Field>
   );
@@ -131,7 +133,7 @@ export const TextareaField = forwardRef<
         required={required}
         aria-invalid={!!error}
         aria-describedby={error || hint ? `${fieldId}-help` : undefined}
-        className={`control ${className}`}
+        className={cn(controlClass, className)}
       />
     </Field>
   );
@@ -176,7 +178,7 @@ export const SelectField = forwardRef<
         required={required}
         aria-invalid={!!error}
         aria-describedby={error || hint ? `${fieldId}-help` : undefined}
-        className={`control ${className}`}
+        className={cn(controlClass, className)}
       >
         {!props.multiple && <option value="">{placeholder}</option>}
         {options.map((option) => (
@@ -240,7 +242,7 @@ export function DateField({
         required={required}
         minDate={parseDate(min) ?? undefined}
         maxDate={parseDate(max) ?? undefined}
-        className="control"
+        className={controlClass}
         ariaInvalid={error ? 'true' : 'false'}
         ariaDescribedBy={error || hint ? `${id}-help` : undefined}
         showMonthDropdown

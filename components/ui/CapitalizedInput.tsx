@@ -1,6 +1,7 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { cn } from '@/lib/utils';
+import { controlClass } from '@/lib/styles';
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { Input, InputGroup, Button, Box, Image as ChakraImage } from '@chakra-ui/react';
 import { capitalizeText } from '@/utils/capitalize/capitalizeText';
@@ -182,8 +183,8 @@ export function CapitalizedInput<T>({
     const hasImage =
       currentImage && typeof currentImage === 'object' && currentImage.base64;
     return (
-      <Box className={ui('[width:100%]!')}>
-        <Box className={ui('[display:flex]! [gap:8px]!')}>
+      <Box className="w-full">
+        <Box className="flex gap-2">
           <input
             type="file"
             ref={fileInputRef}
@@ -194,7 +195,7 @@ export function CapitalizedInput<T>({
             style={{
               fontSize: fontSize || 'xs',
             }}
-            className={ui('[padding:5px]')}
+            className="p-1.25"
           />
 
           {hasImage && (
@@ -205,9 +206,7 @@ export function CapitalizedInput<T>({
               _hover={{
                 bg: 'state.error',
               }}
-              className={ui(
-                '[background:state.error]! [color:white]! [border-radius:9999px]! [font-family:ui]!',
-              )}
+              className="[background:state.error] text-white rounded-full"
             >
               Remove
             </Button>
@@ -216,14 +215,12 @@ export function CapitalizedInput<T>({
 
         {/* 🔥 Image Preview */}
         {imagePreview && hasImage && currentImage.base64 && (
-          <Box className={ui('[margin-top:8px]!')}>
+          <Box className="mt-2">
             <ChakraImage
               src={currentImage.base64}
               alt="Preview"
               maxHeight="80px"
-              className={ui(
-                '[max-width:100%]! [object-fit:cover]! [border-radius:10px]!',
-              )}
+              className="max-w-full object-cover rounded-xl"
             />
           </Box>
         )}
@@ -353,7 +350,7 @@ export function CapitalizedInput<T>({
         type={type === 'number' ? 'text' : type}
         inputMode={type === 'number' ? 'numeric' : undefined}
         value={isFocused ? focusedValue : (value ?? '')}
-        pl={icon ? '1.8rem' : '0.2rem'}
+        pl={icon ? '1.8rem' : undefined}
         textTransform={isCapitalized ? 'uppercase' : 'none'}
         placeholder={placeholder}
         onChange={handleChange}
@@ -381,22 +378,13 @@ export function CapitalizedInput<T>({
             }
           }
         }}
-        className={ui(
-          (noBorder ? '' : 'form-control ') +
-            (onClassUse ? 'type-inputs' : '') +
-            ' ' +
-            className +
-            ' ' +
-            '[text-align:left]!',
-        )}
+        className={cn(!noBorder && controlClass, onClassUse && 'type-inputs', 'text-left', className)}
         maxWidth={maxWidth}
-        bg={noBorder ? 'bg.card' : bg}
-        fontSize={fontSize || 'var(--font-sm)'}
-        minH={noBorder ? undefined : 'var(--control-height)'}
+        bg={noBorder ? 'transparent' : bg}
+        fontSize={fontSize}
         rounded={rounded}
         minWidth={minWidth}
-        border={border || '1px solid'}
-        borderColor={border ? undefined : 'border.default'}
+        border={border}
         // 🔥 Add this
         onFocus={(e) => {
           if (type === 'number') {

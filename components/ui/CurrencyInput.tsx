@@ -1,4 +1,6 @@
 'use client';
+import { cn } from '@/lib/utils';
+import { controlClass } from '@/lib/styles';
 import { forwardRef } from 'react';
 import { formatNumber } from '@/utils/format/number';
 interface CurrencyInputProps {
@@ -29,12 +31,17 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
     ref,
   ) {
     return (
-      <div className="currency-control">
-        <span aria-hidden="true">₹</span>
+      <div className="relative">
+        <span
+          aria-hidden="true"
+          className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[13px] text-muted"
+        >
+          ₹
+        </span>
         <input
           ref={ref}
           aria-label="Amount"
-          className="control"
+          className={cn(controlClass, 'pl-6')}
           inputMode="decimal"
           value={value}
           onChange={(event) => {

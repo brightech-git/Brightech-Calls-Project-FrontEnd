@@ -1,6 +1,6 @@
 'use client';
 
-import { ui } from '@/utils/ui';
+import { buttonClass } from '@/lib/styles';
 import { useSyncExternalStore, useCallback } from 'react';
 import { useQueryClient, useIsFetching } from '@tanstack/react-query';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -28,7 +28,7 @@ export default function QueryErrorNotice() {
   if (!errors) return null;
   return (
     <div
-      className={ui('query-error-notice')}
+      className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-4 text-amber-800 [&>svg]:shrink-0 [&>div]:flex-1 [&_strong]:text-sm [&_p]:mt-1 [&_p]:text-xs"
       role="alert"
     >
       <AlertCircle size={20} />
@@ -37,7 +37,7 @@ export default function QueryErrorNotice() {
         <p>Check your connection and try again. Your current input is kept.</p>
       </div>
       <button
-        className={ui('ui-button')}
+        className={buttonClass}
         disabled={fetching > 0}
         onClick={() =>
           client.refetchQueries({

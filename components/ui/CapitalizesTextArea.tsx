@@ -1,6 +1,5 @@
 'use client';
 
-import { ui } from '@/utils/ui';
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { Input, Textarea } from '@chakra-ui/react';
 import { Dialog } from '@chakra-ui/react';
@@ -107,7 +106,7 @@ export function TextareaField<T>({
           boxShadow: 'none',
         }}
         disabled={disable}
-        className={ui('form-control ' + '')}
+        className="min-h-control w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-brand focus:ring-3 focus:ring-brand-soft disabled:bg-slate-50 disabled:text-slate-600"
       />
     );
   }
@@ -159,7 +158,7 @@ export function TextareaField<T>({
             borderColor: 'border.focus',
           }}
           disabled={disable}
-          className={ui('form-control ' + '')}
+          className="min-h-control w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-brand focus:ring-3 focus:ring-brand-soft disabled:bg-slate-50 disabled:text-slate-600"
         />
       </Dialog.Trigger>
 
@@ -212,7 +211,7 @@ export function TextareaField<T>({
                 borderColor: 'border.focus',
                 boxShadow: 'none',
               }}
-              className={ui('form-control ' + '')}
+              className="min-h-control w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-brand focus:ring-3 focus:ring-brand-soft disabled:bg-slate-50 disabled:text-slate-600"
             />
           </Dialog.Body>
 

@@ -1,4 +1,6 @@
 'use client';
+import { cn } from '@/lib/utils';
+import { controlClass } from '@/lib/styles';
 import React from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -59,7 +61,7 @@ export const DatePickerInput = React.forwardRef<HTMLInputElement, DatePickerInpu
           disabled={disabled}
           minDate={parseDate(minDate) ?? undefined}
           maxDate={parseDate(maxDate) ?? undefined}
-          className={`control ${className}`}
+          className={cn(controlClass, className)}
           onBlur={onBlur}
           onKeyDown={(event) =>
             onKeyDown?.(event as React.KeyboardEvent<HTMLInputElement>)

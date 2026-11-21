@@ -1,7 +1,7 @@
 'use client';
 
 import { clearSession } from '@/lib/auth/session';
-import { ui } from '@/utils/ui';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -36,19 +36,20 @@ function CollapsedGroup({
     >
       <Popover.Trigger asChild>
         <button
-          className={ui(
-            `sidebar-group-btn sidebar-collapsed-group ${active ? 'active' : ''}`,
+          className={cn(
+            'flex size-9 w-full items-center justify-center rounded-md text-ink transition-colors hover:bg-gray-100',
+            active && 'bg-brand-soft font-semibold text-brand hover:bg-brand-soft',
           )}
           aria-label={entry.label}
           title={entry.label}
         >
-          <Icon size={19} />
+          <Icon size={16} />
         </button>
       </Popover.Trigger>
       <Portal>
         <Popover.Positioner>
-          <Popover.Content className={ui('sidebar-flyout')}>
-            <Popover.Title className={ui('sidebar-flyout-title')}>
+          <Popover.Content className="z-50 w-56 max-w-[calc(100vw-110px)] rounded-lg border border-line bg-white p-1.5 shadow-lg outline-none">
+            <Popover.Title className="mb-1 border-b border-line px-2.5 py-2 text-[13px] font-semibold text-ink">
               {entry.label}
             </Popover.Title>
             <nav aria-label={`${entry.label} submenu`}>
@@ -59,12 +60,13 @@ function CollapsedGroup({
                     key={child.id}
                     href={child.href || '/Home'}
                     aria-current={pathname === child.href ? 'page' : undefined}
-                    className={ui(
-                      `sidebar-nav-link ${pathname === child.href ? 'active' : ''}`,
+                    className={cn(
+                      'flex min-h-8 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-ink no-underline transition-colors hover:bg-gray-100',
+                      pathname === child.href && 'bg-brand-soft font-semibold text-brand hover:bg-brand-soft',
                     )}
                     onClick={() => setOpen(false)}
                   >
-                    <ChildIcon size={17} />
+                    <ChildIcon size={15} />
                     <span>{child.label}</span>
                   </Link>
                 );
@@ -107,39 +109,61 @@ function SidebarBody({
   };
   return (
     <>
-      <div className={ui('sidebar-brand')}>
-        <span className={ui('sidebar-brand-mark')}>
-          <Headphones size={22} />
+      <div
+        className={cn(
+          'flex h-12 shrink-0 items-center gap-2 border-b border-line px-3',
+          collapsed && 'justify-center px-2',
+        )}
+      >
+        <span className="grid size-7 shrink-0 place-items-center rounded-md bg-brand text-white">
+          <Headphones size={16} />
         </span>
-        <div className={ui('sidebar-brand-copy')}>
-          <strong>
-            Brightech<span>Calls</span>
+        {!collapsed && (
+          <strong className="min-w-0 truncate text-base font-bold text-ink">
+            Brightech<span className="ml-1 text-brand">Calls</span>
           </strong>
-          <small>YOUR SERVICE WORKSPACE</small>
-        </div>
+        )}
         {onNavigate ? (
           <button
-            className={ui('sidebar-toggle')}
+            className="ml-auto grid size-7 shrink-0 place-items-center rounded-md text-ink hover:bg-gray-100"
             aria-label="Close navigation"
             onClick={onNavigate}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         ) : (
-          <button
-            className={ui('sidebar-toggle')}
-            aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-            onClick={onToggleCollapse}
-          >
-            {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
-          </button>
+          !collapsed && (
+            <button
+              className="ml-auto grid size-7 shrink-0 place-items-center rounded-md text-ink hover:bg-gray-100"
+              aria-label="Collapse navigation"
+              onClick={onToggleCollapse}
+            >
+              <PanelLeftClose size={16} />
+            </button>
+          )
         )}
       </div>
+      {collapsed && !onNavigate && (
+        <button
+          className="mx-auto mt-2 grid size-7 shrink-0 place-items-center rounded-md text-ink hover:bg-gray-100"
+          aria-label="Expand navigation"
+          onClick={onToggleCollapse}
+        >
+          <PanelLeftOpen size={16} />
+        </button>
+      )}
       <nav
-        className={ui('sidebar-nav')}
+        className={cn(
+          'flex-1 overflow-x-hidden overflow-y-auto px-2 py-3 [scrollbar-width:thin]',
+          collapsed && 'px-1.5',
+        )}
         aria-label="Main navigation"
       >
-        <span className={ui('sidebar-section-label')}>Workspace</span>
+        {!collapsed && (
+          <span className="block px-2.5 pb-2 text-[10px] font-semibold tracking-wider text-muted uppercase">
+            Workspace
+          </span>
+        )}
         {accessibleMenu.map((entry) => {
           const Icon = entry.icon;
           const active = pathname === entry.href;
@@ -149,20 +173,24 @@ function SidebarBody({
             return (
               <Link
                 key={entry.id}
-                className={ui(`sidebar-nav-link ${active ? 'active' : ''}`)}
+                className={cn(
+                  'flex min-h-8 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-ink no-underline transition-colors hover:bg-gray-100',
+                  collapsed && 'justify-center px-0',
+                  active && 'bg-brand-soft font-semibold text-brand hover:bg-brand-soft',
+                )}
                 aria-current={active ? 'page' : undefined}
                 href={entry.href || '/Home'}
                 title={entry.label}
                 onClick={onNavigate}
               >
-                <Icon size={19} />
-                <span>{entry.label}</span>
+                <Icon size={16} />
+                <span className={cn(collapsed && 'sr-only')}>{entry.label}</span>
               </Link>
             );
           if (collapsed)
             return (
               <div
-                className={ui('sidebar-group')}
+                className="mt-1"
                 key={entry.id}
               >
                 <CollapsedGroup
@@ -173,12 +201,13 @@ function SidebarBody({
             );
           return (
             <div
-              className={ui('sidebar-group')}
+              className="mt-1"
               key={entry.id}
             >
               <button
-                className={ui(
-                  `sidebar-group-btn ${hasActiveChild ? 'current-group' : ''}`,
+                className={cn(
+                  'flex min-h-8 w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-[13px] text-ink transition-colors hover:bg-gray-100',
+                  hasActiveChild && 'font-semibold',
                 )}
                 aria-expanded={!collapsed && open}
                 aria-controls={`nav-${entry.id}`}
@@ -190,16 +219,16 @@ function SidebarBody({
                   }));
                 }}
               >
-                <Icon size={19} />
-                <span>{entry.label}</span>
+                <Icon size={16} />
+                <span className="flex-1">{entry.label}</span>
                 <ChevronDown
-                  size={15}
-                  className={ui(open ? 'rotated' : '')}
+                  size={14}
+                  className={cn('shrink-0 transition-transform', open && 'rotate-180')}
                 />
               </button>
               {!collapsed && open && (
                 <div
-                  className={ui('sidebar-children')}
+                  className="mt-0.5 mb-1 ml-5 border-l border-line pl-1.5"
                   id={`nav-${entry.id}`}
                 >
                   {entry.children.map((child) => (
@@ -208,11 +237,12 @@ function SidebarBody({
                       href={child.href || '/Home'}
                       onClick={onNavigate}
                       aria-current={pathname === child.href ? 'page' : undefined}
-                      className={ui(
-                        `sidebar-child ${pathname === child.href ? 'active' : ''}`,
+                      className={cn(
+                        'my-px flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] text-ink no-underline transition-colors hover:bg-gray-100',
+                        pathname === child.href && 'bg-brand-soft font-semibold text-brand hover:bg-brand-soft',
                       )}
                     >
-                      <span className={ui('sidebar-child-dot')} />
+                      <span className="size-1 shrink-0 rounded-full bg-current opacity-50" />
                       {child.label}
                     </Link>
                   ))}
@@ -222,20 +252,26 @@ function SidebarBody({
           );
         })}
       </nav>
-      <div className={ui('sidebar-footer')}>
-        <div className={ui('sidebar-user-card')}>
-          <span className={ui('sidebar-avatar')}>{name.slice(0, 2).toUpperCase()}</span>
-          <div className={ui('sidebar-user-info')}>
-            <strong>{name}</strong>
-            <small>{role}</small>
-          </div>
+      <div className="shrink-0 border-t border-line p-2">
+        <div className={cn('flex items-center gap-2 rounded-md p-1.5', collapsed && 'justify-center')}>
+          {!collapsed && (
+            <>
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-gray-100 text-[11px] font-semibold text-ink">
+                {name.slice(0, 2).toUpperCase()}
+              </span>
+              <div className="min-w-0 flex-1">
+                <strong className="block truncate text-xs font-semibold text-ink">{name}</strong>
+                <small className="block truncate text-[11px] text-muted">{role}</small>
+              </div>
+            </>
+          )}
           <button
-            className={ui('sidebar-logout-btn')}
+            className="grid size-7 shrink-0 place-items-center rounded-md text-ink hover:bg-rose-50 hover:text-rose-600"
             aria-label="Sign out"
             title="Sign out"
             onClick={logout}
           >
-            <LogOut size={17} />
+            <LogOut size={16} />
           </button>
         </div>
       </div>
@@ -256,7 +292,10 @@ export default function Sidebar({
   return (
     <>
       <aside
-        className={ui(`sidebar-root sidebar-desktop ${collapsed ? 'collapsed' : ''}`)}
+        className={cn(
+          'flex h-dvh w-56 shrink-0 flex-col border-r border-line bg-white text-ink transition-[width] max-md:hidden',
+          collapsed && 'w-16',
+        )}
       >
         <SidebarBody
           collapsed={collapsed}
@@ -273,8 +312,8 @@ export default function Sidebar({
         <Portal>
           <Drawer.Backdrop />
           <Drawer.Positioner>
-            <Drawer.Content className={ui('sidebar-root sidebar-drawer-content')}>
-              <Drawer.Title className={ui('sr-only')}>Workspace navigation</Drawer.Title>
+            <Drawer.Content className="flex h-dvh w-60 max-w-[88vw] flex-col bg-white text-ink">
+              <Drawer.Title className="sr-only">Workspace navigation</Drawer.Title>
               <SidebarBody onNavigate={onClose} />
             </Drawer.Content>
           </Drawer.Positioner>
