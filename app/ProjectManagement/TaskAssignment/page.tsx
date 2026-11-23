@@ -31,6 +31,7 @@ import {
   CallsBookingRecord,
   CallsBookingRecord_Table,
 } from "@/types/TaskAssignment/TaskAssignment";
+import { openMaster } from "@/utils/openMaster";
 
 // ─────────────────────────────────────────────
 // Schema
@@ -204,16 +205,16 @@ export default function CallsBookingPage() {
       disabled: companies.length === 1,
       options: companies.map((c) => ({ label: c.COMPANYNAME, value: c.COMPID })),
     },
-    { name: "CLIENTID",  label: "Client",   type: "select", placeholder: "Select client",   required: true, inline: true, labelWidth: LW, tabIndex: 2,
+    { name: "CLIENTID",  label: "Client",   type: "combobox", clearable: false, addNew: true, onAddNew: openMaster("/Master/ClientMaster"), placeholder: "Select client",   required: true, inline: true, labelWidth: LW, tabIndex: 2,
       options: clients.map((c) => ({ label: c.CLIENTNAME, value: c.CLIENTID })),
     },
-    { name: "PROJECTID", label: "Project",  type: "select", placeholder: "Select project",  inline: true, labelWidth: LW, tabIndex: 3,
+    { name: "PROJECTID", label: "Project",  type: "combobox", clearable: true, addNew: true, onAddNew: openMaster("/ProjectManagement/ProjectMaster"), placeholder: "Select project",  inline: true, labelWidth: LW, tabIndex: 3,
       options: projects.map((p) => ({ label: p.projectName, value: String(p.projectId) })),
     },
-    { name: "MODULEID",  label: "Module",   type: "select", placeholder: "Select module",   inline: true, labelWidth: LW, tabIndex: 4,
+    { name: "MODULEID",  label: "Module",   type: "combobox", clearable: true, addNew: true, onAddNew: openMaster("/ProjectManagement/ModuleMaster"), placeholder: "Select module",   inline: true, labelWidth: LW, tabIndex: 4,
       options: modules.map((m) => ({ label: m.moduleName, value: String(m.moduleId) })),
     },
-    { name: "STAFFID",   label: "Staff",    type: "select", placeholder: "Select staff",    required: true, inline: true, labelWidth: LW, tabIndex: 5,
+    { name: "STAFFID",   label: "Staff",    type: "combobox", searchInModal: true, addNew: true, onAddNew: openMaster("/Master/StaffMaster"), placeholder: "Select staff",    required: true, inline: true, labelWidth: LW, tabIndex: 5,
       options: staffList.map((s) => ({ label: s.STAFFNAME ?? "", value: s.STAFFID })),
     },
     { name: "STATUS",    label: "Status",   type: "select", placeholder: "Select status",   inline: true, labelWidth: LW, tabIndex: 6,

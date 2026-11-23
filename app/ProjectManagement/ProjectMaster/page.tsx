@@ -25,6 +25,7 @@ import {
   ProjectRecord,
   ProjectRecord_Table,
 } from "@/types/ProjectMaster/ProjectMaster";
+import { openMaster } from "@/utils/openMaster";
 
 // ─────────────────────────────────────────────
 // Schema
@@ -142,7 +143,9 @@ export default function ProjectMasterPage() {
     {
       name: "CLIENTID",
       label: "Client",
-      type: "select",
+      type: "combobox",
+      addNew: true,
+      onAddNew: openMaster("/Master/ClientMaster"),
       placeholder: "Select client",
       required: true,
       inline: true,

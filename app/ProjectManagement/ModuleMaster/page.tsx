@@ -28,6 +28,7 @@ import {
   ModuleRecord,
   ModuleRecord_Table,
 } from "@/types/ModuleMaster/ModuleMaster";
+import { openMaster } from "@/utils/openMaster";
 
 // ─────────────────────────────────────────────
 // Schema
@@ -154,7 +155,9 @@ export default function ModuleMasterPage() {
     {
       name: "PROJECTID",
       label: "Project",
-      type: "select",
+      type: "combobox",
+      addNew: true,
+      onAddNew: openMaster("/ProjectManagement/ProjectMaster"),
       placeholder: "Select project",
       required: true,
       inline: true,

@@ -10,7 +10,9 @@
  * Supported types:
  *  text | email | password | number | tel | url
  *  textarea
- *  select (single)
+ *  select (single, short fixed lists: native <select>, no search)
+ *  combobox (single, long lists: search in the field, or in the list with searchInModal,
+ *            optional "Add new" row)
  *  multi-select  (native <select multiple> wrapped in Chakra)
  *  checkbox      (single boolean)
  *  checkbox-group (multiple values)
@@ -31,7 +33,6 @@ import {
   Field,
   Input,
   Textarea,
-  NativeSelect,
   Checkbox,
   RadioGroup,
   Switch,
@@ -50,6 +51,8 @@ import {
 } from "react-hook-form";
 import { Eye, EyeOff, Upload } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { ComboBox, type ComboBoxValue } from "@/components/ui/ComboBox";
+import { NativeSelect, type NativeSelectValue } from "@/components/ui/NativeSelect";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,6 +65,7 @@ export type FieldType =
   | "url"
   | "textarea"
   | "select"
+  | "combobox"
   | "multi-select"
   | "checkbox"
   | "checkbox-group"
@@ -92,6 +96,17 @@ export interface FieldConfig<T extends FieldValues = FieldValues> {
 
   // select / multi-select / checkbox-group / radio-group
   options?: SelectOption[];
+
+  // combobox
+  /** Search box at the top of the option list instead of in the field. */
+  searchInModal?: boolean;
+  /** Show an "Add new" row at the end of the list (needs onAddNew). */
+  addNew?: boolean;
+  /** Called with the text the user searched for. */
+  onAddNew?: (searchText: string) => void;
+  addNewLabel?: string;
+  /** Show an × to clear the value (ignored when required). */
+  clearable?: boolean;
 
   // textarea
   rows?: number;
@@ -386,7 +401,7 @@ function TextareaInput({
   );
 }
 
-/** Select */
+/** Select — short fixed lists (Yes / No, statuses). Native <select>, no search. */
 function SelectInput({
   field,
   value,
@@ -394,7 +409,7 @@ function SelectInput({
   onBlur,
   invalid,
 }: {
-  field: FieldConfig<any>;
+  field: FieldConfig;
   value: unknown;
   onChange: (v: unknown) => void;
   onBlur: () => void;
@@ -407,8 +422,6 @@ function SelectInput({
   // Only auto-select first option for required number fields when value is 0
   const isEmpty = (value === 0 || value === "") && field.required && shouldBeNumber;
 
-  const effectiveValue = isEmpty && options.length > 0 ? firstVal : value;
-
   useEffect(() => {
     if (isEmpty && options.length > 0) {
       onChange(firstVal);
@@ -416,32 +429,53 @@ function SelectInput({
   }, [options.length]);
 
   return (
-    <NativeSelect.Root disabled={field.disabled}>
-      <NativeSelect.Field
-        value={String(effectiveValue ?? "")}
-        onChange={(e) => {
-            const val = e.target.value;
-            onChange(shouldBeNumber && val !== "" ? Number(val) : val);
-          }}
-        onBlur={onBlur}
-        aria-invalid={invalid}
-        {...inputStyles}
-      >
-        <option value="" disabled style={{ background: "#1a1d2e", color: "rgba(255,255,255,0.5)" }}>
-          {field.placeholder ?? "Select an option"}
-        </option>
-        {field.options?.map((opt) => (
-          <option
-            key={opt.value}
-            value={String(opt.value)}
-            style={{ background: "#1a1d2e", color: "rgba(255,255,255,0.85)" }}
-          >
-            {opt.label}
-          </option>
-        ))}
-      </NativeSelect.Field>
-      <NativeSelect.Indicator />
-    </NativeSelect.Root>
+    <NativeSelect
+      value={(isEmpty && options.length > 0 ? firstVal : value) as NativeSelectValue}
+      options={options}
+      onChange={onChange}
+      onBlur={onBlur}
+      placeholder={field.placeholder ?? "Select an option"}
+      required={field.required}
+      disabled={field.disabled}
+      invalid={invalid}
+      tabIndex={field.tabIndex}
+    />
+  );
+}
+
+/** Combobox — long or loaded lists, with search and optional "Add new". */
+function ComboBoxInput({
+  field,
+  value,
+  onChange,
+  onBlur,
+  invalid,
+}: {
+  field: FieldConfig;
+  value: unknown;
+  onChange: (v: unknown) => void;
+  onBlur: () => void;
+  invalid: boolean;
+}) {
+  return (
+    <ComboBox
+      value={value as ComboBoxValue}
+      options={field.options ?? []}
+      onChange={onChange}
+      onBlur={onBlur}
+      placeholder={field.placeholder ?? (field.label ? `Select ${field.label.toLowerCase()}` : "Select")}
+      required={field.required}
+      disabled={field.disabled}
+      invalid={invalid}
+      tabIndex={field.tabIndex}
+      aria-label={field.label}
+      searchInModal={field.searchInModal}
+      addNew={field.addNew}
+      onAddNew={field.onAddNew}
+      addNewLabel={field.addNewLabel}
+      clearable={field.clearable}
+      uppercase={field.capitalize}
+    />
   );
 }
 
@@ -867,6 +901,9 @@ function renderInput(field: FieldConfig<any>, f: any, invalid: boolean) {
   }
   if (field.type === "select") {
     return <SelectInput field={field} value={f.value} onChange={f.onChange} onBlur={f.onBlur} invalid={invalid} />;
+  }
+  if (field.type === "combobox") {
+    return <ComboBoxInput field={field} value={f.value} onChange={f.onChange} onBlur={f.onBlur} invalid={invalid} />;
   }
   if (field.type === "multi-select") {
     return <MultiSelectInput field={field} value={f.value} onChange={f.onChange} onBlur={f.onBlur} />;
