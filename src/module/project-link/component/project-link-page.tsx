@@ -334,7 +334,7 @@ export default function ProjectLinksPage() {
           columns={columns}
           data={data}
           rowKey="linkId"
-          selectable
+          
           isLoading={links.isPending}
           onEdit={edit}
           onDelete={setDeleting}

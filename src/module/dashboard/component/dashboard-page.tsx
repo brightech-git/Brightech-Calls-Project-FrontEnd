@@ -79,6 +79,14 @@ export default function DashboardPage() {
               Calls booking
             </Link>
           )}
+          {allowed('/ProjectManagement/ProjectLink') && (
+            <Link
+              className={cn(buttonClass, buttonVariants.primary)}
+              href="/ProjectManagement/ProjectLink"
+            >
+              Project's Link
+            </Link>
+          )}
         </div>
       </div>
 

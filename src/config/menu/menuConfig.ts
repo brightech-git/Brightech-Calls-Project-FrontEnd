@@ -28,7 +28,7 @@ export function hasChildren(entry: MenuEntryConfig): boolean {
 export const isMenuGroup = hasChildren;
 
 export const menuConfig: MenuEntryConfig[] = [
-  { id: 'home', label: 'Home', href: '/Home', icon: LayoutDashboard },
+  { id: 'home', label: 'Dashboard', href: '/Home', icon: LayoutDashboard },
   {
     id: 'master',
     label: 'Clients & team',

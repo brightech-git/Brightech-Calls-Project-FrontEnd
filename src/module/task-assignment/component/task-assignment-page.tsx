@@ -1241,7 +1241,7 @@ export default function CallsBookingPage() {
 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
                   {/* Clients raise the call; staff are assigned by the admin. */}
-                  {!isClientUser && (
+                 {/* {!isClientUser && ( */}
                     <Controller
                       name="assignedUsers"
                       control={control}
@@ -1259,7 +1259,7 @@ export default function CallsBookingPage() {
                         />
                       )}
                     />
-                  )}
+                  {/* )} */}
 
                   {/* Active is only editable during Update — on create it
                       defaults to "Y" automatically and isn't shown. */}
