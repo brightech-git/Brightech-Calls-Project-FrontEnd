@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Book a Meeting</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="wrap" style="max-width: 760px">
+    <div class="top">
+      <div>
+        <h1>Book a meeting</h1>
+        <p>Pick a free slot and leave your details. Only open slots are shown.</p>
+      </div>
+    </div>
+
+    <div class="card" id="picker">
+      <h2>1. Choose a day and time</h2>
+      <div class="days" data-days></div>
+      <div class="slots" data-slots></div>
+    </div>
+
+    <form class="card" id="form">
+      <h2>2. Your details</h2>
+      <p class="muted" id="chosen">No slot chosen yet.</p>
+      <div class="grid2">
+        <div><label for="name">Name *</label><input id="name" name="name" required maxlength="100" /></div>
+        <div><label for="email">Email *</label><input id="email" name="email" type="email" required maxlength="150" /></div>
+        <div><label for="phone">Phone *</label><input id="phone" name="phone" required maxlength="20" /></div>
+        <div><label for="company">Company</label><input id="company" name="company" maxlength="150" /></div>
+      </div>
+      <div style="margin-top: 12px"><label for="purpose">What would you like to discuss?</label><textarea id="purpose" name="purpose" maxlength="500"></textarea></div>
+      <div class="row" style="margin-top: 14px"><button id="submit" disabled>Book this slot</button></div>
+      <div class="msg" id="msg"></div>
+    </form>
+  </div>
+
+  <script src="/slot-picker.js"></script>
+  <script>
+    let slot = null;
+    const form = document.getElementById("form");
+    const msg = document.getElementById("msg");
+    const submit = document.getElementById("submit");
+    const chosen = document.getElementById("chosen");
+    const show = (text, ok) => { msg.textContent = text; msg.className = "msg show " + (ok ? "ok" : "bad"); };
+
+    const picker = SlotPicker(document.getElementById("picker"), (s) => {
+      slot = s;
+      chosen.textContent = s ? "Selected: " + s.label : "No slot chosen yet.";
+      submit.disabled = !s;
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!slot) return;
+      submit.disabled = true;
+      const body = Object.fromEntries(new FormData(form));
+      body.slotId = slot.slotId;
+      try {
+        const res = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        show(`Booked! Your reference is ${data.booking.bookingRef} for ${slot.label}.`, true);
+        form.reset();
+      } catch (err) {
+        show(err.message || "Could not book. Please try again.", false);
+      }
+      picker.reload();
+    });
+  </script>
+</body>
+</html>

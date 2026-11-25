@@ -1,0 +1,53 @@
+{
+  "server": {
+    "port": 5050,
+    "host": "0.0.0.0",
+    "corsOrigins": ["http://localhost:3000", "http://127.0.0.1:3000"]
+  },
+
+  "database": {
+    "server": "localhost",
+    "port": 1433,
+    "instanceName": "",
+    "database": "BTSCALLS",
+    "user": "sa",
+    "password": "CHANGE_ME",
+    "encrypt": false,
+    "trustServerCertificate": true,
+    "pool": { "max": 10, "min": 0, "idleTimeoutMillis": 30000 }
+  },
+
+  "tables": {
+    "slots": "MeetSlot",
+    "bookings": "MeetBooking",
+    "blockedDates": "MeetBlockedDate"
+  },
+
+  "admin": {
+    "username": "admin",
+    "password": "CHANGE_ME",
+    "tokenSecret": "CHANGE_ME_TO_A_LONG_RANDOM_STRING",
+    "tokenHours": 8,
+    "maxLoginAttempts": 5,
+    "lockoutMinutes": 5
+  },
+
+  "slots": {
+    "workingDays": [1, 2, 3, 4, 5, 6],
+    "dayStart": "10:00",
+    "dayEnd": "18:00",
+    "durationMinutes": 30,
+    "gapMinutes": 0,
+    "breaks": [{ "start": "13:00", "end": "14:00" }],
+    "capacityPerSlot": 1,
+    "daysAhead": 14,
+    "minNoticeMinutes": 60,
+    "holidays": ["2026-12-25", "2027-01-01"]
+  },
+
+  "booking": {
+    "companyName": "Brightech Software",
+    "requirePhone": true,
+    "maxPurposeLength": 500
+  }
+}

@@ -1,0 +1,3 @@
+node_modules/
+# Real settings (DB password, admin password). Copy from public/config.example.json.
+public/config.json

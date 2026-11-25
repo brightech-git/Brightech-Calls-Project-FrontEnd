@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Meeting Admin</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <!-- Login -->
+  <div class="wrap hidden" id="loginView">
+    <form class="card login" id="loginForm">
+      <h2>Admin login</h2>
+      <p class="muted" style="margin-top: -6px">Meeting bookings</p>
+      <div><label for="username">Username</label><input id="username" autocomplete="username" required /></div>
+      <div style="margin-top: 10px"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required /></div>
+      <div class="row" style="margin-top: 14px"><button style="width: 100%">Log in</button></div>
+      <div class="msg" id="loginMsg"></div>
+    </form>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="wrap hidden" id="appView">
+    <div class="top">
+      <div>
+        <h1>Meeting bookings</h1>
+        <p id="who"></p>
+      </div>
+      <button class="ghost" id="logout">Log out</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span>Today</span><b id="sToday">-</b></div>
+      <div class="stat"><span>Upcoming</span><b id="sUpcoming">-</b></div>
+      <div class="stat"><span>Open slots</span><b id="sOpen">-</b></div>
+      <div class="stat"><span>Cancelled</span><b id="sCancelled">-</b></div>
+    </div>
+
+    <div class="tabs">
+      <button class="active" data-tab="bookings">Booked meetings</button>
+      <button data-tab="book">Book a slot</button>
+      <button data-tab="blocked">Blocked dates</button>
+    </div>
+
+    <!-- Booked meetings -->
+    <section class="card" data-panel="bookings">
+      <div class="row" style="margin-bottom: 12px">
+        <div style="flex: 2 1 200px"><label for="fQ">Search</label><input id="fQ" placeholder="Name, email, phone, company or ref" /></div>
+        <div style="flex: 1 1 140px"><label for="fFrom">From</label><input id="fFrom" type="date" /></div>
+        <div style="flex: 1 1 140px"><label for="fTo">To</label><input id="fTo" type="date" /></div>
+        <div style="flex: 1 1 130px"><label for="fStatus">Status</label>
+          <select id="fStatus"><option value="Booked">Booked</option><option value="Cancelled">Cancelled</option><option value="">All</option></select>
+        </div>
+        <button class="ghost" id="fApply">Filter</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Time</th><th>Client</th><th>Contact</th><th>Purpose</th><th>Status</th><th></th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="msg" id="listMsg"></div>
+    </section>
+
+    <!-- Book a slot -->
+    <section class="hidden" data-panel="book">
+      <div class="card" id="picker">
+        <h2>Choose a remaining slot</h2>
+        <div class="days" data-days></div>
+        <div class="slots" data-slots></div>
+      </div>
+      <form class="card" id="bookForm">
+        <h2>Client details</h2>
+        <p class="muted" id="chosen">No slot chosen yet.</p>
+        <div class="grid2">
+          <div><label for="bName">Name *</label><input id="bName" name="name" required maxlength="100" /></div>
+          <div><label for="bEmail">Email *</label><input id="bEmail" name="email" type="email" required maxlength="150" /></div>
+          <div><label for="bPhone">Phone</label><input id="bPhone" name="phone" maxlength="20" /></div>
+          <div><label for="bCompany">Company</label><input id="bCompany" name="company" maxlength="150" /></div>
+        </div>
+        <div style="margin-top: 12px"><label for="bPurpose">Purpose</label><textarea id="bPurpose" name="purpose" maxlength="500"></textarea></div>
+        <div class="row" style="margin-top: 14px"><button id="bSubmit" disabled>Book slot</button></div>
+        <div class="msg" id="bookMsg"></div>
+      </form>
+    </section>
+
+    <!-- Blocked dates -->
+    <section class="card hidden" data-panel="blocked">
+      <h2>Close a date for bookings</h2>
+      <p class="muted" style="margin-top: -6px">Slots on a blocked date are hidden from the website. Existing bookings stay as they are.</p>
+      <form class="row" id="blockForm">
+        <div style="flex: 1 1 160px"><label for="blDate">Date</label><input id="blDate" type="date" required /></div>
+        <div style="flex: 2 1 220px"><label for="blReason">Reason</label><input id="blReason" maxlength="200" placeholder="e.g. Office closed" /></div>
+        <button>Block date</button>
+      </form>
+      <div class="msg" id="blockMsg"></div>
+      <div class="table-wrap" style="margin-top: 14px">
+        <table><thead><tr><th>Date</th><th>Reason</th><th></th></tr></thead><tbody id="blockedRows"></tbody></table>
+      </div>
+    </section>
+  </div>
+
+  <script src="/slot-picker.js"></script>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>
