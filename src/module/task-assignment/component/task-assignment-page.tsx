@@ -130,8 +130,8 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
     key: 'status',
     header: 'Status',
     sortable: true,
-    total: 'breakdown',
-    totalLabel: (v) => describeCallStatus(v).label,
+    //total: 'breakdown',
+    //totalLabel: (v) => describeCallStatus(v).label,
     render: (row) => <CallStatusBadge value={row.status} />,
   },
   // { key: "bookingMedia", header: "Calls Media", render: (row) => {
@@ -201,7 +201,7 @@ const COLUMNS: TableColumn<CallsBookingListItem_Table>[] = [
   },
   {
     key: 'active',
-    total: 'active',
+   // total: 'active',
     header: 'Active',
     render: (row) => (
       <span
